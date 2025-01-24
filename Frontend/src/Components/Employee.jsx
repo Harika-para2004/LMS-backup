@@ -57,6 +57,7 @@ const App = () => {
   });
 
 
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -108,7 +109,7 @@ const App = () => {
     const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const { leaveType, applyDate, startDate, endDate, reason } = formData;
+    const { leaveType, startDate, endDate, reason } = formData;
     if (!leaveType  || !startDate || !endDate ) {
       setErrors({
         leaveType: leaveType ? "" : "Required field",
@@ -126,7 +127,7 @@ const App = () => {
       }));
       return;
     }
-
+    const applyDate=getTodayDate();
     const formDataToSend = new FormData();
     formDataToSend.append("email", email);
     formDataToSend.append("leaveType", leaveType);
@@ -144,7 +145,7 @@ const App = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:5001/leave?email=${email}`,
+        `http://localhost:5001/apply-leave?email=${email}`,
         {
           method: "POST",
           body: formDataToSend,

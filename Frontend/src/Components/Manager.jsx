@@ -167,7 +167,7 @@ function LeaveRequests() {
 
     try {
       const response = await fetch(
-        `http://localhost:5001/leave?email=${email}`,
+        `http://localhost:5001/apply-leave?email=${email}`,
         {
           method: "POST",
           body: formDataToSend,

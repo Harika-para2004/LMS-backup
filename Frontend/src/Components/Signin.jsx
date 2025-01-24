@@ -38,7 +38,7 @@ const LoginForm = () => {
         const userData = userDataResponse.data;
 
         localStorage.setItem("userData", JSON.stringify(userData));
-        if (formData.email === "admin@gmail.com" && formData.password === "1234") {
+        if (email === "admin@gmail.com" && password === "1234") {
           navigate(`/admin`);
         } else if (formData.email === "manager@gmail.com" && formData.password === "123456") {
           navigate(`/manager`);

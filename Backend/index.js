@@ -29,7 +29,7 @@ app.use("/api/auth", authRoutes);
 const upload = multer({ dest: "uploads/" });
 const path = require("path");
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-app.post("/leave", upload.single("attachment"), async (req, res) => {
+app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
   const { email } = req.query;
   const { leaveType, applyDate, startDate, endDate, reason } = req.body;
   const filePath = req.file ? req.file.path : null;
