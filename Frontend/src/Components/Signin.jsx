@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { AiFillEye, AiFillEyeInvisible } from 'react-icons/ai'; // Importing eye icons from react-icons
+import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai"; // Importing eye icons from react-icons
 import "./../assets/css/styles.css";
 import logo from "./../assets/img/logo.jpg";
 import authImage from "./../assets/img/authentication.svg";
@@ -25,29 +25,33 @@ const LoginForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const apiUrl = "http://localhost:5001/api/auth/signin";
+    if (formData.email === "admin@gmail.com" && formData.password === "1234") {
+      navigate(`/admin`);
+    } else {
+      try {
+        const apiUrl = "http://localhost:5001/api/auth/signin";
+        const response = await axios.post(apiUrl, formData);
+        alert(response.data.message);
 
-    try {
-      const response = await axios.post(apiUrl, formData);
-      alert(response.data.message);
+        if (response.status === 200 || response.status === 201) {
+          const userDataResponse = await axios.get(
+            `http://localhost:5001/api/auth/user/${response.data.userId}`
+          );
+          const userData = userDataResponse.data;
 
-      if (response.status === 200 || response.status === 201) {
-        const userDataResponse = await axios.get(
-          `http://localhost:5001/api/auth/user/${response.data.userId}`
-        );
-        const userData = userDataResponse.data;
-
-        localStorage.setItem("userData", JSON.stringify(userData));
-        if (email === "admin@gmail.com" && password === "1234") {
-          navigate(`/admin`);
-        } else if (formData.email === "manager@gmail.com" && formData.password === "123456") {
-          navigate(`/manager`);
-        } else  {
-          navigate(`/employee`, { state: { userData } });
+          localStorage.setItem("userData", JSON.stringify(userData));
+          if (
+            formData.email === "manager@gmail.com" &&
+            formData.password === "123456"
+          ) {
+            navigate(`/manager`);
+          } else if(userData) {
+            navigate(`/employee`, { state: { userData } });
+          }
         }
+      } catch (error) {
+        alert(error.response?.data?.message || "Something went wrong");
       }
-    } catch (error) {
-      alert(error.response?.data?.message || "Something went wrong");
     }
   };
 
@@ -62,8 +66,11 @@ const LoginForm = () => {
         <img src={authImage} alt="Authentication" className="form__img" />
 
         <form onSubmit={handleSubmit} className="form__content">
-        <div >  <h2 style={{textAlign:'center'}}>Welcome,Back</h2><br/>
-</div>
+          <div>
+            {" "}
+            <h2 style={{ textAlign: "center" }}>Welcome,Back</h2>
+            <br />
+          </div>
           <div className="form__div form__div-one">
             <div className="form__icon">
               <i className="bx bx-user-circle"></i>
