@@ -19,7 +19,7 @@ app.use(express.json());
 /* mongodb+srv://lahiri:sai*123@cluster0.r7eze9l.mongodb.net/*/
 // Connect to MongoDB
 mongoose
-  .connect(process.env.MONGO_URI)
+  .connect("mongodb+srv://lahiri:sai*123@cluster0.r7eze9l.mongodb.net/Sai?retryWrites=true&w=majority&appName=Cluster0")
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err.message));
 
