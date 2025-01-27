@@ -1,4 +1,5 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
+const LeavePolicy = require('./LeavePolicy'); // Import LeavePolicy schema
 
 const LeaveSchema = new mongoose.Schema({
   email: {
@@ -9,7 +10,10 @@ const LeaveSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  
+  applyDate: {
+    type: [Date],
+    required: true,
+  },
   startDate: {
     type: [Date],
     required: true,
@@ -48,27 +52,32 @@ const LeaveSchema = new mongoose.Schema({
   },
 });
 
-LeaveSchema.pre("save", function (next) {
-  if (!this.isModified("leaveType")) return next();
-  const leaveTypeDefaults = {
-    sick: 14,
-    maternity: 26,
-    paternity: 10,
-    adoption: 10,
-    bereavement: 3,
-    compensatory: 3,
-    lop: 3,
-  };
+LeaveSchema.pre('save', async function (next) {
+  if (!this.isModified('leaveType')) return next();
 
-  this.totalLeaves = leaveTypeDefaults[this.leaveType] || 0;
+  try {
+    // Fetch the maxAllowedLeaves for the given leaveType
+    const policy = await LeavePolicy.findOne({ leaveType: this.leaveType });
 
-  if (this.status.length === 0) {
-    this.status = Array(this.totalLeaves).fill("pending");
+    if (policy) {
+      this.totalLeaves = policy.maxAllowedLeaves || 0;
+
+      // Initialize status if not already set
+      if (this.status.length === 0) {
+        this.status = Array(this.totalLeaves).fill('pending');
+      }
+
+      // Calculate available leaves
+      this.availableLeaves = this.totalLeaves - this.usedLeaves;
+    } else {
+      throw new Error(`Leave policy not found for leave type: ${this.leaveType}`);
+    }
+
+    next();
+  } catch (error) {
+    console.error('Error in LeaveSchema pre-save:', error);
+    next(error);
   }
-
-  this.availableLeaves = this.totalLeaves - this.usedLeaves;
-
-  next();
 });
 
-module.exports = mongoose.model("Leaverequests", LeaveSchema);
+module.exports = mongoose.model('Leaverequests', LeaveSchema);

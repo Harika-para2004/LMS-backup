@@ -5,7 +5,7 @@ const nodemailer = require('nodemailer');
 
 const router = express.Router();
 router.post('/addEmployee', async (req, res) => {
-  const { empname,empid, email, password, project } = req.body;
+  const { empname,empid, email, password,gender, project } = req.body;
 /* app name:lmsappgmail*/
 /* password:jmfe rmka otnc upxe*/
 role='employee'
@@ -22,6 +22,7 @@ role='employee'
       empid,
       email,
       password: hashedPassword,
+      gender,
       project,
       role
     });
