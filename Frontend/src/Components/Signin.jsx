@@ -23,6 +23,7 @@ const LoginForm = () => {
     setPasswordVisible(!passwordVisible); // Toggle password visibility
   };
 
+  //handle submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.email === "admin@gmail.com" && formData.password === "1234") {

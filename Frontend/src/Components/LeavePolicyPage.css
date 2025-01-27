@@ -1,0 +1,195 @@
+  .leave-policy-page {
+    font-family: Arial, sans-serif;
+    /* padding: 20px; */
+    /* background-color: #48bff7; */
+    cursor:default;
+  }
+  
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0px;
+    cursor:default;
+  }
+  
+  .header h2 {
+    color: #384959;
+  }
+  
+  .create-policy-btn {
+    background-color: #006600;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .create-policy-btn:hover {
+    background-color:  green;
+  }
+  
+  .form-container {
+    background-color: rgb(195, 237, 244);
+    border: 1px solid #0b0101;
+    border-radius: 10px;
+    padding: 20px;
+    max-width: 500px;
+    margin: 0 auto;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .form-container h3 {
+    color: rgb(236, 21, 61);
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .form-group {
+    margin-bottom: 15px;
+  }
+  
+  .form-group label {
+    display: block;
+    color: #333333;
+    font-weight: 500;
+    margin-bottom: 5px;
+  }
+  
+  .form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+  }
+  
+  .submit-btn {
+    width: 100%;
+    background-color: steelblue;
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  
+  .submit-btn:hover {
+    background-color: #1d5e89;
+  }
+
+  .cancel-btn{
+    margin-top: 10px;
+  }
+  
+  .policy-list {
+    margin-top: 30px;
+  }
+  
+  .policy-item {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .policy-details h4 {
+    color: steelblue;
+    margin: 0;
+  }
+  
+  .policy-details p {
+    color: #555;
+    margin: 5px 0 0 0;
+  }
+  
+  .policy-actions button {
+    /* background-color: #f0ad4e; */
+    color: #ffffff;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-left: 5px;
+  }
+
+  
+  .edit-btn {
+    background-color: #5bc0de;
+  }
+  
+  .edit-btn:hover {
+    background-color: #31b0d5;
+  }
+  
+  .delete-btn {
+    background-color: #d9534f;
+  }
+  
+  .delete-btn:hover {
+    background-color: #c9302c;
+  }
+  
+  .policy-list {
+    margin-top: 30px;
+  }
+  
+  .policy-item {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+  
+  .policy-details h4 {
+    color: steelblue;
+    margin: 0;
+  }
+  
+  .policy-details p {
+    color: #555;
+    margin: 5px 0;
+  }
+  
+  .policy-actions button {
+    background-color: #f0ad4e;
+    color: #ffffff;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-left: 5px;
+  }
+  
+  .policy-actions button:hover {
+    background-color: #ec971f;
+  }
+  
+  .edit-btn {
+    background-color: #5bc0de;
+  }
+  
+  .edit-btn:hover {
+    background-color: #31b0d5;
+  }
+  
+  .delete-btn {
+    background-color: #d9534f;
+  }
+  
+  .delete-btn:hover {
+    background-color: #c9302c;
+  }
+  
