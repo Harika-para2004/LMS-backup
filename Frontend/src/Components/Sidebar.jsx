@@ -112,15 +112,7 @@ const Sidebar = ({
     } else {
       return (
         <>
-          <li>
-            <Link
-              to="#"
-              className={selectedCategory === "dashboard" ? "active-tab" : ""}
-              onClick={() => setSelectedCategory("dashboard")}
-            >
-              <FontAwesomeIcon icon={faChartLine} /> Dashboard
-            </Link>
-          </li>
+          
           
           <li>
             <Link
@@ -131,6 +123,15 @@ const Sidebar = ({
               onClick={() => setSelectedCategory("leaverequests")}
             >
               <FontAwesomeIcon icon={faCalendarCheck} /> Leave Requests
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="#"
+              className={selectedCategory === "dashboard" ? "active-tab" : ""}
+              onClick={() => setSelectedCategory("dashboard")}
+            >
+              <FontAwesomeIcon icon={faChartLine} /> Leave Balances
             </Link>
           </li>
           <li>

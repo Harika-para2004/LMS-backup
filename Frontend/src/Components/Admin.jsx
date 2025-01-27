@@ -854,7 +854,7 @@ function AdminDashboard() {
       case "leaverequests":
         return (
           <div className="history-container">
-            <h2 className="content-heading" >Leave Requests</h2>
+            <h2 className="content-heading">Leave Requests</h2>
             <table id="tb">
               <thead>
                 <tr>
@@ -946,114 +946,25 @@ function AdminDashboard() {
               <h2 className="content-heading">Employee Details</h2>
               <Button
                 variant="contained"
-                onClick={() => setShowModal(true)}
+                onClick={() => handleAddEmployeeClick()}
                 sx={{
-                  textTransform: "capitalize",
-                  backgroundColor: "#006400", // Align the button absolutely
-                  // marginTop: "-40px", // Push it to the right edge
-                  // marginRight: "35px", // Optional: Add some spacing from the right edge
+                  position: "absolute",
+                  backgroundColor: "#006600",
+                  right: 0,
+                  textTransform:"none",
+
+                  marginRight: "35px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1, // Add spacing between text and icon
                   "&:focus": {
                     outline: "none",
                   },
                 }}
               >
-                Add Employee
+                <AddIcon /> Add Employee
               </Button>
             </div>
-
-            <Modal
-              open={showAddEmployeeModal}
-              onClose={handleAddEmployeeClose}
-              aria-labelledby="add-employee-modal"
-              aria-describedby="add-employee-form"
-            >
-              <Box
-                component="form"
-                onSubmit={handleSubmit}
-                sx={{
-                  position: "absolute",
-                  top: "50%",
-                  left: "50%",
-                  transform: "translate(-50%, -50%)",
-                  width: 400,
-                  bgcolor: "background.paper",
-                  borderRadius: 2,
-                  boxShadow: 24,
-                  p: 4,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 2,
-                  marginTop: "20px",
-                }}
-              >
-                <Typography
-                  variant="h5"
-                  id="add-employee-modal"
-                  textAlign="center"
-                >
-                  Add Employee
-                </Typography>
-                <TextField
-                  label="Employee Name"
-                  name="empname"
-                  value={empData.empname}
-                  onChange={handleChange}
-                  fullWidth
-                />
-                <TextField
-                  label="Employee Id"
-                  name="empid"
-                  value={empData.empid}
-                  onChange={handleChange}
-                  fullWidth
-                />
-                <TextField
-                  label="Email"
-                  name="email"
-                  value={empData.email}
-                  onChange={handleChange}
-                  fullWidth
-                />
-                <TextField
-                  label="Password"
-                  name="password"
-                  value={empData.password}
-                  onChange={handleChange}
-                  fullWidth
-                />
-                <FormControl fullWidth>
-                  <InputLabel id="gender-label">Gender</InputLabel>
-                  <Select
-                    labelId="gender-label"
-                    id="gender"
-                    name="gender"
-                    value={empData.gender}
-                    onChange={handleChange}
-                    label="Gender"
-                  >
-                    <MenuItem value="Male">Male</MenuItem>
-                    <MenuItem value="Female">Female</MenuItem>
-                    <MenuItem value="Other">Other</MenuItem>
-                  </Select>
-                </FormControl>
-                <TextField
-                  label="Project"
-                  name="project"
-                  value={empData.project}
-                  onChange={handleChange}
-                  fullWidth
-                />
-
-                <Box display="flex" justifyContent="flex-end">
-                  <Button onClick={handleAddEmployeeClose} sx={{ mr: 2 }}>
-                    Cancel
-                  </Button>
-                  <Button variant="contained" type="submit">
-                    Add Employee
-                  </Button>
-                </Box>
-              </Box>
-            </Modal>
 
             <table className="holiday-table">
               {/* <caption>Employee Details</caption> */}
@@ -1193,6 +1104,95 @@ function AdminDashboard() {
 
         <main className="main-content">{renderContent()}</main>
       </div>
+
+      <Modal
+        open={showAddEmployeeModal}
+        onClose={handleAddEmployeeClose}
+        aria-labelledby="add-employee-modal"
+        aria-describedby="add-employee-form"
+      >
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            borderRadius: 2,
+            boxShadow: 24,
+            p: 4,
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+          }}
+        >
+          <Typography variant="h5" id="add-employee-modal" textAlign="center">
+            Add Employee
+          </Typography>
+          <TextField
+            label="Employee Name"
+            name="empname"
+            value={empData.empname}
+            onChange={handleChange}
+            fullWidth
+          />
+          <TextField
+            label="Employee Id"
+            name="empid"
+            value={empData.empid}
+            onChange={handleChange}
+            fullWidth
+          />
+          <TextField
+            label="Email"
+            name="email"
+            value={empData.email}
+            onChange={handleChange}
+            fullWidth
+          />
+          <TextField
+            label="Password"
+            name="password"
+            value={empData.password}
+            onChange={handleChange}
+            fullWidth
+          />
+          <FormControl fullWidth>
+            <InputLabel id="gender-label">Gender</InputLabel>
+            <Select
+              labelId="gender-label"
+              id="gender"
+              name="gender"
+              value={empData.gender}
+              onChange={handleChange}
+              label="Gender"
+            >
+              <MenuItem value="Male">Male</MenuItem>
+              <MenuItem value="Female">Female</MenuItem>
+              <MenuItem value="Other">Other</MenuItem>
+            </Select>
+          </FormControl>
+          <TextField
+            label="Project"
+            name="project"
+            value={empData.project}
+            onChange={handleChange}
+            fullWidth
+          />
+
+          <Box display="flex" justifyContent="flex-end">
+            <Button onClick={handleAddEmployeeClose} sx={{ mr: 2 }}>
+              Cancel
+            </Button>
+            <Button variant="contained" type="submit">
+              Add Employee
+            </Button>
+          </Box>
+        </Box>
+      </Modal>
 
       {/* <Button
         variant="contained"

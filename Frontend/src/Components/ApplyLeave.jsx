@@ -144,7 +144,7 @@ const ApplyLeave = ({
       </div>
 
       <div className="holiday-table-section apply-leave-container">
-        <h2 className="section-title">Holiday Table</h2>
+        <h2 className="section-title">Holiday Calendar</h2>
         {/* Holiday Table code goes here */}
         <table className="holiday-table">
           <thead>

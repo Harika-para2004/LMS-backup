@@ -292,7 +292,7 @@ const App = () => {
     { leaveType: "adoption Leave", availableLeaves: 10, totalLeaves: 10 },
     { leaveType: "bereavement", availableLeaves: 3, totalLeaves: 3 },
     { leaveType: "Compensatory Off", availableLeaves: 3, totalLeaves: 3 },
-    { leaveType: "Loss of Pay (LOP)", availableLeaves: 3, totalLeaves: 3 },
+    // { leaveType: "Loss of Pay (LOP)", availableLeaves: 3, totalLeaves: 3 },
   ];
 
   const mergedLeaveData = defaultLeaveData.map((defaultLeave) => {
@@ -349,7 +349,7 @@ const App = () => {
           userType="employee"
           selectedCategory={selectedCategory}
           setSelectedCategory={setSelectedCategory}
-          username="John Doe"
+          username="Ajay"
           empid="EMP123"
           handleLogout={handleLogout}
           logo={logo}

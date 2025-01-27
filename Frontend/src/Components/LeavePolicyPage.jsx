@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./LeavePolicyPage.css";
+import { FaEdit, FaTrash } from "react-icons/fa";
 
 function LeavePolicyPage() {
   const [formData, setFormData] = useState({
@@ -182,11 +183,11 @@ function LeavePolicyPage() {
               <div className="policy-details">
                 <h4>{policy.leaveType}</h4>
                 <p>Total Leaves: {policy.maxAllowedLeaves}</p>
-                <p>Created: {new Date(policy.createdAt).toLocaleDateString()}</p>
+                {/* <p>Created: {new Date(policy.createdAt).toLocaleDateString()}</p> */}
               </div>
               <div className="policy-actions">
-                <button className="edit-btn" onClick={() => handleEdit(policy._id)}>Edit</button>
-                <button className="delete-btn" onClick={() => handleDelete(policy._id)}>Delete</button>
+                <button className="edit-btn" onClick={() => handleEdit(policy._id)}> <FaEdit/> </button>
+                <button className="delete-btn" onClick={() => handleDelete(policy._id)}>  <FaTrash/> </button>
               </div>
             </div>
           ))
