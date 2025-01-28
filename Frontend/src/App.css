@@ -2,9 +2,10 @@
 
 :root {
   --primary-blue: #00D7FF;  /* Bright Blue */
-  --dark-blue: #216B88;    /* Dark Blue */
+  --dark-blue: #21BB88;    /* Dark Blue */
   --deep-blue: #313896;    /* Deep Blue */
   --purple: #9F32B2;       /* Purple */
+  
   --light-bg: #f8f9fa;     /* Neutral Light Background */
   --shadow-color: rgba(0, 0, 0, 0.15);
   /* --highlight-color: #9f32b2; */
@@ -24,6 +25,7 @@
   padding: 0;
   box-sizing: border-box;
   font-family: "Poppins", sans-serif;
+  text-transform: capitalize;
 
 }
 

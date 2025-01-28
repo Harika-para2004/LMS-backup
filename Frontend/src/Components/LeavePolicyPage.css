@@ -109,6 +109,7 @@
     border-radius: 5px;
     cursor: pointer;
     margin-left: 5px;
+    font-size: 20px;
   }
 
   
@@ -126,8 +127,13 @@
   
   .delete-btn:hover {
     background-color: #c9302c;
+<<<<<<< Updated upstream
   }
    */
+=======
+  } */
+  
+>>>>>>> Stashed changes
   .policy-list {
     margin-top: 30px;
   }
@@ -167,8 +173,8 @@
   .policy-actions button:hover {
     background-color: #ec971f;
   }
-  
-  .edit-btn {
+   */
+  /* .edit-btn {
     background-color: #5bc0de;
   }
   

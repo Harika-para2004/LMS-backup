@@ -42,7 +42,7 @@ const ApplyLeave = ({
                   variant="outlined"
                   sx={{ backgroundColor: "#fff" }}
                 >
-                  <MenuItem value="sick">Sick/Casual/Earned Leave</MenuItem>
+                  <MenuItem value="SICK LEAVE">Sick/Casual/Earned Leave</MenuItem>
                   <MenuItem value="maternity">Maternity Leave</MenuItem>
                   <MenuItem value="paternity">Paternity Leave</MenuItem>
                   <MenuItem value="adoption">Adoption Leave</MenuItem>

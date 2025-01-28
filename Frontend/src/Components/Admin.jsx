@@ -782,75 +782,7 @@ function AdminDashboard() {
         );
       case "reports":
         return <div></div>;
-      //case "leaverequests":
-      // return (
-      // <div className="history-container">
-      //   <h2 className="content-heading">Leave Requests</h2>
-      //   <table id="tb">
-      //     <thead>
-      //       <tr>
-      //         <th>Leave Type</th>
-      //         <th>From</th>
-      //         <th>To</th>
-      //         <th>Reason</th>
-      //         <th>Status</th>
-      //       </tr>
-      //     </thead>
-      //     <tbody>
-      //       {leaveHistory.map((leave) =>
-      //         leave.startDate.map((startDate, index) => (
-      //           <tr
-      //             key={`${leave._id}-${index}`}
-      //             onClick={() => handleRowClick(leave, index)}
-      //           >
-      //             <td>{leave.leaveType}</td>
-      //             <td>{new Date(startDate).toLocaleDateString()}</td>
-      //             <td>
-      //               {new Date(leave.endDate[index]).toLocaleDateString()}
-      //             </td>
-      //             <td>{leave.reason[index]}</td>
-      //             <td>{leave.status[index]}</td>
-      //           </tr>
-      //         ))
-      //       )}
-      //     </tbody>
-      //   </table>
-
-      //   {selectedLeave && (
-      //     <div className="details-container">
-      //       <h3>Leave Details</h3>
-      //       <p>Employee Email: {selectedLeave.email}</p>
-      //       <p>Leave Type: {selectedLeave.leaveType}</p>
-      //       <p>
-      //         From:{" "}
-      //         {new Date(
-      //           selectedLeave.startDate[selectedLeave.selectedIndex]
-      //         ).toLocaleDateString()}
-      //       </p>
-      //       <p>
-      //         To:{" "}
-      //         {new Date(
-      //           selectedLeave.endDate[selectedLeave.selectedIndex]
-      //         ).toLocaleDateString()}
-      //       </p>
-      //       <p>
-      //         Reason: {selectedLeave.reason[selectedLeave.selectedIndex]}
-      //       </p>
-      //       <p>
-      //         Status: {selectedLeave.status[selectedLeave.selectedIndex]}
-      //       </p>
-      //       <p>Total Leaves: {selectedLeave.totalLeaves}</p>
-      //       <p>Available Leaves: {selectedLeave.availableLeaves}</p>
-      //       <p>Used Leaves: {selectedLeave.usedLeaves}</p>
-      //       <div className="action-buttons">
-      //         <button onClick={handleApprove}>Approve</button>
-      //         <button onClick={() => setSelectedLeave(null)}>Reject</button>
-      //       </div>
-      //     </div>
-      //   )}
-      // </div>
-
-      //);
+      
       case "leaverequests":
         return (
           <div className="history-container">

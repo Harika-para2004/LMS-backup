@@ -349,8 +349,13 @@ const App = () => {
           userType="employee"
           selectedCategory={selectedCategory}
           setSelectedCategory={setSelectedCategory}
+<<<<<<< Updated upstream
           username="Ajay"
           empid="EMP123"
+=======
+          username={username}
+          empid={empid}
+>>>>>>> Stashed changes
           handleLogout={handleLogout}
           logo={logo}
           profileImage={profileImage}

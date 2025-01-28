@@ -58,7 +58,7 @@ LeaveSchema.pre('save', async function (next) {
   try {
     // Fetch the maxAllowedLeaves for the given leaveType
     const policy = await LeavePolicy.findOne({ leaveType: this.leaveType });
-
+    console.log(policy);
     if (policy) {
       this.totalLeaves = policy.maxAllowedLeaves || 0;
 
