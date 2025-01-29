@@ -18,6 +18,8 @@ const ApplyLeave = ({
   getTodayDate,
   leavePolicies
 }) => {
+  const disabledDates = ["2024-02-10", "2024-02-15", "2024-02-20"];
+
   return (
     <div className="leave-management-container">
       <div className="apply-leave-section">
@@ -69,10 +71,16 @@ const ApplyLeave = ({
                   name="startDate"
                   value={formData.startDate}
                   onChange={handleInputChange}
+                  inputProps={{
+                    max: formData.endDate,
+                    min: getTodayDate(),
+                  }}
+                  
                   fullWidth
                   size="small"
                   variant="outlined"
                 />
+                
               </label>
             </Grid>
 
@@ -120,7 +128,7 @@ const ApplyLeave = ({
                 component="label"
                 sx={{
                   backgroundColor: "transparent",
-                  border:"1px solid var(--dark-blue)",
+                  border: "1px solid var(--dark-blue)",
                   color: "#000",
                   margin: "10px 0",
                 }}

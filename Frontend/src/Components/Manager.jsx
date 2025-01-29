@@ -3,6 +3,9 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import logo from "./../assets/img/quadfacelogo-hd.png";
 import { Modal, Box } from "@mui/material";
+import Profile from "../assets/img/profile.png";
+import { useNavigate } from "react-router-dom";
+
 import {
   TextField,
   MenuItem,
@@ -26,16 +29,28 @@ import {
 import LeaveHistory from "./LeaveHistory";
 import ApplyLeave from "./ApplyLeave";
 import Sidebar from "./Sidebar";
+import ProfilePage from "./ProfilePage";
+
 function LeaveRequests() {
   const [modalOpen, setModalOpen] = useState(false);
   const [leaveHistory, setLeaveHistory] = useState([]);
   const [selectedLeave, setSelectedLeave] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState("dashboard");
+  const [selectedCategory, setSelectedCategory] = useState("leaverequests");
   const [leaveData, setLeaveData] = useState([]);
   const [email, setEmail] = useState("");
+  const [empid, setEmpid] = useState("");
+  const [username, setUsername] = useState("");
+  const [project, setProject] = useState("");
+  const [designation, setDesignation] = useState("");
   const [leavehistory, setLeavehistory] = useState([]);
   const [holidays, setHolidays] = useState([]);
-  const [file,setFile]=useState(null);
+  const [profileImage, setProfileImage] = useState(Profile);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [userData, setUserData] = useState(null);
+  const [file, setFile] = useState(null);
+  const navigate = useNavigate();
+
   const [errors, setErrors] = useState({
     leaveType: "",
     from: "",
@@ -214,6 +229,7 @@ function LeaveRequests() {
           );
           if (response.ok) {
             const data = await response.json();
+            console.log(data);
             setLeaveData(data);
           } else {
             console.error("Failed to fetch leave data");
@@ -258,6 +274,14 @@ function LeaveRequests() {
     }
   };
 
+  // const handleLogout = () => {
+  //   window.location.href = "/login";
+  // };
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate("/login");  // Redirects user after logout
+  };
+
   const getTodayDate = () => {
     const today = new Date();
     return today.toISOString().split("T")[0];
@@ -296,6 +320,8 @@ function LeaveRequests() {
     }
     if (reason) {
       formDataToSend.append("reason", reason);
+    }else{
+      formDataToSend.append("reason", "N/A");
     }
 
     try {
@@ -429,33 +455,64 @@ function LeaveRequests() {
       case "dashboard":
         return (
           <div>
-      
-
-      <div className="leave-types-container">
-        <h2 className="content-heading">Leave Balances</h2>
-        <div className="leave-cards">
-          {mergedLeaveData.map((leave, index) => (
-            <div key={index} className="leave-card">
-              <div className="leave-card-header">
-                <h3 className="leave-type">{leave.leaveType}</h3>
-              </div>
-              <div className="leave-count">
-                <div className="count-item">
-                  <span className="count-number">{leave.availableLeaves}</span>
-                  <span className="count-label">Available</span>
-                </div>
-                <div className="count-item">
-                  <span className="count-number">{leave.totalLeaves}</span>
-                  <span className="count-label">Total</span>
-                </div>
+            <div className="leave-types-container">
+              <h2
+                style={{ textAlign: "center", marginTop: "-30px" }}
+                className="leavebalance"
+              >
+                Leave Balances
+              </h2>
+              <div className="leave-cards">
+                {mergedLeaveData.map((leave, index) => (
+                  <div key={index} className="leave-card">
+                    <div className="leave-card-header">
+                      <h3 className="leave-type">{leave.leaveType}</h3>
+                    </div>
+                    <div className="leave-count">
+                      <div className="count-item">
+                        <span className="count-number">
+                          {leave.availableLeaves}
+                        </span>
+                        <span className="count-label">Available</span>
+                      </div>
+                      <div className="count-item">
+                        <span className="count-number">
+                          {leave.totalLeaves}
+                        </span>
+                        <span className="count-label">Total</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
-        </div>
-      </div>
-    </div>
-           
-       
+            {/* <table className="holiday-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Day</th>
+                  <th>Name of Holiday</th>
+                  <th>Holiday Type</th>
+                </tr>
+              </thead>
+              <tbody>
+                {holidays.length > 0 ? (
+                  holidays.map((holiday) => (
+                    <tr key={holiday._id}>
+                      <td>{holiday.date}</td>
+                      <td>{holiday.day}</td>
+                      <td>{holiday.name}</td>
+                      <td>{holiday.type}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4">No holidays found.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table> */}
+          </div>
         );
       case "apply-leave":
         return (
@@ -470,6 +527,17 @@ function LeaveRequests() {
             getTodayDate={getTodayDate}
             leavePolicies={leavePolicies} // Pass leave policies here
 
+          />
+        );
+
+        case "profile":
+        return (
+          <ProfilePage
+            Profile={Profile}
+            username={username}
+            empid={empid}
+            project={project}
+            leaveData={leaveData}
           />
         );
 
@@ -618,11 +686,21 @@ function LeaveRequests() {
   return (
     <div className="dashboard-container">
       <div className="content">
-        <Sidebar
+        {/* <Sidebar
           userType="manager"
           selectedCategory={selectedCategory}
           setSelectedCategory={setSelectedCategory}
           logo={logo}
+        /> */}
+        <Sidebar
+          userType="manager"
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          username={username}
+          empid={empid}
+          handleLogout={handleLogout}
+          logo={logo}
+          profileImage={profileImage}
         />
         <main className="main-content">{renderContent()}</main>
       </div>

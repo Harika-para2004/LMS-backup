@@ -806,7 +806,7 @@ function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {holidays.map((holiday, index) => (
+                {holidays ? holidays.map((holiday, index) => (
                   <tr key={holiday._id}>
                     {editingRow === index ? (
                       <>
@@ -830,7 +830,8 @@ function AdminDashboard() {
                           <input
                             type="text"
                             name="name"
-                            value={formData.name}
+                            value={formData.name.toLowerCase()
+                              .replace(/\b\w/g, (char) => char.toUpperCase())}
                             onChange={handleInputChange}
                           />
                         </td>
@@ -875,7 +876,9 @@ function AdminDashboard() {
                       </>
                     )}
                   </tr>
-                ))}
+                )) : 
+                <tr><td>No Holidays available</td></tr>
+                }
               </tbody>
             </table>
           </div>
@@ -919,8 +922,9 @@ function AdminDashboard() {
                       <td>
                         {new Date(leave.endDate[index]).toLocaleDateString()}
                       </td>
-                      <td>{leave.reason[index]}</td>
-                      <td>{leave.status[index]}</td>
+                      <td>{(leave.reason[index] === null) ? 'N/A' : leave.reason[index]}</td>
+                      <td>{leave.status[index].toLowerCase()
+            .replace(/\b\w/g, (char) => char.toUpperCase())}</td>
                     </tr>
                   ))
                 )}
@@ -1049,15 +1053,16 @@ function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {employeeList.map((emp, index) => (
+                { employeeList ? employeeList.map((emp, index) => (
                   <tr key={emp._id}>
                     {editingRow === index ? (
                       <>
                         <td>
                           <input
                             type="text"
-                            name="empid"
-                            value={empData.empid}
+                            name="empname"
+                            value={empData.empname.toLowerCase()
+                              .replace(/\b\w/g, (char) => char.toUpperCase())}
                             onChange={handleEmployeeData}
                           />
                         </td>
@@ -1089,7 +1094,8 @@ function AdminDashboard() {
                           <input
                             type="text"
                             name="project"
-                            value={empData.project}
+                            value={empData.project.toLowerCase()
+                              .replace(/\b\w/g, (char) => char.toUpperCase())}
                             onChange={handleEmployeeData}
                           />
                         </td>
@@ -1132,7 +1138,11 @@ function AdminDashboard() {
                       </>
                     )}
                   </tr>
-                ))}
+                )) : 
+                <tr>
+                  <td>No Employees Available</td>
+                </tr>
+                }
               </tbody>
             </table>
           </>

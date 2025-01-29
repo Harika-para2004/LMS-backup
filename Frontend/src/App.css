@@ -284,15 +284,35 @@ body, html {
   margin-bottom: 15px;
 }
 
+.sidebar ul li.seg {
+  color: white;
+  font-size: 15px;
+  /* margin-bottom: 0; */
+  margin-left: 8px;
+  color: #121C3E;
+}
+
 .sidebar ul li a {
   text-decoration: none;
   color: white;
-  font-size: 18px;
+  font-size: 16px;
+  font-weight: 500;
   padding: 4px;
   display: block;
   border-radius: 4px;
   transition: background-color 0.3s;
-  margin-left: 20px;
+  /* margin-left: 4px; */
+}
+
+.sidebar hr{
+  outline: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 20px;
+}
+
+.sidebar ul li a svg{
+  margin-right: 5px;
+  padding-left: 5px;
 }
 
 .sidebar ul li .active-tab {
@@ -316,7 +336,12 @@ body, html {
 }
 
 .sidebar-comps{
-  padding: 10px;
+  padding: 22px;
+  padding-top: 0;
+}
+
+.sidebar-comps-admin{
+  padding-top: 20px;
 }
 
 .profile-section {
@@ -325,7 +350,7 @@ body, html {
   margin-bottom: 20px;
   padding-bottom: 15px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  margin-left: 20px;
+  /* margin-left: 20px; */
 }
 
 .profile-pic {

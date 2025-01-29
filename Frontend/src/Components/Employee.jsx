@@ -135,8 +135,12 @@ const App = () => {
     }
   };
 
+  // const handleLogout = () => {
+  //   window.location.href = "/login";
+  // };
   const handleLogout = () => {
-    window.location.href = "/login";
+    localStorage.clear();
+    navigate("/login");  // Redirects user after logout
   };
 
   const handleSubmit = async (event) => {

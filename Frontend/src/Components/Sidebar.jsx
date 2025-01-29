@@ -28,6 +28,7 @@ const Sidebar = ({
 }) => {
   const isEmployee = userType === "employee";
   const isAdmin = userType === "admin";
+  const isManager = userType === "manager";
 
   // Function to generate links based on user type
   const generateLinks = () => {
@@ -56,7 +57,7 @@ const Sidebar = ({
       );
     } else if (isAdmin) {
       return (
-        <>
+        <div className="sidebar-comps-admin">
           <li>
             <Link
               to="#"
@@ -107,13 +108,12 @@ const Sidebar = ({
               <FontAwesomeIcon icon={faEnvelopeOpenText} /> Leave Requests
             </Link>
           </li>
-        </>
+        </div>
       );
     } else {
       return (
         <>
-          
-          
+          {/* <li className="seg">Manager Actions</li> */}
           <li>
             <Link
               to="#"
@@ -125,7 +125,7 @@ const Sidebar = ({
               <FontAwesomeIcon icon={faCalendarCheck} /> Leave Requests
             </Link>
           </li>
-          <li>
+          {/* <li>
             <Link
               to="#"
               className={selectedCategory === "dashboard" ? "active-tab" : ""}
@@ -133,7 +133,7 @@ const Sidebar = ({
             >
               <FontAwesomeIcon icon={faChartLine} /> Leave Balances
             </Link>
-          </li>
+          </li> */}
           <li>
             <Link
               to="#"
@@ -143,6 +143,8 @@ const Sidebar = ({
               <FontAwesomeIcon icon={faFileAlt} /> Reports
             </Link>
           </li>
+          {/* <li className="seg">Employee Actions</li> */}
+          <hr/>
           <li>
             <Link
               to="#"
@@ -173,7 +175,7 @@ const Sidebar = ({
       </div>
 
       <div className="sidebar-comps">
-        {isEmployee && (
+        {(isEmployee || isManager)  && (
           <Link
             to="#"
             className={selectedCategory === "profile" ? "active-tab" : ""}
@@ -193,7 +195,7 @@ const Sidebar = ({
 
         <ul>{generateLinks()}</ul>
 
-        {isEmployee && (
+        {(isEmployee || isManager) && (
           <div className="logout">
             <Link to="#" onClick={handleLogout}>
               <FontAwesomeIcon icon={faSignOutAlt} /> Logout

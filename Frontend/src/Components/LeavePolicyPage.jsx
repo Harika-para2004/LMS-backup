@@ -7,7 +7,7 @@ function LeavePolicyPage() {
   const [formData, setFormData] = useState({
     leaveType: "",
     maxLeaves: "",
-    policyId: "",  // Add this field to track the policy being edited
+    policyId: "", // Add this field to track the policy being edited
   });
 
   const [showForm, setShowForm] = useState(false);
@@ -19,7 +19,9 @@ function LeavePolicyPage() {
   useEffect(() => {
     async function fetchPolicies() {
       try {
-        const response = await axios.get("http://localhost:5001/api/leave-policies");
+        const response = await axios.get(
+          "http://localhost:5001/api/leave-policies"
+        );
         setPolicies(response.data.data);
       } catch (error) {
         console.error("Error fetching leave policies:", error);
@@ -41,7 +43,9 @@ function LeavePolicyPage() {
 
   // Check for duplicate leave types before submitting
   const isDuplicateLeaveType = (leaveType) => {
-    return policies.some((policy) => policy.leaveType.toLowerCase() === leaveType.toLowerCase());
+    return policies.some(
+      (policy) => policy.leaveType.toLowerCase() === leaveType.toLowerCase()
+    );
   };
 
   const handleSubmit = async (e) => {
@@ -61,23 +65,33 @@ function LeavePolicyPage() {
       let response;
       if (formData.policyId) {
         // Edit existing policy
-        response = await axios.put(`http://localhost:5001/api/leave-policies/update/${formData.policyId}`, {
-          leaveType: formData.leaveType,
-          maxAllowedLeaves: formData.maxLeaves,
-        });
+        response = await axios.put(
+          `http://localhost:5001/api/leave-policies/update/${formData.policyId}`,
+          {
+            leaveType: formData.leaveType
+            .toLowerCase()
+            .replace(/\b\w/g, (char) => char.toUpperCase()),
+            maxAllowedLeaves: formData.maxLeaves,
+          }
+        );
         setMessage("Leave policy updated successfully!");
       } else {
         // Create new policy
-        response = await axios.post("http://localhost:5001/api/leave-policies/create", {
-          leaveType: formData.leaveType,
-          maxAllowedLeaves: formData.maxLeaves,
-        });
+        response = await axios.post(
+          "http://localhost:5001/api/leave-policies/create",
+          {
+            leaveType: formData.leaveType,
+            maxAllowedLeaves: formData.maxLeaves,
+          }
+        );
         setMessage("Leave policy created successfully!");
       }
 
       if (response.status === 200 || response.status === 201) {
         // Fetch updated leave policies after creating or updating one
-        const updatedPolicies = await axios.get("http://localhost:5001/api/leave-policies");
+        const updatedPolicies = await axios.get(
+          "http://localhost:5001/api/leave-policies"
+        );
         setPolicies(updatedPolicies.data.data);
 
         // Clear form after submission
@@ -96,7 +110,7 @@ function LeavePolicyPage() {
   const handleCreatePolicyClick = () => {
     setMessage(""); // Clear message when creating new policy
     setShowForm(true);
-    setFormData({ leaveType: "", maxLeaves: "", policyId: "" });  // Reset form for new policy
+    setFormData({ leaveType: "", maxLeaves: "", policyId: "" }); // Reset form for new policy
   };
 
   const handleCancel = () => {
@@ -106,7 +120,9 @@ function LeavePolicyPage() {
 
   const handleDelete = async (id) => {
     try {
-      const response = await axios.delete(`http://localhost:5001/api/leave-policies/delete/${id}`);
+      const response = await axios.delete(
+        `http://localhost:5001/api/leave-policies/delete/${id}`
+      );
       setMessage("Leave policy deleted successfully!");
       setPolicies(policies.filter((policy) => policy._id !== id)); // Remove deleted policy from UI
     } catch (error) {
@@ -129,20 +145,30 @@ function LeavePolicyPage() {
   return (
     <div className="leave-policy-page">
       <div className="header">
-        <h2 className="content-heading" >Leave Policies</h2>
+        <h2 className="content-heading">Leave Policies</h2>
         <button className="create-policy-btn" onClick={handleCreatePolicyClick}>
-           Create Policy
+          Create Policy
         </button>
       </div>
 
       {/* Display message */}
-      {message && <div className={`message ${message.includes("successfully") ? "success" : "error"}`}>{message}</div>}
+      {message && (
+        <div
+          className={`message ${
+            message.includes("successfully") ? "success" : "error"
+          }`}
+        >
+          {message}
+        </div>
+      )}
 
       {/* Form */}
       {showForm && (
         <div className="form-container">
           <form onSubmit={handleSubmit}>
-            <h3>{formData.policyId ? "Edit Leave Policy" : "Create Leave Policy"}</h3>
+            <h3>
+              {formData.policyId ? "Edit Leave Policy" : "Create Leave Policy"}
+            </h3>
             <div className="form-group">
               <label htmlFor="leaveType">Leave Type:</label>
               <input
@@ -168,9 +194,17 @@ function LeavePolicyPage() {
             </div>
             <div className="form-actions">
               <button type="submit" className="submit-btn" disabled={isLoading}>
-                {isLoading ? "Saving..." : formData.policyId ? "Update Policy" : "Add Policy"}
+                {isLoading
+                  ? "Saving..."
+                  : formData.policyId
+                  ? "Update Policy"
+                  : "Add Policy"}
               </button>
-              <button type="button" className="cancel-btn" onClick={handleCancel}>
+              <button
+                type="button"
+                className="cancel-btn"
+                onClick={handleCancel}
+              >
                 Cancel
               </button>
             </div>
@@ -186,7 +220,8 @@ function LeavePolicyPage() {
           policies.map((policy) => (
             <div key={policy._id} className="policy-item">
               <div className="policy-details">
-                <h4>{policy.leaveType}</h4>
+                <h4>{policy.leaveType.toLowerCase()
+            .replace(/\b\w/g, (char) => char.toUpperCase())}</h4>
                 <p>Total Leaves: {policy.maxAllowedLeaves}</p>
                 {/* <p>Created: {new Date(policy.createdAt).toLocaleDateString()}</p> */}
               </div>
