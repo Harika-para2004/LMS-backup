@@ -1,0 +1,116 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', sans-serif;
+    color: #fff;
+    overflow: hidden;
+}
+.land-container {
+    margin-top: -20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Vertically centers the content */
+    align-items: center; /* Horizontally centers the content */
+    height: 100vh;
+    width: 1000px;
+    text-align: center;
+    padding: 20px;
+}
+
+.land-logo {
+    width: 150px;
+    height: auto;
+    font-weight: bold;
+    margin-bottom: 20px;
+    animation: fadeIn 2s ease-in-out;
+}
+
+.land-h1 {
+    font-size: 3em;
+    margin: 10px 0;
+    margin-left: 10%; /* This might be causing misalignment; adjust if needed */
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: -webkit-linear-gradient(#fff, #00D7FF);
+    -webkit-background-clip: text; /* For WebKit browsers */
+    background-clip: text; /* Standard property for compatibility */
+    -webkit-text-fill-color: transparent;
+    animation: slideIn 1.5s ease-out;
+}
+
+
+
+p {
+    font-size: 1.2em;
+    margin-bottom: 30px;
+    color: rgba(255, 255, 255, 0.9);
+    animation: fadeIn 2s ease-in-out;
+}
+
+.land-cta-btn {
+    text-decoration: none;
+    color: #fff;
+    background: #313896;
+    padding: 15px 40px;
+    font-size: 1.2em;
+    font-weight: bold;
+    border-radius: 50px;
+    transition: all 0.3s ease-in-out;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+}
+
+.land-cta-btn:hover {
+    background: #216B88;
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.7);
+}
+
+.land-circle {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    animation: float 6s ease-in-out infinite;
+}
+
+.land-circle.small {
+    width: 100px;
+    height: 100px;
+    bottom: 10%;
+    left: 15%;
+}
+
+.land-circle.large {
+    width: 200px;
+    height: 200px;
+    top: 20%;
+    right: 10%;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-20px);
+    }
+}

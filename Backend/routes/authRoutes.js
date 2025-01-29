@@ -5,10 +5,10 @@ const nodemailer = require('nodemailer');
 
 const router = express.Router();
 router.post('/addEmployee', async (req, res) => {
-  const { empname,empid, email, password,gender, project } = req.body;
+  const { empname,empid, email, password,gender, project ,role} = req.body;
 /* app name:lmsappgmail*/
 /* password:jmfe rmka otnc upxe*/
-role='employee'
+
   try {
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -95,9 +95,9 @@ router.get('/user/:userId', async (req, res) => {
       empname: user.empname,
       empid: user.empid,
       email: user.email,
+      password:user.password,
+      gender:user.gender,
       project: user.project,
-      designation: user.designation,
-      joiningDate: user.joiningDate,
       role: user.role, // Add role here
     });
   } catch (error) {

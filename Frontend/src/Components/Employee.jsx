@@ -5,7 +5,7 @@ import Profile from "../assets/img/profile.png";
 import { Link } from "react-router-dom";
 import logo from "./../assets/img/quadfacelogo-hd.png";
 import Grid from "@mui/material/Grid";
-
+import axios from "axios";
 import {
   TextField,
   MenuItem,
@@ -59,7 +59,41 @@ const App = () => {
     endDate: "",
     reason: "",
   });
-
+  const [leavePolicies, setLeavePolicies] = useState([]);
+  useEffect(() => {
+    const fetchLeavePolicies = async () => {
+      try {
+        const response = await axios.get("http://localhost:5001/api/leave-policies");
+        console.log("API Response:", response.data);
+  
+        // Check if response.data is an array
+        if (Array.isArray(response.data)) {
+          const leaveTypes = response.data.map((policy) => policy.leaveType);
+          setLeavePolicies(leaveTypes);
+        }
+        // Check if data is nested
+        else if (response.data.data && Array.isArray(response.data.data)) {
+          const leaveTypes = response.data.data.map((policy) => policy.leaveType);
+          setLeavePolicies(leaveTypes);
+        }
+        // Handle single object response
+        else if (response.data.leaveType) {
+          setLeavePolicies([response.data.leaveType]);
+        } else {
+          console.error("Unexpected response format:", response.data);
+          setLeavePolicies([]); // Set to empty array if the format is unexpected
+        }
+      } catch (error) {
+        console.error("Error fetching leave policies:", error);
+        setLeavePolicies([]);
+      }
+    };
+  
+    fetchLeavePolicies();
+  }, []);
+  
+  
+  
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -135,9 +169,15 @@ const App = () => {
 
     if (file) {
       formDataToSend.append("attachment", file);
+    }else {
+      // If no file, append null value
+      formDataToSend.append("attachment", null);
     }
     if (reason) {
       formDataToSend.append("reason", reason);
+    }else{
+      formDataToSend.append("reason", null);
+
     }
 
     try {
@@ -180,7 +220,26 @@ const App = () => {
       }
     }
   }, []);
-
+  const sortHolidaysByMonthAndCustomDay = (holidayList) => {
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  
+    return [...holidayList].sort((a, b) => {
+      const [dayA, monthA] = a.date.split("-");
+      const [dayB, monthB] = b.date.split("-");
+  
+      const monthIndexA = monthNames.indexOf(monthA);
+      const monthIndexB = monthNames.indexOf(monthB);
+  
+      // First, compare months
+      if (monthIndexA !== monthIndexB) {
+        return monthIndexA - monthIndexB;
+      }
+  
+      // If months are the same, compare days (numerically)
+      return parseInt(dayA, 10) - parseInt(dayB, 10);
+    });
+  };
+  
   useEffect(() => {
     const fetchLeaveData = async () => {
       try {
@@ -212,16 +271,21 @@ const App = () => {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
         const data = await response.json();
-        setHolidays(data);
+  
+        // Sort the fetched holidays before setting the state
+        const sortedHolidays = sortHolidaysByMonthAndCustomDay(data);
+  
+        // Set the sorted holidays
+        setHolidays(sortedHolidays);
       } catch (error) {
         console.error("Error fetching holidays:", error);
         setError("Failed to fetch holidays.");
       }
     };
-
+  
     fetchHolidays();
   }, []);
-
+  
   const fetchLeaveHistory = async () => {
     try {
       const response = await fetch(
@@ -285,37 +349,24 @@ const App = () => {
     }
   };
 
-  const defaultLeaveData = [
-    { leaveType: "sick", availableLeaves: 14, totalLeaves: 14 },
-    { leaveType: "maternity", availableLeaves: 26, totalLeaves: 26 },
-    { leaveType: "paternity ", availableLeaves: 10, totalLeaves: 10 },
-    { leaveType: "adoption Leave", availableLeaves: 10, totalLeaves: 10 },
-    { leaveType: "bereavement", availableLeaves: 3, totalLeaves: 3 },
-    { leaveType: "Compensatory Off", availableLeaves: 3, totalLeaves: 3 },
-    // { leaveType: "Loss of Pay (LOP)", availableLeaves: 3, totalLeaves: 3 },
-  ];
-
-  const mergedLeaveData = defaultLeaveData.map((defaultLeave) => {
-    const leaveFromDB = leaveData.find(
-      (leave) => leave.leaveType === defaultLeave.leaveType
-    );
-    return leaveFromDB ? leaveFromDB : defaultLeave;
-  });
+ 
 
   const renderContent = () => {
     switch (selectedCategory) {
       case "apply-leave":
         return (
           <ApplyLeave
-            formData={formData}
-            errors={errors}
-            handleInputChange={handleInputChange}
-            handleBlur={handleBlur}
-            handleSubmit={handleSubmit}
-            handleFileChange={handleFileChange}
-            holidays={holidays}
-            getTodayDate={getTodayDate}
-          />
+          formData={formData}
+          errors={errors}
+          handleInputChange={handleInputChange}
+          handleBlur={handleBlur}
+          handleSubmit={handleSubmit}
+          handleFileChange={handleFileChange}
+          holidays={holidays}
+          getTodayDate={getTodayDate}
+          leavePolicies={leavePolicies} 
+        />
+
         );
 
       case "profile":
@@ -325,7 +376,7 @@ const App = () => {
             username={username}
             empid={empid}
             project={project}
-            mergedLeaveData={mergedLeaveData}
+            leaveData={leaveData}
           />
         );
 

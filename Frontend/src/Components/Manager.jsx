@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { Link } from "react-router-dom";
 import logo from "./../assets/img/quadfacelogo-hd.png";
 import { Modal, Box } from "@mui/material";
-
 import {
   TextField,
   MenuItem,
@@ -26,7 +26,6 @@ import {
 import LeaveHistory from "./LeaveHistory";
 import ApplyLeave from "./ApplyLeave";
 import Sidebar from "./Sidebar";
-
 function LeaveRequests() {
   const [modalOpen, setModalOpen] = useState(false);
   const [leaveHistory, setLeaveHistory] = useState([]);
@@ -36,6 +35,7 @@ function LeaveRequests() {
   const [email, setEmail] = useState("");
   const [leavehistory, setLeavehistory] = useState([]);
   const [holidays, setHolidays] = useState([]);
+  const [file,setFile]=useState(null);
   const [errors, setErrors] = useState({
     leaveType: "",
     from: "",
@@ -50,7 +50,93 @@ function LeaveRequests() {
     endDate: "",
     reason: "",
   });
+  const [mergedLeaveData, setMergedLeaveData] = useState([]);
 
+  useEffect(() => {
+    const fetchLeavePolicies = async () => {
+      try {
+        // Fetch leave policies (default leave types)
+        const policyResponse = await axios.get("http://localhost:5001/api/leave-policies");
+        const leavePolicies = policyResponse.data.data;
+
+        // Convert applied leave data (leaveData) into a map for easy lookup
+        const appliedLeavesMap = {};
+        leaveData.forEach((leave) => {
+          appliedLeavesMap[leave.leaveType] = leave;
+        });
+
+        // Merge applied leaves with policies
+        const finalLeaveData = leavePolicies.map((policy) => {
+          if (appliedLeavesMap[policy.leaveType]) {
+            return appliedLeavesMap[policy.leaveType]; // Use applied leave data
+          } else {
+            return {
+              leaveType: policy.leaveType,
+              totalLeaves: policy.maxAllowedLeaves,
+              availableLeaves: policy.maxAllowedLeaves, // Default available = maxAllowed
+            };
+          }
+        });
+
+        setMergedLeaveData(finalLeaveData);
+      } catch (error) {
+        console.error("Error fetching leave policies:", error);
+      }
+    };
+
+    fetchLeavePolicies();
+  }, [leaveData]); 
+  const [leavePolicies, setLeavePolicies] = useState([]);
+  useEffect(() => {
+    const fetchLeavePolicies = async () => {
+      try {
+        const response = await axios.get("http://localhost:5001/api/leave-policies");
+        console.log("API Response:", response.data);
+  
+        // Check if response.data is an array
+        if (Array.isArray(response.data)) {
+          const leaveTypes = response.data.map((policy) => policy.leaveType);
+          setLeavePolicies(leaveTypes);
+        }
+        // Check if data is nested
+        else if (response.data.data && Array.isArray(response.data.data)) {
+          const leaveTypes = response.data.data.map((policy) => policy.leaveType);
+          setLeavePolicies(leaveTypes);
+        }
+        // Handle single object response
+        else if (response.data.leaveType) {
+          setLeavePolicies([response.data.leaveType]);
+        } else {
+          console.error("Unexpected response format:", response.data);
+          setLeavePolicies([]); // Set to empty array if the format is unexpected
+        }
+      } catch (error) {
+        console.error("Error fetching leave policies:", error);
+        setLeavePolicies([]);
+      }
+    };
+  
+    fetchLeavePolicies();
+  }, []);
+  const sortHolidaysByMonthAndCustomDay = (holidayList) => {
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  
+    return [...holidayList].sort((a, b) => {
+      const [dayA, monthA] = a.date.split("-");
+      const [dayB, monthB] = b.date.split("-");
+  
+      const monthIndexA = monthNames.indexOf(monthA);
+      const monthIndexB = monthNames.indexOf(monthB);
+  
+      // First, compare months
+      if (monthIndexA !== monthIndexB) {
+        return monthIndexA - monthIndexB;
+      }
+  
+      // If months are the same, compare days (numerically)
+      return parseInt(dayA, 10) - parseInt(dayB, 10);
+    });
+  };
   useEffect(() => {
     const fetchHolidays = async () => {
       try {
@@ -59,13 +145,18 @@ function LeaveRequests() {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
         const data = await response.json();
-        setHolidays(data);
+  
+        // Sort the fetched holidays before setting the state
+        const sortedHolidays = sortHolidaysByMonthAndCustomDay(data);
+  
+        // Set the sorted holidays
+        setHolidays(sortedHolidays);
       } catch (error) {
         console.error("Error fetching holidays:", error);
         setError("Failed to fetch holidays.");
       }
     };
-
+  
     fetchHolidays();
   }, []);
 
@@ -332,86 +423,39 @@ function LeaveRequests() {
     setModalOpen(false); // Close the modal
     setSelectedLeave(null); // Clear selected leave
   };
-  const defaultLeaveData = [
-    { leaveType: "sick", availableLeaves: 14, totalLeaves: 14 },
-    { leaveType: "maternity", availableLeaves: 26, totalLeaves: 26 },
-    { leaveType: "paternity ", availableLeaves: 10, totalLeaves: 10 },
-    { leaveType: "adoption Leave", availableLeaves: 10, totalLeaves: 10 },
-    { leaveType: "bereavement", availableLeaves: 3, totalLeaves: 3 },
-    { leaveType: "Compensatory Off", availableLeaves: 3, totalLeaves: 3 },
-    // { leaveType: "Loss of Pay (LOP)", availableLeaves: 3, totalLeaves: 3 },
-  ];
-
-  const mergedLeaveData = defaultLeaveData.map((defaultLeave) => {
-    const leaveFromDB = leaveData.find(
-      (leave) => leave.leaveType === defaultLeave.leaveType
-    );
-    return leaveFromDB ? leaveFromDB : defaultLeave;
-  });
 
   const renderContent = () => {
     switch (selectedCategory) {
       case "dashboard":
         return (
           <div>
-            <div className="leave-types-container">
-              <h2
-                style={{ textAlign: "center", marginTop: "-30px" }}
-                className="leavebalance"
-              >
-                Leave Balances
-              </h2>
-              <div className="leave-cards">
-                {mergedLeaveData.map((leave, index) => (
-                  <div key={index} className="leave-card">
-                    <div className="leave-card-header">
-                      <h3 className="leave-type">{leave.leaveType}</h3>
-                    </div>
-                    <div className="leave-count">
-                      <div className="count-item">
-                        <span className="count-number">
-                          {leave.availableLeaves}
-                        </span>
-                        <span className="count-label">Available</span>
-                      </div>
-                      <div className="count-item">
-                        <span className="count-number">
-                          {leave.totalLeaves}
-                        </span>
-                        <span className="count-label">Total</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+      
+
+      <div className="leave-types-container">
+        <h2 className="content-heading">Leave Balances</h2>
+        <div className="leave-cards">
+          {mergedLeaveData.map((leave, index) => (
+            <div key={index} className="leave-card">
+              <div className="leave-card-header">
+                <h3 className="leave-type">{leave.leaveType}</h3>
+              </div>
+              <div className="leave-count">
+                <div className="count-item">
+                  <span className="count-number">{leave.availableLeaves}</span>
+                  <span className="count-label">Available</span>
+                </div>
+                <div className="count-item">
+                  <span className="count-number">{leave.totalLeaves}</span>
+                  <span className="count-label">Total</span>
+                </div>
               </div>
             </div>
-            {/* <table className="holiday-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Day</th>
-                  <th>Name of Holiday</th>
-                  <th>Holiday Type</th>
-                </tr>
-              </thead>
-              <tbody>
-                {holidays.length > 0 ? (
-                  holidays.map((holiday) => (
-                    <tr key={holiday._id}>
-                      <td>{holiday.date}</td>
-                      <td>{holiday.day}</td>
-                      <td>{holiday.name}</td>
-                      <td>{holiday.type}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="4">No holidays found.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table> */}
-          </div>
+          ))}
+        </div>
+      </div>
+    </div>
+           
+       
         );
       case "apply-leave":
         return (
@@ -424,120 +468,117 @@ function LeaveRequests() {
             handleFileChange={handleFileChange}
             holidays={holidays}
             getTodayDate={getTodayDate}
+            leavePolicies={leavePolicies} // Pass leave policies here
+
           />
         );
 
       case "leaverequests":
         return (
           <div className="history-container">
-            <h2 className="content-heading">Leave Requests</h2>
-            <table id="tb">
-              <thead>
-                <tr>
-                  <th>Leave Type</th>
-                  <th>From</th>
-                  <th>To</th>
-                  <th>Reason</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leaveHistory.map((leave) =>
-                  leave.startDate.map((startDate, index) => (
-                    <tr>
-                      <td>{leave.leaveType}</td>
-
-                      <td>{new Date(startDate).toLocaleDateString()}</td>
-                      <td>
-                        {new Date(leave.endDate[index]).toLocaleDateString()}
-                      </td>
-                      <td>{leave.reason[index]}</td>
-                      <td
-                        key={`${leave._id}-${index}`}
-                        onClick={() => handleRowClick(leave, index)}
+          <h2 className="content-heading">Leave Requests</h2>
+          <table id="tb">
+            <thead>
+              <tr>
+                <th>Leave Type</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Reason</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {leaveHistory.map((leave) =>
+                leave.startDate.map((startDate, index) => (
+                  <tr key={`${leave._id}-${index}`}>
+                    <td>{leave.leaveType}</td>
+                    <td>{new Date(startDate).toLocaleDateString()}</td>
+                    <td>{new Date(leave.endDate[index]).toLocaleDateString()}</td>
+                    <td>{leave.reason[index]}</td>
+                    <td onClick={() => handleRowClick(leave, index)}>
+                      <button
+                        style={{ color: "white", backgroundColor: "#313896" }}
                       >
-                        <button
-                          style={{ color: "white", backgroundColor: "#313896" }}
+                        {leave.status[index]}
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+          
+          <Modal open={modalOpen} onClose={handleCloseModal}>
+            <Box
+              sx={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                width: 400,
+                bgcolor: "var(--dark-blue)",
+                boxShadow: 24,
+                p: 4,
+                borderRadius: "8px",
+              }}
+            >
+              {selectedLeave && (
+                <>
+                  <h3>Leave Details</h3>
+                  <p>Employee Email: {selectedLeave.email}</p>
+                  <p>Leave Type: {selectedLeave.leaveType}</p>
+                  <p>
+                    From:{" "}
+                    {new Date(selectedLeave.startDate[selectedLeave.selectedIndex]).toLocaleDateString()}
+                  </p>
+                  <p>
+                    To:{" "}
+                    {new Date(selectedLeave.endDate[selectedLeave.selectedIndex]).toLocaleDateString()}
+                  </p>
+                  <p>
+                    Reason:{" "}
+                    {selectedLeave.reason[selectedLeave.selectedIndex]}
+                  </p>
+                  <p>
+                    Status:{" "}
+                    {selectedLeave.status[selectedLeave.selectedIndex]}
+                  </p>
+                  <p>Total Leaves: {selectedLeave.totalLeaves}</p>
+                  <p>Available Leaves: {selectedLeave.availableLeaves}</p>
+                  <p>Used Leaves: {selectedLeave.usedLeaves}</p>
+        
+                  {selectedLeave.attachments &&
+                    selectedLeave.attachments[selectedLeave.selectedIndex] && (
+                      <div className="pdf-container">
+                        <a
+                          href={`http://localhost:5001/${
+                            selectedLeave.attachments[selectedLeave.selectedIndex]
+                          }`}
+                          download
                         >
-                          {leave.status[index]}
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-            <Modal open={modalOpen} onClose={handleCloseModal}>
-              <Box
-                sx={{
-                  position: "absolute",
-                  top: "50%",
-                  left: "50%",
-                  transform: "translate(-50%, -50%)",
-                  width: 400,
-                  bgcolor: "background.paper",
-                  boxShadow: 24,
-                  p: 4,
-                  borderRadius: "8px",
-                }}
-              >
-                {selectedLeave && (
-                  <>
-                    <h3>Leave Details</h3>
-                    <p>Employee Email: {selectedLeave.email}</p>
-                    <p>Leave Type: {selectedLeave.leaveType}</p>
-                    <p>
-                      From:{" "}
-                      {new Date(
-                        selectedLeave.startDate[selectedLeave.selectedIndex]
-                      ).toLocaleDateString()}
-                    </p>
-                    <p>
-                      To:{" "}
-                      {new Date(
-                        selectedLeave.endDate[selectedLeave.selectedIndex]
-                      ).toLocaleDateString()}
-                    </p>
-                    <p>
-                      Reason:{" "}
-                      {selectedLeave.reason[selectedLeave.selectedIndex]}
-                    </p>
-                    <p>
-                      Status:{" "}
-                      {selectedLeave.status[selectedLeave.selectedIndex]}
-                    </p>
-                    <p>Total Leaves: {selectedLeave.totalLeaves}</p>
-                    <p>Available Leaves: {selectedLeave.availableLeaves}</p>
-                    <p>Used Leaves: {selectedLeave.usedLeaves}</p>
-
-                    {selectedLeave.attachments &&
-                      selectedLeave.attachments[
-                        selectedLeave.selectedIndex
-                      ] && (
-                        <div className="pdf-container">
-                          <a
-                            href={`http://localhost:5001/${
-                              selectedLeave.attachments[
-                                selectedLeave.selectedIndex
-                              ]
-                            }`}
-                            download
-                          >
-                            View Document
-                          </a>
-                        </div>
-                      )}
-
-                    <div className="action-buttons">
-                      <button onClick={handleApprove}>Approve</button>
-                      <button onClick={handleReject}>Reject</button>
-                      <button onClick={handleCloseModal}>Close</button>
-                    </div>
-                  </>
-                )}
-              </Box>
-            </Modal>
-          </div>
+                          View Document
+                        </a>
+                      </div>
+                    )}
+        
+                  <div className="action-buttons">
+                    {/* Disable Approve button if Available Leaves are 0 */}
+                    <button 
+                      onClick={handleApprove} 
+                      disabled={selectedLeave.availableLeaves === 0}
+                      style={{ backgroundColor: selectedLeave.availableLeaves === 0 ? 'gray' : '#28a745' }}
+                    >
+                      Approve
+                    </button>
+                    <button onClick={handleReject}>Reject</button>
+                    <button onClick={handleCloseModal}>Close</button>
+                  </div>
+                </>
+              )}
+            </Box>
+          </Modal>
+        </div>
+        
         );
       case "reports":
         return <div className="profile-content">Reports Content</div>;
