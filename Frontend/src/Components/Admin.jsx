@@ -59,33 +59,45 @@ function AdminDashboard() {
     password: "",
     gender: "",
     project: "",
-    role:""
+    role: "",
   });
   const sortHolidaysByMonthAndCustomDay = (holidayList) => {
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+
     return [...holidayList].sort((a, b) => {
       const [dayA, monthA] = a.date.split("-");
       const [dayB, monthB] = b.date.split("-");
-  
+
       const monthIndexA = monthNames.indexOf(monthA);
       const monthIndexB = monthNames.indexOf(monthB);
-  
+
       // First, compare months
       if (monthIndexA !== monthIndexB) {
         return monthIndexA - monthIndexB;
       }
-  
+
       // If months are the same, compare days (numerically)
       return parseInt(dayA, 10) - parseInt(dayB, 10);
     });
   };
-  
+
   const sortEmployeeList = (employees) => {
     return [...employees].sort((a, b) => a.empid.localeCompare(b.empid));
   };
-  
-  
+
   const handleAddEmployeeClick = () => {
     setShowAddEmployeeModal(true);
   };
@@ -139,8 +151,8 @@ function AdminDashboard() {
           email: "",
           password: "",
           project: "",
-          gender:"",
-          role:""
+          gender: "",
+          role: "",
         });
         handleAddEmployeeClose();
       } else {
@@ -155,19 +167,19 @@ function AdminDashboard() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-  
+
     setFormData((prevState) => ({
       ...prevState,
-      [name]: name === "holidayName"
-        ? value
-            .split(" ")
-            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(" ")
-        : value,
+      [name]:
+        name === "holidayName"
+          ? value
+              .split(" ")
+              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(" ")
+          : value,
     }));
   };
-  
-  
+
   const handleEmployeeData = (e) => {
     const { name, value } = e.target;
     setEmpData((prevData) => ({
@@ -189,15 +201,30 @@ function AdminDashboard() {
 
   const handleAddHoliday = async () => {
     if (!validateForm()) return;
-  
+
     try {
       const { date, holidayName, holidayType } = formData;
-  
+
       // Convert date to "dd-MMM" format (e.g., "10-Jan")
       const [year, month, day] = date.split("-"); // Split the date into year, month, and day
-      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      const formattedDate = `${day}-${monthNames[parseInt(month, 10) - 1]}-${year}`; // Format the date
-  
+      const monthNames = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+      const formattedDate = `${day}-${
+        monthNames[parseInt(month, 10) - 1]
+      }-${year}`; // Format the date
+
       const response = await fetch(`${BASE_URL}holidays`, {
         method: "POST",
         body: JSON.stringify({
@@ -209,32 +236,33 @@ function AdminDashboard() {
           "Content-Type": "application/json",
         },
       });
-  
+
       if (!response.ok) {
         throw new Error("Failed to add holiday.");
       }
-  
+
       const newHoliday = await response.json();
-  
+
       // Update state with the sorted holidays after adding
-      setHolidays((prevHolidays) =>
-        sortHolidaysByMonthAndCustomDay([...prevHolidays, newHoliday]) // Sort after adding the new holiday
+      setHolidays(
+        (prevHolidays) =>
+          sortHolidaysByMonthAndCustomDay([...prevHolidays, newHoliday]) // Sort after adding the new holiday
       );
-  
+
       // Reset the form
       setFormData({
         date: "",
         holidayName: "",
         holidayType: "Mandatory",
       });
-  
+
       setShowModal(false); // Close the modal
     } catch (error) {
       console.error("Error adding holiday:", error);
       setError("Failed to add holiday. Please try again later.");
     }
   };
-  
+
   const handleEditHoliday = () => {
     if (!validateForm()) return; // Don't proceed if validation fails
 
@@ -311,7 +339,7 @@ function AdminDashboard() {
 
   useEffect(() => {
     const excludeEmail = "admin@gmail.com"; // Email to exclude from the list
-  
+
     const fetchEmployees = async () => {
       try {
         const response = await fetch(`${BASE_URL}employee-list`, {
@@ -320,28 +348,27 @@ function AdminDashboard() {
             "Content-Type": "application/json", // Set appropriate headers
           },
         });
-  
+
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
-  
+
         const data = await response.json();
-  
+
         // Exclude specific email and sort by employee ID
         const filteredAndSortedData = data
           .filter((item) => item.email !== excludeEmail)
           .sort((a, b) => a.empid.localeCompare(b.empid));
-  
+
         setEmpList(filteredAndSortedData); // Update state with filtered and sorted data
       } catch (error) {
         console.error("Error fetching employees:", error);
         setError("Failed to fetch employees. Please try again later."); // Update error state for UI
       }
     };
-  
+
     fetchEmployees();
   }, []);
-  
 
   const handleApprove = async () => {
     if (selectedLeave) {
@@ -509,7 +536,7 @@ function AdminDashboard() {
       empid: employeeList[index].empid,
       email: employeeList[index].email,
       project: employeeList[index].project,
-      role:employeeList[index].role
+      role: employeeList[index].role,
     });
   };
 
@@ -518,10 +545,10 @@ function AdminDashboard() {
       setError("All fields are required.");
       return;
     }
-  
+
     const updatedHolidays = [...holidays];
     const holidayId = updatedHolidays[index]._id;
-  
+
     try {
       const response = await fetch(`${BASE_URL}holidays/${holidayId}`, {
         method: "PUT",
@@ -530,19 +557,19 @@ function AdminDashboard() {
           "Content-Type": "application/json",
         },
       });
-  
+
       if (!response.ok) {
         throw new Error("Failed to update holiday.");
       }
-  
+
       const updatedHoliday = await response.json();
-  
+
       // Update the holiday in the array
       updatedHolidays[index] = { ...updatedHoliday };
-  
+
       // Sort holidays by month and custom day order
       const sortedHolidays = sortHolidaysByMonthAndCustomDay(updatedHolidays);
-  
+
       // Update the state
       setHolidays(sortedHolidays);
       setEditingRow(null);
@@ -552,71 +579,70 @@ function AdminDashboard() {
       setError("Failed to update holiday. Please try again later.");
     }
   };
- const handleSave1 = async (index) => {
-  // Validate all required fields
-  if (
-    !empData.email ||
-    !empData.empid ||
-    !empData.empname ||
-    !empData.project ||
-    !empData.role
-  ) {
-    setError("All fields are required.");
-    return;
-  }
-
-  const updatedEmployeeList = [...employeeList];
-  const employeeId = updatedEmployeeList[index]._id;
-
-  try {
-    // API call to update employee details
-    const response = await fetch(
-      `${BASE_URL}updateEmployeeList/${employeeId}`,
-      {
-        method: "PUT",
-        body: JSON.stringify(empData),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to update employee.");
+  const handleSave1 = async (index) => {
+    // Validate all required fields
+    if (
+      !empData.email ||
+      !empData.empid ||
+      !empData.empname ||
+      !empData.project ||
+      !empData.role
+    ) {
+      setError("All fields are required.");
+      return;
     }
 
-    // Update the employee in the list
-    updatedEmployeeList[index] = { ...empData, _id: employeeId };
+    const updatedEmployeeList = [...employeeList];
+    const employeeId = updatedEmployeeList[index]._id;
 
-    // Sort the updated list by employee ID (or any other criteria)
-    const sortedEmployeeList = updatedEmployeeList.sort((a, b) =>
-      a.empid.localeCompare(b.empid)
-    );
+    try {
+      // API call to update employee details
+      const response = await fetch(
+        `${BASE_URL}updateEmployeeList/${employeeId}`,
+        {
+          method: "PUT",
+          body: JSON.stringify(empData),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-    // Update the state with the sorted list
-    setEmpList(sortedEmployeeList);
+      if (!response.ok) {
+        throw new Error("Failed to update employee.");
+      }
 
-    // Reset form data and exit edit mode
-    setEmpData({
-      empname: "",
-      empid: "",
-      email: "",
-      password: "",
-      project: "",
-      role: "",
-    });
-    setEditingRow(null);
-    setError(null); // Clear errors
-  } catch (error) {
-    console.error("Error updating employee:", error);
-    setError("Failed to update employee. Please try again later.");
-  }
-};
+      // Update the employee in the list
+      updatedEmployeeList[index] = { ...empData, _id: employeeId };
+
+      // Sort the updated list by employee ID (or any other criteria)
+      const sortedEmployeeList = updatedEmployeeList.sort((a, b) =>
+        a.empid.localeCompare(b.empid)
+      );
+
+      // Update the state with the sorted list
+      setEmpList(sortedEmployeeList);
+
+      // Reset form data and exit edit mode
+      setEmpData({
+        empname: "",
+        empid: "",
+        email: "",
+        password: "",
+        project: "",
+        role: "",
+      });
+      setEditingRow(null);
+      setError(null); // Clear errors
+    } catch (error) {
+      console.error("Error updating employee:", error);
+      setError("Failed to update employee. Please try again later.");
+    }
+  };
 
   const handleFilterChange = (e) => {
     setSelectedFilter(e.target.value);
   };
-  
 
   const filteredLeaveHistory = leaveHistory.filter((leave) =>
     selectedFilter === "All"
@@ -824,15 +850,16 @@ function AdminDashboard() {
                       </>
                     ) : (
                       <>
- <td>
-          {holiday.date.split("-").slice(0, 2).join("-")} {/* Display without the year */}
-        </td><td>{holiday.day}</td>
+                        <td>
+                          {holiday.date.split("-").slice(0, 2).join("-")}{" "}
+                          {/* Display without the year */}
+                        </td>
+                        <td>{holiday.day}</td>
                         <td>{holiday.name}</td>
                         <td>{holiday.type}</td>
                         <td>
                           <button onClick={() => handleEdit(index)}>
-                          <FaEdit size={20} color="blue" />
-
+                            <FaEdit size={20} color="blue" />
                           </button>
                           <button
                             onClick={() => handleDeleteHoliday(holiday._id)}
@@ -861,7 +888,7 @@ function AdminDashboard() {
         );
       case "reports":
         return <div></div>;
- 
+
       case "leaverequests":
         return (
           <div className="history-container">
@@ -883,7 +910,11 @@ function AdminDashboard() {
                       key={`${leave._id}-${index}`}
                       onClick={() => handleRowClick(leave, index)}
                     >
-                      <td>{leave.leaveType}</td>
+                      <td>
+                        {leave.leaveType
+                          .toLowerCase()
+                          .replace(/\b\w/g, (char) => char.toUpperCase())}
+                      </td>
                       <td>{new Date(startDate).toLocaleDateString()}</td>
                       <td>
                         {new Date(leave.endDate[index]).toLocaleDateString()}
@@ -907,47 +938,55 @@ function AdminDashboard() {
                   boxShadow: 24,
                   p: 4,
                   borderRadius: "8px",
-              
                 }}
               >
-            {selectedLeave && (
-              <div className="details-container">
-                <h3>Leave Details</h3>
-                <p>Employee Email: {selectedLeave.email}</p>
-                <p>Leave Type: {selectedLeave.leaveType}</p>
-                <p>
-                  From:{" "}
-                  {new Date(
-                    selectedLeave.startDate[selectedLeave.selectedIndex]
-                  ).toLocaleDateString()}
-                </p>
-                <p>
-                  To:{" "}
-                  {new Date(
-                    selectedLeave.endDate[selectedLeave.selectedIndex]
-                  ).toLocaleDateString()}
-                </p>
-                <p>
-                  Reason: {selectedLeave.reason[selectedLeave.selectedIndex]}
-                </p>
-                <p>
-                  Status: {selectedLeave.status[selectedLeave.selectedIndex]}
-                </p>
-                <p>Total Leaves: {selectedLeave.totalLeaves}</p>
-                <p>Available Leaves: {selectedLeave.availableLeaves}</p>
-                <p>Used Leaves: {selectedLeave.usedLeaves}</p>
-                <div className="action-buttons">
-                <button 
-                      onClick={handleApprove} 
-                      disabled={selectedLeave.availableLeaves === 0}
-                      style={{ backgroundColor: selectedLeave.availableLeaves === 0 ? 'gray' : '#28a745' }}
-                    >
-                      Approve
-                    </button>                  <button onClick={handleReject}>Reject</button>
-                </div>
-              </div>
-            )}
-            </Box></Modal>
+                {selectedLeave && (
+                  <div className="details-container">
+                    <h3>Leave Details</h3>
+                    <p>Employee Email: {selectedLeave.email}</p>
+                    <p>Leave Type: {selectedLeave.leaveType}</p>
+                    <p>
+                      From:{" "}
+                      {new Date(
+                        selectedLeave.startDate[selectedLeave.selectedIndex]
+                      ).toLocaleDateString()}
+                    </p>
+                    <p>
+                      To:{" "}
+                      {new Date(
+                        selectedLeave.endDate[selectedLeave.selectedIndex]
+                      ).toLocaleDateString()}
+                    </p>
+                    <p>
+                      Reason:{" "}
+                      {selectedLeave.reason[selectedLeave.selectedIndex]}
+                    </p>
+                    <p>
+                      Status:{" "}
+                      {selectedLeave.status[selectedLeave.selectedIndex]}
+                    </p>
+                    <p>Total Leaves: {selectedLeave.totalLeaves}</p>
+                    <p>Available Leaves: {selectedLeave.availableLeaves}</p>
+                    <p>Used Leaves: {selectedLeave.usedLeaves}</p>
+                    <div className="action-buttons">
+                      <button
+                        onClick={handleApprove}
+                        disabled={selectedLeave.availableLeaves === 0}
+                        style={{
+                          backgroundColor:
+                            selectedLeave.availableLeaves === 0
+                              ? "gray"
+                              : "#28a745",
+                        }}
+                      >
+                        Approve
+                      </button>{" "}
+                      <button onClick={handleReject}>Reject</button>
+                    </div>
+                  </div>
+                )}
+              </Box>
+            </Modal>
           </div>
         );
 
@@ -982,7 +1021,7 @@ function AdminDashboard() {
                   position: "absolute",
                   backgroundColor: "#006600",
                   right: 0,
-                  textTransform:"none",
+                  textTransform: "none",
 
                   marginRight: "35px",
                   display: "flex",
@@ -1014,7 +1053,6 @@ function AdminDashboard() {
                   <tr key={emp._id}>
                     {editingRow === index ? (
                       <>
-                     
                         <td>
                           <input
                             type="text"
@@ -1055,7 +1093,7 @@ function AdminDashboard() {
                             onChange={handleEmployeeData}
                           />
                         </td>
-                     
+
                         <td>
                           <button onClick={() => handleSave1(index)}>
                             Save
@@ -1108,36 +1146,6 @@ function AdminDashboard() {
   return (
     <div className="dashboard-container">
       <div className="content">
-        {/* <nav className="sidebar" id="side_admin">
-          <img src={logo} alt="Quadface Logo" className="logo_das" />
-
-          <ul>
-            <li>
-              <Link
-                to="#"
-                onClick={() => setSelectedCategory("holiday-calendar")}
-              >
-                <FontAwesomeIcon icon={faCalendarDays} /> Calendar
-              </Link>
-            </li>
-            <li>
-              <Link to="#" onClick={() => setSelectedCategory("reports")}>
-                <FontAwesomeIcon icon={faFileLines} /> Reports
-              </Link>
-            </li>
-            <li>
-              <Link to="#" onClick={() => setSelectedCategory("leavepolicy")}>
-                <FontAwesomeIcon icon={faClipboardList} /> Leave Policy
-              </Link>
-            </li>
-
-            <li>
-              <Link to="#" onClick={() => setSelectedCategory("leaverequests")}>
-                <FontAwesomeIcon icon={faEnvelopeOpenText} /> Leave Requests{" "}
-              </Link>
-            </li>
-          </ul>
-        </nav> */}
         <Sidebar
           userType="admin"
           selectedCategory={selectedCategory}

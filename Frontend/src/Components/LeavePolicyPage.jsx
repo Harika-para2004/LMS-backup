@@ -191,8 +191,8 @@ function LeavePolicyPage() {
                 {/* <p>Created: {new Date(policy.createdAt).toLocaleDateString()}</p> */}
               </div>
               <div className="policy-actions">
-                <button className="edit-btn" onClick={() => handleEdit(policy._id)}> <FaEdit/> </button>
-                <button className="delete-btn" onClick={() => handleDelete(policy._id)}>  <FaTrash/> </button>
+                <button className="edit-btn" onClick={() => handleEdit(policy._id)}> <FaEdit size={20} color="blue"  /> </button>
+                <button className="delete-btn" onClick={() => handleDelete(policy._id)}>  <FaTrash size={20} color="red" /> </button>
               </div>
             </div>
           ))

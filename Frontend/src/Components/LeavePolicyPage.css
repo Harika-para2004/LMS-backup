@@ -112,23 +112,6 @@
     font-size: 20px;
   }
 
-  
-  /* .edit-btn {
-    background-color: #5bc0de;
-  }
-  
-  .edit-btn:hover {
-    background-color: #31b0d5;
-  }
-  
-  .delete-btn {
-    background-color: #d9534f;
-  }
-  
-  .delete-btn:hover {
-    background-color: #c9302c;
-  }
-   */
   .policy-list {
     margin-top: 30px;
   }
@@ -144,44 +127,3 @@
     align-items: center;
     width: 100%;
   }
-  
-  .policy-details h4 {
-    color: steelblue;
-    margin: 0;
-  }
-  
-  .policy-details p {
-    color: #555;
-    margin: 5px 0;
-  }
-  
-  /* .policy-actions button {
-    background-color: #f0ad4e;
-    color: #ffffff;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-left: 5px;
-  }
-  
-  .policy-actions button:hover {
-    background-color: #ec971f;
-  }
-   */
-  /* .edit-btn {
-    background-color: #5bc0de;
-  }
-  
-  .edit-btn:hover {
-    background-color: #31b0d5;
-  }
-  
-  .delete-btn {
-    background-color: #d9534f;
-  }
-  
-  .delete-btn:hover {
-    background-color: #c9302c;
-  }
-   */

@@ -40,12 +40,12 @@ body {
 
 
 
-p {
+/* p {
     font-size: 1.2em;
     margin-bottom: 30px;
     color: rgba(255, 255, 255, 0.9);
     animation: fadeIn 2s ease-in-out;
-}
+} */
 
 .land-cta-btn {
     text-decoration: none;

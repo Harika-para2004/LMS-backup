@@ -25,7 +25,6 @@
   padding: 0;
   box-sizing: border-box;
   font-family: "Poppins", sans-serif;
-  text-transform: capitalize;
 
 }
 
@@ -1090,6 +1089,7 @@ body {
   margin-bottom: 10px;
   color: #384959;
 }
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -1135,6 +1135,7 @@ body {
 .view-attachment-btn:hover {
   background-color: #0056b3;
 }
+
 .spin {
   animation: spin 1s linear infinite;
 }
@@ -1143,6 +1144,7 @@ body {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
 .history-container {
   position: relative;
   padding: 20px;
@@ -1167,6 +1169,7 @@ body {
   cursor: pointer;
   border-radius: 5px;
 }
+
 .pagination-numbered .arrow {
   padding: 5px 10px;
   background-color: var(--primary-blue);
@@ -1197,6 +1200,7 @@ body {
 .pagination-numbered button[disabled]:hover {
   background-color: #ddd;
 }
+
 .modal-overlay {
   position: fixed;
   top: 0;

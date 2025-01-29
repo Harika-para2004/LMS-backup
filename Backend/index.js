@@ -567,6 +567,7 @@ app.get("/holidays", async (req, res) => {
     res.status(500).json({ message: "Server Error", error: err.message }); // Include error message
   }
 });
+
 app.get("/employee-list", async (req, res) => {
   try {
     
