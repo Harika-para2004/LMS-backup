@@ -31,8 +31,13 @@ function LeavePolicyPage() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+  
+    setFormData({
+      ...formData,
+      [name]: name === "leaveType" ? value.toUpperCase() : value, // Convert leaveType to uppercase
+    });
   };
+  
 
   // Check for duplicate leave types before submitting
   const isDuplicateLeaveType = (leaveType) => {

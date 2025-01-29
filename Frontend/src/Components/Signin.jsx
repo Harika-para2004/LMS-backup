@@ -32,7 +32,6 @@ const LoginForm = () => {
       try {
         const apiUrl = "http://localhost:5001/api/auth/signin";
         const response = await axios.post(apiUrl, formData);
-        alert(response.data.message);
 
         if (response.status === 200 || response.status === 201) {
           const userDataResponse = await axios.get(
@@ -42,11 +41,10 @@ const LoginForm = () => {
 
           localStorage.setItem("userData", JSON.stringify(userData));
           if (
-            formData.email === "manager@gmail.com" &&
-            formData.password === "123456"
+            userData.role === "Manager"
           ) {
             navigate(`/manager`);
-          } else if(userData) {
+          } else {
             navigate(`/employee`, { state: { userData } });
           }
         }

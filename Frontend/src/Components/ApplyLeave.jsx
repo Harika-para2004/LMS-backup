@@ -16,6 +16,7 @@ const ApplyLeave = ({
   handleFileChange,
   holidays,
   getTodayDate,
+  leavePolicies
 }) => {
   return (
     <div className="leave-management-container">
@@ -30,26 +31,31 @@ const ApplyLeave = ({
                 Leave Type: <span className="req">*</span>
                 {errors.leaveType && (
                   <span className="req">{errors.leaveType}</span>
+                )}<TextField
+                select
+                name="leaveType"
+                value={formData.leaveType}
+                onChange={handleInputChange}
+                onBlur={handleBlur}
+                fullWidth
+                size="small"
+                variant="outlined"
+              >
+                <MenuItem value="Select Leave Type" disabled>
+                  Select Leave Type
+                </MenuItem>
+                {leavePolicies.length > 0 ? (
+                  leavePolicies.map((leaveType, index) => (
+                    <MenuItem key={index} value={leaveType}>
+                      {leaveType}
+                    </MenuItem>
+                  ))
+                ) : (
+                  <MenuItem disabled>No Leave Policies Available</MenuItem>
                 )}
-                <TextField
-                  select
-                  name="leaveType"
-                  value={formData.leaveType}
-                  onChange={handleInputChange}
-                  onBlur={handleBlur}
-                  fullWidth
-                  size="small"
-                  variant="outlined"
-                  sx={{ backgroundColor: "#fff" }}
-                >
-                  <MenuItem value="sick">Sick/Casual/Earned Leave</MenuItem>
-                  <MenuItem value="maternity">Maternity Leave</MenuItem>
-                  <MenuItem value="paternity">Paternity Leave</MenuItem>
-                  <MenuItem value="adoption">Adoption Leave</MenuItem>
-                  <MenuItem value="bereavement">Bereavement Leave</MenuItem>
-                  <MenuItem value="compensatory">Compensatory Off</MenuItem>
-                  <MenuItem value="lop">Loss of Pay (LOP)</MenuItem>
-                </TextField>
+              </TextField>
+              
+              
               </label>
             </Grid>
 
@@ -63,10 +69,6 @@ const ApplyLeave = ({
                   name="startDate"
                   value={formData.startDate}
                   onChange={handleInputChange}
-                  inputProps={{
-                    max: formData.endDate,
-                    min: getTodayDate(),
-                  }}
                   fullWidth
                   size="small"
                   variant="outlined"
@@ -159,7 +161,7 @@ const ApplyLeave = ({
             {holidays.length > 0 ? (
               holidays.map((holiday) => (
                 <tr key={holiday._id}>
-                  <td>{holiday.date}</td>
+                  <td>{holiday.date.split("-").slice(0, 2).join("-")}</td>
                   <td>{holiday.day}</td>
                   <td>{holiday.name}</td>
                   <td>{holiday.type}</td>

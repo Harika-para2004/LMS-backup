@@ -393,25 +393,34 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
   const { email } = req.query;
   const { leaveType, applyDate, startDate, endDate, reason } = req.body;
-  const filePath = req.file ? req.file.path : null;
+  const filePath = req.file ? req.file.path : null; // Check if file exists, else null
 
   try {
     let leaveRecord = await Leave.findOne({ email, leaveType });
 
     if (leaveRecord) {
+      // Update existing leave record
       leaveRecord.startDate.push(new Date(startDate));
       leaveRecord.endDate.push(new Date(endDate));
       leaveRecord.status.push("pending");
 
+      // If file is provided, push the file path; otherwise, push null
       if (filePath) {
         leaveRecord.attachments.push(filePath);
+      } else {
+        leaveRecord.attachments.push(null); // Store null if no file is uploaded
       }
 
+      // Handle reason
       if (reason) {
         leaveRecord.reason = leaveRecord.reason || []; // Ensure it's an array
         leaveRecord.reason.push(reason);
+      }else{
+        leaveRecord.reason.push(null);
+
       }
     } else {
+      // Create a new leave record if none exists for the given email and leaveType
       leaveRecord = new Leave({
         email,
         applyDate,
@@ -420,17 +429,17 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
         endDate: [new Date(endDate)],
         reason: reason ? [reason] : [], // Add reason only if provided
         status: ["pending"],
-        attachments: filePath ? [filePath] : [],
+        attachments: filePath ? [filePath] : [null], // Store null if no file is provided
       });
     }
 
     await leaveRecord.save();
     res.status(200).json({ message: "Leave application submitted successfully" });
   } catch (error) {
+    console.error("Error updating leave record:", error);
     res.status(500).json({ error: "Error updating leave record" });
   }
 });
-
 
 app.get("/leave-history", async (req, res) => {
   const { email } = req.query;
@@ -445,10 +454,11 @@ app.get("/leave-history", async (req, res) => {
       .map((leave) => {
         return leave.startDate.map((start, index) => ({
           leaveType: leave.leaveType,
-          applyDate: new Date(leave.applyDate).toLocaleDateString(), // Format and include apply date
+          applyDate: new Date(leave.applyDate).toLocaleDateString(),
           startDate: new Date(start).toLocaleDateString(),
           endDate: new Date(leave.endDate[index]).toLocaleDateString(),
           reason: leave.reason[index],
+          attachments: leave.attachments[index], // Ensure that this is an array of URLs
           status: leave.status[index] || "Pending",
         }));
       })
@@ -457,9 +467,12 @@ app.get("/leave-history", async (req, res) => {
     res.status(200).json(formattedHistory);
   } catch (error) {
     console.error("Error fetching leave history:", error);
-    res.status(500).json({ message: "An error occurred" });
+    res.status(500).json({ message: "An error occurred while fetching leave history" });
   }
 });
+
+
+
 
 app.get("/leavesummary", async (req, res) => {
   const { email } = req.query; // Get the email from the query parameters
@@ -619,15 +632,15 @@ app.put("/holidays/:id", async (req, res) => {
   }
 });
 app.put("/updateEmployeeList/:id", async (req, res) => {
-  const { empid, empname, email,project } = req.body;
+  const { empid, empname, email,role,project } = req.body;
 
   try {
-    if (!empid || !empname || !email || !project) {
+    if (!empid || !empname || !email || !project || !role) {
       return res.status(400).json({ message: "All fields are required!" });
     }
     const updatedEmployee = await User.findByIdAndUpdate(
       req.params.id,
-      { empid,empname,email,project },
+      { empid,empname,email,role,project },
       { new: true }
     );
 
