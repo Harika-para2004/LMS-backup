@@ -64,7 +64,7 @@ const ProfilePage = ({ Profile, username, empid, project, leaveData }) => {
       <div className="leave-types-container">
         <h2 className="content-heading">Leave Balances</h2>
         <div className="leave-cards">
-          {leaveData.map((leave, index) => (
+          {mergedLeaveData.map((leave, index) => (
             <div key={index} className="leave-card">
               <div className="leave-card-header">
                 <h3 className="leave-type">{leave.leaveType}</h3>

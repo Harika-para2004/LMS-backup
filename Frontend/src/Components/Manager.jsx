@@ -68,6 +68,26 @@ function LeaveRequests() {
   const [mergedLeaveData, setMergedLeaveData] = useState([]);
 
   useEffect(() => {
+    const storedUserData = localStorage.getItem("userData");
+    console.log(storedUserData);
+    if (storedUserData) {
+      try {
+        const parsedUserData = JSON.parse(storedUserData);
+        if (parsedUserData) {
+          setUserData(parsedUserData);
+          setUsername(parsedUserData.empname || "");
+          setEmpid(parsedUserData.empid || "");
+
+          setEmail(parsedUserData.email || "");
+          setProject(parsedUserData.project || "");
+        }
+      } catch (error) {
+        console.error("Error parsing userData from localStorage:", error);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     const fetchLeavePolicies = async () => {
       try {
         // Fetch leave policies (default leave types)

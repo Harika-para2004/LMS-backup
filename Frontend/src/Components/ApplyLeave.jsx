@@ -38,7 +38,7 @@ const ApplyLeave = ({
                 name="leaveType"
                 value={formData.leaveType}
                 onChange={handleInputChange}
-                onBlur={handleBlur}
+                // onBlur={handleBlur}
                 fullWidth
                 size="small"
                 variant="outlined"
