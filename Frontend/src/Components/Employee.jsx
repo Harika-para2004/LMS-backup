@@ -163,6 +163,7 @@ const App = () => {
       }));
       return;
     }
+    
     const applyDate = getTodayDate();
     const formDataToSend = new FormData();
     formDataToSend.append("email", email);

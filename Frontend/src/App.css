@@ -511,7 +511,7 @@ body, html {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 20px;
+  padding: 30px;
   background-color: #f9f9f9;
   border-radius: 8px;
 }
@@ -533,83 +533,34 @@ body, html {
   padding-bottom: 8px;
 }
 
-/* .apply-leave-container form .form-fields{
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  gap: 30px;
-} */
-
-.apply-leave-container form label {
-  font-size: 16px;
-  font-weight: 500;
-  /* flex: 1 1 45%; Two columns layout */
+.css-1dune0f-MuiInputBase-input-MuiOutlinedInput-input {
+  padding: 12px 8px !important; 
+  font-size: small;
+}
+.MuiFormControl-root textarea{
+  font-size: small;
+}
+.css-si86to-MuiSelect-select-MuiInputBase-input-MuiOutlinedInput-input{
+  padding: 12.5px 7px;
 }
 
-/* .apply-leave-container form label input {
-   margin-bottom: 20px;
-   outline: none;
-   border: none;
-} */
 
-.apply-leave-container form input,
-.apply-leave-container form select,
-.apply-leave-container form textarea {
-  padding: 8px;
-  font-size: 14px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  width: 100%;
-  background-color: #fff;
-
-}
-
-.apply-leave-container form textarea {
-  min-height: 80px;
-}
-
-.apply-leave-container form button {
-  background-color: #253D90;
-  color: #fff;
-  padding: 7px 20px;
-  margin: 10px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 16px;
-}
-
-.apply-leave-container form button:hover {
+/* .apply-leave-container form button:hover {
   background-color: #1e3177;
-}
-.applyleave{
-  background: linear-gradient(to bottom, white,#9F32B2); 
-  margin-bottom: 20px;
-}
-/* .leavebalance{
-  background: linear-gradient(to bottom, white,#313896); 
-  margin-bottom: 20px;
 } */
-.leavebalance{
-  font-size: 30px;
-  font-weight: bold;
-  text-align: center;
-  margin-bottom: 10px;
-  color: #313896;
+
+.apply-leave-container{
+  padding: 25px 60px;
 }
 
-.apply-leave-container .attach-button {
-  padding: 10px;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  text-align: center;
-  display: inline-block;
+.apply-leave-container form textarea label{
+  /* height: 40px; */
+  margin-top: -50px;
 }
 
-.apply-leave-container .attach-button:hover {
-  background-color: #2980b9;
+.apply-leave-container .field-label{
+  /* margin-bottom: 8px; */
+  font-size: 15px;
 }
 
 .apply-leave-container .attach-button input {
@@ -621,10 +572,6 @@ body, html {
   font-size: 16px;
   display: inline-block;
 }
-
-/* .apply-leave-container .attach-button label:before {
-  content: 'Attach Document';
-} */
 
 .apply-leave-container .file-name {
   margin-top: 10px;
@@ -837,6 +784,14 @@ body, html {
   color: rgba(255, 255, 255, 0.8);
 }
 
+.leavebalance{
+  font-size: 30px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 10px;
+  color: #313896;
+}
+
 .leave-card::before {
   content: "";
   position: absolute;
@@ -875,7 +830,7 @@ body, html {
 
 /*  -------------------- History container css -------------- */
 .history-container {
-  padding: 20px;
+  padding: 10px;
 }
 
 /* .history-container h2 {
@@ -890,8 +845,8 @@ body, html {
 }
 
 .history-container table th, table td {
-  padding: 12px;
-  text-align: left;
+  padding: 4px;
+  text-align: center;
   border: 1px solid #ddd;
 }
 
@@ -899,6 +854,8 @@ body, html {
   background-color:var(--dark-blue);
   font-weight: bold;
   color:white;
+  padding: 12px;
+
 }
 
 .history-container table td {

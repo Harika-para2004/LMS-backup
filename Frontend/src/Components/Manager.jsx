@@ -122,6 +122,7 @@ function LeaveRequests() {
     fetchLeavePolicies();
   }, [leaveData]); 
   const [leavePolicies, setLeavePolicies] = useState([]);
+
   useEffect(() => {
     const fetchLeavePolicies = async () => {
       try {
@@ -195,14 +196,14 @@ function LeaveRequests() {
     fetchHolidays();
   }, []);
 
-  const fetchLeavehistory = async () => {
+  const fetchLeaveHistory = async () => {
     try {
       const response = await fetch(
         `http://localhost:5001/leave-history?email=${email}`
       );
       if (response.ok) {
         const data = await response.json();
-        setLeavehistory(data);
+        setLeaveHistory(data);
       } else {
         console.error("Failed to fetch leave history");
       }
@@ -213,18 +214,18 @@ function LeaveRequests() {
 
   useEffect(() => {
     if (selectedCategory === "history") {
-      fetchLeavehistory();
+      fetchLeaveHistory();
     }
   }, [selectedCategory]);
 
-  const fetchLeaveHistory = async () => {
+  const fetchLeavehistory = async () => {
     const excludeEmail = "manager@gmail.com"; // Replace with the email to exclude
     try {
       const response = await fetch("http://localhost:5001/leaverequests");
       if (response.ok) {
         const data = await response.json();
         const filteredData = data.filter((item) => item.email !== excludeEmail); // Filter out records with the given email
-        setLeaveHistory(filteredData); // Update state with filtered data
+        setLeavehistory(filteredData); // Update state with filtered data
       } else {
         console.error("Failed to fetch leave history");
       }
@@ -232,6 +233,10 @@ function LeaveRequests() {
       console.error("Error fetching leave history:", error);
     }
   };
+
+  useEffect(() => {
+    fetchLeavehistory();
+  }, []);
 
   useEffect(() => {
     const storedUserData = JSON.parse(localStorage.getItem("userData"));
@@ -262,9 +267,7 @@ function LeaveRequests() {
     }
   }, [email]);
 
-  useEffect(() => {
-    fetchLeaveHistory();
-  }, []);
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -390,7 +393,7 @@ function LeaveRequests() {
 
         if (response.ok) {
           const updatedLeaveFromServer = await response.json();
-          setLeaveHistory((prevHistory) =>
+          setLeavehistory((prevHistory) =>
             prevHistory.map((item) =>
               item._id === updatedLeaveFromServer._id
                 ? updatedLeaveFromServer
@@ -439,7 +442,7 @@ function LeaveRequests() {
 
         if (response.ok) {
           const updatedLeaveFromServer = await response.json();
-          setLeaveHistory((prevHistory) =>
+          setLeavehistory((prevHistory) =>
             prevHistory.map((item) =>
               item._id === updatedLeaveFromServer._id
                 ? updatedLeaveFromServer
@@ -568,24 +571,33 @@ function LeaveRequests() {
           <table id="tb">
             <thead>
               <tr>
+                <th>ID</th>
+                <th>Name</th>
                 <th>Leave Type</th>
+                <th>Duration</th>
                 <th>From</th>
                 <th>To</th>
+                <th>Available</th>
                 <th>Reason</th>
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
-              {leaveHistory.map((leave) =>
+              {leavehistory.map((leave) =>
                 leave.startDate.map((startDate, index) => (
                   <tr key={`${leave._id}-${index}`}>
+
+                    <td>{leave.empid}</td>
+                    <td>{leave.empname}</td>
                     <td>{leave.leaveType}</td>
+                    <td>{leave.duration ? leave.duration[index] : "N/A"}</td>
                     <td>{new Date(startDate).toLocaleDateString()}</td>
                     <td>{new Date(leave.endDate[index]).toLocaleDateString()}</td>
-                    <td>{leave.reason[index]}</td>
+                    <td>{leave.availableLeaves}</td>
+                    <td>{leave.reason == "null" ? leave.reason[index] : "No reason"}</td>
                     <td onClick={() => handleRowClick(leave, index)}>
                       <button
-                        style={{ color: "white", backgroundColor: "#313896" }}
+                        style={{ color: "white", backgroundColor: "green" }}
                       >
                         {leave.status[index]}
                       </button>
@@ -672,31 +684,9 @@ function LeaveRequests() {
         return <div className="profile-content">Reports Content</div>;
       case "history":
         return (
-          <div className="history-container">
-            <h2 className="content-heading" >Leave History</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th>Leave Type</th>
-                  <th>From</th>
-                  <th>To</th>
-                  <th>Reason</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leavehistory.map((leave, index) => (
-                  <tr key={index}>
-                    <td>{leave.leaveType}</td>
-                    <td>{leave.startDate}</td>
-                    <td>{leave.endDate}</td>
-                    <td>{leave.reason}</td>
-                    <td>{leave.status || "Pending"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          
+          <LeaveHistory leaveHistory={leaveHistory} />
+
         );
       default:
         return null;

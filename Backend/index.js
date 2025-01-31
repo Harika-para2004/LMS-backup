@@ -31,6 +31,7 @@ app.use("/api/leave-policies",leavepolicyRoutes);
 const upload = multer({ dest: "uploads/" });
 const path = require("path");
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
   const { email } = req.query;
   const { leaveType, applyDate, startDate, endDate, reason } = req.body;
@@ -82,18 +83,22 @@ app.get("/leave-history", async (req, res) => {
   try {
     const leaveHistory = await Leave.find({ email });
 
-    const formattedHistory = leaveHistory
-      .map((leave) => {
-        return leave.startDate.map((start, index) => ({
+    console.log(leaveHistory);
+    const formattedHistory = leaveHistory.map((leave) => {
+      return leave.startDate.map((start, index) => {
+        const duration = leave.duration && leave.duration[index] ? leave.duration[index] : "N/A"; // Add fallback for missing duration
+        console.log("Duration for this leave:", leave.duration[index]);
+        return {
           leaveType: leave.leaveType,
-          applyDate: new Date(leave.applyDate).toLocaleDateString(), // Format and include apply date
+          applyDate: new Date(leave.applyDate).toLocaleDateString(),
           startDate: new Date(start).toLocaleDateString(),
           endDate: new Date(leave.endDate[index]).toLocaleDateString(),
-          reason: leave.reason[index],
+          duration,
+          reason: leave.reason[index] || "N/A",
           status: leave.status[index] || "Pending",
-        }));
-      })
-      .flat();
+        };
+      });
+    }).flat();
 
     res.status(200).json(formattedHistory);
   } catch (error) {
@@ -124,17 +129,79 @@ app.get("/leavesummary", async (req, res) => {
   }
 });
 
+// app.get("/leaverequests", async (req, res) => {
+//   try {
+//     const excludeEmail = req.query.excludeEmail; // Get email to exclude from query parameters
+//     const query = excludeEmail ? { email: { $ne: excludeEmail } } : {}; // Filter out the email
+//     const leaveRequests = await Leave.find(query); // Query the database
+//     res.json(leaveRequests);
+//   } catch (error) {
+//     console.error("Error fetching leave requests:", error);
+//     res.status(500).send("Server error");
+//   }
+// });
+
 app.get("/leaverequests", async (req, res) => {
   try {
-    const excludeEmail = req.query.excludeEmail; // Get email to exclude from query parameters
-    const query = excludeEmail ? { email: { $ne: excludeEmail } } : {}; // Filter out the email
-    const leaveRequests = await Leave.find(query); // Query the database
+    const { email, excludeEmail } = req.query;
+
+    let matchQuery = {};
+    if (email) {
+      matchQuery.email = email; // Fetch leave requests for a specific employee
+    } else if (excludeEmail) {
+      matchQuery.email = { $ne: excludeEmail }; // Exclude leave requests for a specific email
+    }
+
+    const leaveRequests = await Leave.aggregate([
+      {
+        $match: matchQuery, // Apply the filter condition
+      },
+      {
+        $lookup: {
+          from: "signups_cols", // The actual collection name in MongoDB
+          localField: "email",
+          foreignField: "email",
+          as: "employeeDetails",
+        },
+      },
+      {
+        $unwind: {
+          path: "$employeeDetails",
+          preserveNullAndEmptyArrays: true, // Keep records even if no user details exist
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          empid: "$employeeDetails.empid",
+          empname: "$employeeDetails.empname",
+          email: 1,
+          leaveType: 1,
+          applyDate: 1,
+          startDate: 1,
+          endDate: 1,
+          reason: 1,
+          status: 1,
+          totalLeaves: 1,
+          usedLeaves: 1,
+          availableLeaves: 1,
+          attachments: 1,
+          duration:1,
+        },
+      },
+    ]);
+
+    if (!leaveRequests.length) {
+      return res.status(404).json({ message: "No leave records found" });
+    }
+
     res.json(leaveRequests);
   } catch (error) {
     console.error("Error fetching leave requests:", error);
     res.status(500).send("Server error");
   }
 });
+
 
 app.put("/leaverequests/:id", async (req, res) => {
   try {
@@ -195,6 +262,7 @@ app.get("/holidays", async (req, res) => {
     res.status(500).json({ message: "Server Error", error: err.message }); // Include error message
   }
 });
+
 app.get("/employee-list", async (req, res) => {
   try {
     const employees = await User.find();

@@ -4,9 +4,15 @@ import {
   TextField,
   MenuItem,
   Button,
+  Box,
   TextareaAutosize,
 } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import dayjs from "dayjs";
 
+// const disabledDates = ["2025-02-14", "2025-02-20", "2025-02-25"];
 const ApplyLeave = ({
   formData,
   errors,
@@ -16,29 +22,31 @@ const ApplyLeave = ({
   handleFileChange,
   holidays,
   getTodayDate,
-  leavePolicies
+  leavePolicies,
 }) => {
-  const disabledDates = ["2024-02-10", "2024-02-15", "2024-02-20"];
+  // const disabledDates = ["2025-02-10", "2024-02-15", "2024-02-20"];
 
   return (
     <div className="leave-management-container">
-      <div className="apply-leave-section">
+      <div className="apply-leave-section apply-leave-container">
         <h2 className="section-title">Apply Leave</h2>
         {/* Apply Leave form code goes here */}
-        <form onSubmit={handleSubmit}>
-          <Grid container spacing={2}>
+        <form onSubmit={handleSubmit}  >
+          <Box display="flex" justifyContent="space-between" gap={2}>
             {/* Leave Type */}
-            <Grid item xs={12} sm={4}>
-              <label>
+            <Box flex={1}>
+              <label className="field-label">
                 Leave Type: <span className="req">*</span>
-                {errors.leaveType && (
-                  <span className="req">{errors.leaveType}</span>
-                )}<TextField
+                <br />
+              </label>
+              {errors.leaveType && (
+                <span className="req">{errors.leaveType}</span>
+              )}
+              <TextField
                 select
                 name="leaveType"
                 value={formData.leaveType}
                 onChange={handleInputChange}
-                // onBlur={handleBlur}
                 fullWidth
                 size="small"
                 variant="outlined"
@@ -56,100 +64,121 @@ const ApplyLeave = ({
                   <MenuItem disabled>No Leave Policies Available</MenuItem>
                 )}
               </TextField>
-              
-              
-              </label>
-            </Grid>
+            </Box>
 
             {/* From Date */}
-            <Grid item xs={12} sm={4}>
-              <label>
+            <Box flex={1} sx={{ml:6}}>
+              <label className="field-label">
                 From: <span className="req">*</span>
-                {errors.from && <span className="req">{errors.from}</span>}
-                <TextField
-                  type="date"
-                  name="startDate"
-                  value={formData.startDate}
-                  onChange={handleInputChange}
-                  inputProps={{
-                    max: formData.endDate,
-                    min: getTodayDate(),
-                  }}
-                  
-                  fullWidth
-                  size="small"
-                  variant="outlined"
-                />
-                
+                <br />
               </label>
-            </Grid>
+              {errors.from && <span className="req">{errors.from}</span>}
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  value={formData.startDate ? dayjs(formData.startDate) : null}
+                  onChange={(newValue) =>
+                    handleInputChange({
+                      target: { name: "startDate", value: newValue },
+                    })
+                  }
+                  shouldDisableDate={(date) =>
+                    holidays.some((holiday) =>
+                      dayjs(holiday.date).isSame(date, "day")
+                    )
+                  }
+                  disablePast
+                  renderInput={(params) => (
+                    <TextField {...params} fullWidth size="small" sx={{
+                      "& .MuiOutlinedInput-input": {
+                        fontSize: "small", 
+                      },
+                    }} />
+                  )}
+                />
+              </LocalizationProvider>
+            </Box>
 
             {/* To Date */}
-            <Grid item xs={12} sm={4}>
-              <label>
+            <Box flex={1} sx={{ml:4}}>
+              <label className="field-label">
                 To: <span className="req">*</span>
-                {errors.to && <span className="req">{errors.to}</span>}
-                <TextField
-                  type="date"
-                  name="endDate"
-                  value={formData.endDate}
-                  onChange={handleInputChange}
-                  inputProps={{ min: formData.startDate }}
-                  fullWidth
-                  size="small"
-                  variant="outlined"
-                />
+                <br />
               </label>
-            </Grid>
-
-            {/* Reason */}
-            <Grid item xs={12}>
-              <label>
-                Reason:
-                <TextareaAutosize
-                  name="reason"
-                  value={formData.reason}
-                  onChange={handleInputChange}
-                  maxRows={1}
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    border: "1px solid #ccc",
-                    borderRadius: "4px",
-                  }}
+              {errors.to && <span className="req">{errors.to}</span>}
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  value={formData.endDate ? dayjs(formData.endDate) : null}
+                  onChange={(newValue) =>
+                    handleInputChange({
+                      target: { name: "endDate", value: newValue },
+                    })
+                  }
+                  shouldDisableDate={(date) =>
+                    holidays.some((holiday) =>
+                      dayjs(holiday.date).isSame(date, "day")
+                    )
+                  }
+                  minDate={
+                    formData.startDate ? dayjs(formData.startDate) : dayjs()
+                  }
+                  disablePast
+                  renderInput={(params) => (
+                    <TextField {...params} fullWidth size="small" />
+                  )}
                 />
-              </label>
-            </Grid>
+              </LocalizationProvider>
+            </Box>
+          </Box>
 
-            {/* Attach Document Button */}
-            <Grid item xs={12}>
-              <Button
-                variant="contained"
-                component="label"
-                sx={{
-                  backgroundColor: "transparent",
-                  border: "1px solid var(--dark-blue)",
-                  color: "#000",
-                  margin: "10px 0",
-                }}
-              >
-                Attach
-                <input
-                  type="file"
-                  name="attachment"
-                  onChange={handleFileChange}
-                  hidden
-                />
-              </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                sx={{ marginLeft: "10px" }}
-              >
-                Submit
-              </Button>
-            </Grid>
-          </Grid>
+          <Box mt={2}>
+            <label className="field-label">Reason:</label>
+            <TextField
+              name="reason"
+              value={formData.reason}
+              onChange={handleInputChange}
+              multiline
+              rows={2}
+              fullWidth
+              variant="outlined"
+              sx={{
+                mt: 1,
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "8px",
+                },
+              }}
+            />
+          </Box>
+
+          <Box
+            display="flex"
+            alignItems="center"
+            gap={2}
+            mt={2}
+          >
+            {/* Attach Button */}
+            <Button
+              variant="outlined"
+              component="label"
+              className="attach-button"
+            >
+              Attach
+              <input
+                type="file"
+                name="attachment"
+                onChange={handleFileChange}
+                hidden
+              />
+            </Button>
+
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              variant="contained"
+              sx={{ textTransform: "none" }}
+            >
+              Submit
+            </Button>
+          </Box>
         </form>
       </div>
 
