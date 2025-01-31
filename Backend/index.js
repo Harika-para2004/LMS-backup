@@ -87,7 +87,7 @@ app.get("/leave-history", async (req, res) => {
     const formattedHistory = leaveHistory.map((leave) => {
       return leave.startDate.map((start, index) => {
         const duration = leave.duration && leave.duration[index] ? leave.duration[index] : "N/A"; // Add fallback for missing duration
-        console.log("Duration for this leave:", leave.duration[index]);
+        // console.log("Duration for this leave:", leave.duration[index]);
         return {
           leaveType: leave.leaveType,
           applyDate: new Date(leave.applyDate).toLocaleDateString(),
@@ -203,23 +203,113 @@ app.get("/leaverequests", async (req, res) => {
 });
 
 
+// app.put("/leaverequests/:id", async (req, res) => {
+//   try {
+//     const leaveId = req.params.id;
+//     const updatedData = req.body;
+
+//     const leave = await Leave.findByIdAndUpdate(leaveId, updatedData, {
+//       new: true,
+//     });
+
+//     if (leave) {
+//       res.status(200).json(leave);
+//     } else {
+//       res.status(404).json({ message: "Leave request not found" });
+//     }
+//   } catch (error) {
+//     console.error("Error updating leave request:", error);
+//     res.status(500).json({ message: "An error occurred" });
+//   }
+// });
+
 app.put("/leaverequests/:id", async (req, res) => {
   try {
     const leaveId = req.params.id;
     const updatedData = req.body;
 
-    const leave = await Leave.findByIdAndUpdate(leaveId, updatedData, {
-      new: true,
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(leaveId)) {
+      return res.status(400).json({ message: "Invalid Leave ID" });
+    }
+
+    // Allowed fields for update
+    const allowedFields = [
+      "status",
+      "availableLeaves",
+      "usedLeaves",
+      "leaveType",
+      "startDate",
+      "endDate",
+      "reason",
+      "attachments",
+      "duration"
+    ];
+    
+    const updatePayload = {};
+    Object.keys(updatedData).forEach((key) => {
+      if (allowedFields.includes(key)) {
+        updatePayload[key] = updatedData[key];
+      }
     });
 
-    if (leave) {
-      res.status(200).json(leave);
-    } else {
-      res.status(404).json({ message: "Leave request not found" });
+    // Update the leave request in MongoDB
+    const leave = await Leave.findByIdAndUpdate(leaveId, updatePayload, { new: true });
+
+    if (!leave) {
+      return res.status(404).json({ message: "Leave request not found" });
     }
+
+    // Fetch the updated leave request with employee details
+    const updatedLeaveWithEmployee = await Leave.aggregate([
+      { $match: { _id: new mongoose.Types.ObjectId(leaveId) } },
+      {
+        $lookup: {
+          from: "signups_cols",
+          localField: "email",
+          foreignField: "email",
+          as: "employeeDetails",
+        },
+      },
+      {
+        $unwind: {
+          path: "$employeeDetails",
+          preserveNullAndEmptyArrays: true, // Keep record even if no user details exist
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          empid: "$employeeDetails.empid",
+          empname: "$employeeDetails.empname",
+          email: 1,
+          leaveType: 1,
+          applyDate: 1,
+          startDate: 1,
+          endDate: 1,
+          reason: 1,
+          status: 1,
+          totalLeaves: 1,
+          usedLeaves: 1,
+          availableLeaves: 1,
+          attachments: 1,
+          duration: 1,
+        },
+      },
+    ]);
+
+    if (!updatedLeaveWithEmployee.length) {
+      return res.status(404).json({ message: "Leave updated, but employee details not found" });
+    }
+
+    res.status(200).json({
+      message: "Leave updated successfully",
+      updatedLeave: updatedLeaveWithEmployee[0], // Send the updated leave with employee details
+    });
+
   } catch (error) {
     console.error("Error updating leave request:", error);
-    res.status(500).json({ message: "An error occurred" });
+    res.status(500).json({ message: "An error occurred while updating leave request" });
   }
 });
 

@@ -57,7 +57,8 @@ const ApplyLeave = ({
                 {leavePolicies.length > 0 ? (
                   leavePolicies.map((leaveType, index) => (
                     <MenuItem key={index} value={leaveType}>
-                      {leaveType}
+                      {leaveType.toLowerCase()
+            .replace(/\b\w/g, (char) => char.toUpperCase())}
                     </MenuItem>
                   ))
                 ) : (

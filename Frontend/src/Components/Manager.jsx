@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import logo from "./../assets/img/quadfacelogo-hd.png";
-import { Modal, Box } from "@mui/material";
+import { Modal, Box, Select } from "@mui/material";
 import Profile from "../assets/img/profile.png";
 import { useNavigate } from "react-router-dom";
 
@@ -30,6 +30,9 @@ import LeaveHistory from "./LeaveHistory";
 import ApplyLeave from "./ApplyLeave";
 import Sidebar from "./Sidebar";
 import ProfilePage from "./ProfilePage";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle"; // Approved Icon
+import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty"; // Pending Icon
+import CancelIcon from "@mui/icons-material/Cancel"; // Rejected Icon
 
 function LeaveRequests() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -67,6 +70,188 @@ function LeaveRequests() {
   });
   const [mergedLeaveData, setMergedLeaveData] = useState([]);
 
+  const statusOptions = [
+    {
+      label: "Pending",
+      value: "pending",
+      icon: <HourglassEmptyIcon color="warning" />,
+    },
+    {
+      label: "Approved",
+      value: "approved",
+      icon: <CheckCircleIcon color="success" />,
+    },
+    {
+      label: "Rejected",
+      value: "rejected",
+      icon: <CancelIcon color="error" />,
+    },
+  ];
+
+  // const handleStatusChange = async (leave, index, newStatus) => {
+  //   try {
+  //     // Find the leave record
+  //     console.log(leavehistory);
+  //     console.log(leave);
+  //     // const leaveToUpdate = leavehistory.find((leave) => leave._id === leaveId);
+  //     // if (!leaveToUpdate) return console.error("Leave not found");
+
+  //     // Prevent unnecessary API calls if status hasn't changed
+  //     if (leave.status[index] === newStatus) return;
+
+  //     // Update the status in the object
+  //     const updatedLeave = {
+  //       ...leave,
+  //       availableLeaves: leave.availableLeaves - 1,
+  //       usedLeaves: leave.usedLeaves + 1,
+  //       status: leave.status.map((stat, index) =>
+  //         index === selectedIndex && stat === "pending" ? "Approved" : stat
+  //       ),
+  //     };
+
+  //     try {
+  //       const response = await fetch(
+  //         `http://localhost:5001/leaverequests/${leave._id}`,
+  //         {
+  //           method: "PUT",
+  //           headers: {
+  //             "Content-Type": "application/json",
+  //           },
+  //           body: JSON.stringify(updatedLeave),
+  //         }
+  //       );
+
+  //       if (response.ok) {
+  //         const updatedLeaveFromServer = await response.json();
+  //         setLeavehistory((prevHistory) =>
+  //           prevHistory.map((item) =>
+  //             item._id === updatedLeaveFromServer._id
+  //               ? updatedLeaveFromServer
+  //               : item
+  //           )
+  //         );
+  //         setSelectedLeave(null);
+  //         setModalOpen(false);
+  //         console.log(
+  //           "Approved and updated in the database:",
+  //           updatedLeaveFromServer
+  //         );
+  //       } else {
+  //         console.error("Failed to update leave in the database");
+  //       }
+  //     } catch (error) {
+  //       console.error("Error updating leave in the database:", error);
+  //     }
+  //   }
+  //   catch(error){
+  //     console.error("Error updating leave:", error);
+  //   }
+  // };
+
+  const handleStatusChange = async (leave, index, newStatus) => {
+    try {
+      console.log("Current leave data:", leave);
+      console.log("Updating status at index:", index, "to:", newStatus);
+
+      // Prevent unnecessary API calls if the status hasn't changed
+      if (leave.status[index] === newStatus) return;
+
+      // Update the status and handle leave balance changes
+      const updatedLeave = {
+        ...leave,
+        availableLeaves:
+          newStatus === "approved"
+            ? leave.availableLeaves - 1
+            : leave.availableLeaves,
+        usedLeaves:
+          newStatus === "approved" ? leave.usedLeaves + 1 : leave.usedLeaves,
+        status: leave.status.map((stat, i) => (i === index ? newStatus : stat)),
+      };
+
+      console.log("Updated leave data:", updatedLeave);
+
+      const response = await fetch(
+        `http://localhost:5001/leaverequests/${leave._id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedLeave),
+        }
+      );
+
+      if (response.ok) {
+        const updatedLeaveFromServer = await response.json();
+
+        setLeavehistory((prevHistory) =>
+          prevHistory.map((item) =>
+            item._id === updatedLeaveFromServer._id
+              ? updatedLeaveFromServer
+              : item
+          )
+        );
+
+        console.log(
+          "Leave successfully updated in the database:",
+          updatedLeaveFromServer
+        );
+      } else {
+        console.error("Failed to update leave in the database");
+      }
+    } catch (error) {
+      console.error("Error updating leave:", error);
+    }
+  };
+
+  const handleApprove = async () => {
+    if (selectedLeave) {
+      const { selectedIndex, ...leave } = selectedLeave;
+      const updatedLeave = {
+        ...leave,
+        availableLeaves: leave.availableLeaves - 1,
+        usedLeaves: leave.usedLeaves + 1,
+        status: leave.status.map((stat, index) =>
+          index === selectedIndex && stat === "pending" ? "Approved" : stat
+        ),
+      };
+
+      try {
+        const response = await fetch(
+          `http://localhost:5001/leaverequests/${leave._id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(updatedLeave),
+          }
+        );
+
+        if (response.ok) {
+          const updatedLeaveFromServer = await response.json();
+          setLeavehistory((prevHistory) =>
+            prevHistory.map((item) =>
+              item._id === updatedLeaveFromServer._id
+                ? updatedLeaveFromServer
+                : item
+            )
+          );
+          setSelectedLeave(null);
+          setModalOpen(false);
+          console.log(
+            "Approved and updated in the database:",
+            updatedLeaveFromServer
+          );
+        } else {
+          console.error("Failed to update leave in the database");
+        }
+      } catch (error) {
+        console.error("Error updating leave in the database:", error);
+      }
+    }
+  };
+
   useEffect(() => {
     const storedUserData = localStorage.getItem("userData");
     console.log(storedUserData);
@@ -91,7 +276,9 @@ function LeaveRequests() {
     const fetchLeavePolicies = async () => {
       try {
         // Fetch leave policies (default leave types)
-        const policyResponse = await axios.get("http://localhost:5001/api/leave-policies");
+        const policyResponse = await axios.get(
+          "http://localhost:5001/api/leave-policies"
+        );
         const leavePolicies = policyResponse.data.data;
 
         // Convert applied leave data (leaveData) into a map for easy lookup
@@ -120,15 +307,17 @@ function LeaveRequests() {
     };
 
     fetchLeavePolicies();
-  }, [leaveData]); 
+  }, [leaveData]);
   const [leavePolicies, setLeavePolicies] = useState([]);
 
   useEffect(() => {
     const fetchLeavePolicies = async () => {
       try {
-        const response = await axios.get("http://localhost:5001/api/leave-policies");
+        const response = await axios.get(
+          "http://localhost:5001/api/leave-policies"
+        );
         console.log("API Response:", response.data);
-  
+
         // Check if response.data is an array
         if (Array.isArray(response.data)) {
           const leaveTypes = response.data.map((policy) => policy.leaveType);
@@ -136,7 +325,9 @@ function LeaveRequests() {
         }
         // Check if data is nested
         else if (response.data.data && Array.isArray(response.data.data)) {
-          const leaveTypes = response.data.data.map((policy) => policy.leaveType);
+          const leaveTypes = response.data.data.map(
+            (policy) => policy.leaveType
+          );
           setLeavePolicies(leaveTypes);
         }
         // Handle single object response
@@ -151,24 +342,37 @@ function LeaveRequests() {
         setLeavePolicies([]);
       }
     };
-  
+
     fetchLeavePolicies();
   }, []);
   const sortHolidaysByMonthAndCustomDay = (holidayList) => {
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+
     return [...holidayList].sort((a, b) => {
       const [dayA, monthA] = a.date.split("-");
       const [dayB, monthB] = b.date.split("-");
-  
+
       const monthIndexA = monthNames.indexOf(monthA);
       const monthIndexB = monthNames.indexOf(monthB);
-  
+
       // First, compare months
       if (monthIndexA !== monthIndexB) {
         return monthIndexA - monthIndexB;
       }
-  
+
       // If months are the same, compare days (numerically)
       return parseInt(dayA, 10) - parseInt(dayB, 10);
     });
@@ -181,10 +385,10 @@ function LeaveRequests() {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
         const data = await response.json();
-  
+
         // Sort the fetched holidays before setting the state
         const sortedHolidays = sortHolidaysByMonthAndCustomDay(data);
-  
+
         // Set the sorted holidays
         setHolidays(sortedHolidays);
       } catch (error) {
@@ -192,7 +396,7 @@ function LeaveRequests() {
         setError("Failed to fetch holidays.");
       }
     };
-  
+
     fetchHolidays();
   }, []);
 
@@ -254,7 +458,7 @@ function LeaveRequests() {
           );
           if (response.ok) {
             const data = await response.json();
-            console.log(data);
+            // console.log(data);
             setLeaveData(data);
           } else {
             console.error("Failed to fetch leave data");
@@ -266,8 +470,6 @@ function LeaveRequests() {
       fetchLeaveData();
     }
   }, [email]);
-
-  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -302,7 +504,7 @@ function LeaveRequests() {
   // };
   const handleLogout = () => {
     localStorage.clear();
-    navigate("/login");  // Redirects user after logout
+    navigate("/login"); // Redirects user after logout
   };
 
   const getTodayDate = () => {
@@ -343,7 +545,7 @@ function LeaveRequests() {
     }
     if (reason) {
       formDataToSend.append("reason", reason);
-    }else{
+    } else {
       formDataToSend.append("reason", "N/A");
     }
 
@@ -416,58 +618,11 @@ function LeaveRequests() {
     }
   };
 
-  const handleApprove = async () => {
-    if (selectedLeave) {
-      const { selectedIndex, ...leave } = selectedLeave;
-      const updatedLeave = {
-        ...leave,
-        availableLeaves: leave.availableLeaves - 1,
-        usedLeaves: leave.usedLeaves + 1,
-        status: leave.status.map((stat, index) =>
-          index === selectedIndex && stat === "pending" ? "Approved" : stat
-        ),
-      };
-
-      try {
-        const response = await fetch(
-          `http://localhost:5001/leaverequests/${leave._id}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(updatedLeave),
-          }
-        );
-
-        if (response.ok) {
-          const updatedLeaveFromServer = await response.json();
-          setLeavehistory((prevHistory) =>
-            prevHistory.map((item) =>
-              item._id === updatedLeaveFromServer._id
-                ? updatedLeaveFromServer
-                : item
-            )
-          );
-          setSelectedLeave(null);
-          setModalOpen(false);
-          console.log(
-            "Approved and updated in the database:",
-            updatedLeaveFromServer
-          );
-        } else {
-          console.error("Failed to update leave in the database");
-        }
-      } catch (error) {
-        console.error("Error updating leave in the database:", error);
-      }
-    }
-  };
-
   const handleRowClick = (leave, index) => {
     setSelectedLeave({ ...leave, selectedIndex: index });
-    setModalOpen(true); // Open the modal
+    setModalOpen(true);
   };
+
   const handleCloseModal = () => {
     setModalOpen(false); // Close the modal
     setSelectedLeave(null); // Clear selected leave
@@ -549,11 +704,10 @@ function LeaveRequests() {
             holidays={holidays}
             getTodayDate={getTodayDate}
             leavePolicies={leavePolicies} // Pass leave policies here
-
           />
         );
 
-        case "profile":
+      case "profile":
         return (
           <ProfilePage
             Profile={Profile}
@@ -567,127 +721,163 @@ function LeaveRequests() {
       case "leaverequests":
         return (
           <div className="history-container">
-          <h2 className="content-heading">Leave Requests</h2>
-          <table id="tb">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Leave Type</th>
-                <th>Duration</th>
-                <th>From</th>
-                <th>To</th>
-                <th>Available</th>
-                <th>Reason</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {leavehistory.map((leave) =>
-                leave.startDate.map((startDate, index) => (
-                  <tr key={`${leave._id}-${index}`}>
-
-                    <td>{leave.empid}</td>
-                    <td>{leave.empname}</td>
-                    <td>{leave.leaveType}</td>
-                    <td>{leave.duration ? leave.duration[index] : "N/A"}</td>
-                    <td>{new Date(startDate).toLocaleDateString()}</td>
-                    <td>{new Date(leave.endDate[index]).toLocaleDateString()}</td>
-                    <td>{leave.availableLeaves}</td>
-                    <td>{leave.reason == "null" ? leave.reason[index] : "No reason"}</td>
-                    <td onClick={() => handleRowClick(leave, index)}>
+            <h2 className="content-heading">Leave Requests</h2>
+            <table id="tb">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Leave Type</th>
+                  <th>Duration</th>
+                  <th>From</th>
+                  <th>To</th>
+                  <th>Available</th>
+                  <th>Reason</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {leavehistory.map((leave) =>
+                  leave.startDate.map((startDate, index) => (
+                    <tr key={`${leave._id}-${index}`}>
+                      <td>{leave.empid}</td>
+                      <td>{leave.empname}</td>
+                      <td>{leave.leaveType}</td>
+                      <td>{leave.duration ? leave.duration[index] : "N/A"}</td>
+                      <td>{new Date(startDate).toLocaleDateString()}</td>
+                      <td>
+                        {new Date(leave.endDate[index]).toLocaleDateString()}
+                      </td>
+                      <td>{leave.availableLeaves}</td>
+                      <td>{leave.reason[index]}</td>
+                      {/* <td onClick={() => handleRowClick(leave, index)}>
                       <button
                         style={{ color: "white", backgroundColor: "green" }}
                       >
                         {leave.status[index]}
                       </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-          
-          <Modal open={modalOpen} onClose={handleCloseModal}>
-            <Box
-              sx={{
-                position: "absolute",
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-                width: 400,
-                bgcolor: "var(--dark-blue)",
-                boxShadow: 24,
-                p: 4,
-                borderRadius: "8px",
-              }}
-            >
-              {selectedLeave && (
-                <>
-                  <h3>Leave Details</h3>
-                  <p>Employee Email: {selectedLeave.email}</p>
-                  <p>Leave Type: {selectedLeave.leaveType}</p>
-                  <p>
-                    From:{" "}
-                    {new Date(selectedLeave.startDate[selectedLeave.selectedIndex]).toLocaleDateString()}
-                  </p>
-                  <p>
-                    To:{" "}
-                    {new Date(selectedLeave.endDate[selectedLeave.selectedIndex]).toLocaleDateString()}
-                  </p>
-                  <p>
-                    Reason:{" "}
-                    {selectedLeave.reason[selectedLeave.selectedIndex]}
-                  </p>
-                  <p>
-                    Status:{" "}
-                    {selectedLeave.status[selectedLeave.selectedIndex]}
-                  </p>
-                  <p>Total Leaves: {selectedLeave.totalLeaves}</p>
-                  <p>Available Leaves: {selectedLeave.availableLeaves}</p>
-                  <p>Used Leaves: {selectedLeave.usedLeaves}</p>
-        
-                  {selectedLeave.attachments &&
-                    selectedLeave.attachments[selectedLeave.selectedIndex] && (
-                      <div className="pdf-container">
-                        <a
-                          href={`http://localhost:5001/${
-                            selectedLeave.attachments[selectedLeave.selectedIndex]
-                          }`}
-                          download
+                    </td> */}
+                      <td>
+                        <Select
+                          value={leave.status?.[index] ?? ""}
+                          onChange={(e) =>
+                            handleStatusChange(leave, index, e.target.value)
+                          }
+                          variant="outlined"
+                          size="small"
+                          sx={{
+                            backgroundColor:
+                              leave.status?.[index] === "approved"
+                                ? "lightgreen"
+                                : leave.status?.[index] === "rejected"
+                                ? "lightcoral"
+                                : "lightyellow",
+                            fontSize: "14px",
+                            width: "120px",
+                            textAlign: "center",
+                          }}
                         >
-                          View Document
-                        </a>
-                      </div>
-                    )}
-        
-                  <div className="action-buttons">
-                    {/* Disable Approve button if Available Leaves are 0 */}
-                    <button 
-                      onClick={handleApprove} 
-                      disabled={selectedLeave.availableLeaves === 0}
-                      style={{ backgroundColor: selectedLeave.availableLeaves === 0 ? 'gray' : '#28a745' }}
-                    >
-                      Approve
-                    </button>
-                    <button onClick={handleReject}>Reject</button>
-                    <button onClick={handleCloseModal}>Close</button>
-                  </div>
-                </>
-              )}
-            </Box>
-          </Modal>
-        </div>
-        
+                          {statusOptions.map((option) => (
+                            <MenuItem key={option.value} value={option.value}>
+                              {option.icon} {option.label}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+
+            <Modal open={modalOpen} onClose={handleCloseModal}>
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  width: 400,
+                  bgcolor: "var(--dark-blue)",
+                  boxShadow: 24,
+                  p: 4,
+                  borderRadius: "8px",
+                }}
+              >
+                {selectedLeave && (
+                  <>
+                    <h3>Leave Details</h3>
+                    <p>Employee Email: {selectedLeave.email}</p>
+                    <p>Leave Type: {selectedLeave.leaveType}</p>
+                    <p>
+                      From:{" "}
+                      {new Date(
+                        selectedLeave.startDate[selectedLeave.selectedIndex]
+                      ).toLocaleDateString()}
+                    </p>
+                    <p>
+                      To:{" "}
+                      {new Date(
+                        selectedLeave.endDate[selectedLeave.selectedIndex]
+                      ).toLocaleDateString()}
+                    </p>
+                    <p>
+                      Reason:{" "}
+                      {selectedLeave.reason[selectedLeave.selectedIndex]}
+                    </p>
+                    <p>
+                      Status:{" "}
+                      {selectedLeave.status[selectedLeave.selectedIndex]}
+                    </p>
+                    <p>Total Leaves: {selectedLeave.totalLeaves}</p>
+                    <p>Available Leaves: {selectedLeave.availableLeaves}</p>
+                    <p>Used Leaves: {selectedLeave.usedLeaves}</p>
+
+                    {selectedLeave.attachments &&
+                      selectedLeave.attachments[
+                        selectedLeave.selectedIndex
+                      ] && (
+                        <div className="pdf-container">
+                          <a
+                            href={`http://localhost:5001/${
+                              selectedLeave.attachments[
+                                selectedLeave.selectedIndex
+                              ]
+                            }`}
+                            download
+                          >
+                            View Document
+                          </a>
+                        </div>
+                      )}
+
+                    <div className="action-buttons">
+                      {/* Disable Approve button if Available Leaves are 0 */}
+                      <button
+                        onClick={handleApprove}
+                        disabled={selectedLeave.availableLeaves === 0}
+                        style={{
+                          backgroundColor:
+                            selectedLeave.availableLeaves === 0
+                              ? "gray"
+                              : "#28a745",
+                        }}
+                      >
+                        Approve
+                      </button>
+                      <button onClick={handleReject}>Reject</button>
+                      <button onClick={handleCloseModal}>Close</button>
+                    </div>
+                  </>
+                )}
+              </Box>
+            </Modal>
+          </div>
         );
       case "reports":
         return <div className="profile-content">Reports Content</div>;
       case "history":
-        return (
-          
-          <LeaveHistory leaveHistory={leaveHistory} />
-
-        );
+        return <LeaveHistory leaveHistory={leaveHistory} />;
       default:
         return null;
     }
