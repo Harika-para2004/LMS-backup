@@ -355,132 +355,101 @@ function LeaveRequests() {
       alert(error.message); // Display the error message to the user
     }
   };
-  
-  const handleReject = async () => {
-    if (selectedLeave) {
-      const { selectedIndex, ...leave } = selectedLeave;
-  
-      const wasApproved = leave.status[selectedIndex] === "Approved";
-  
-      const updatedLeave = {
-        ...leave,
-        status: leave.status.map((stat, index) =>
-          index === selectedIndex && (stat === "pending" || stat === "Approved")
-            ? "Rejected"
-            : stat
-        ),
-        availableLeaves: wasApproved 
-          ? leave.availableLeaves + leave.duration[selectedIndex] 
-          : leave.availableLeaves,
-        usedLeaves: wasApproved 
-          ? leave.usedLeaves - leave.duration[selectedIndex] 
-          : leave.usedLeaves,
-      };
-  
-      try {
-        const response = await fetch(
-          `http://localhost:5001/leaverequests/${leave._id}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(updatedLeave),
-          }
+const handleReject = async () => {
+  if (selectedLeave) {
+    const { selectedIndex, ...leave } = selectedLeave;
+
+    const wasApproved = leave.status[selectedIndex] === "Approved";
+
+    const updatedLeave = {
+      ...leave,
+      status: leave.status.map((stat, index) =>
+        index === selectedIndex && (stat === "pending" || stat === "Approved")
+          ? "Rejected"
+          : stat
+      ),
+      availableLeaves: wasApproved ? leave.availableLeaves + 1 : leave.availableLeaves,
+      usedLeaves: wasApproved ? leave.usedLeaves - 1 : leave.usedLeaves,
+    };
+
+    try {
+      const response = await fetch(`http://localhost:5001/leaverequests/${leave._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedLeave),
+      });
+
+      if (response.ok) {
+        const updatedLeaveFromServer = await response.json();
+        setLeaveHistory((prevHistory) =>
+          prevHistory.map((item) =>
+            item._id === updatedLeaveFromServer._id ? updatedLeaveFromServer : item
+          )
         );
-  
-        if (response.ok) {
-          const updatedLeaveFromServer = await response.json();
-          setLeaveHistory((prevHistory) =>
-            prevHistory.map((item) =>
-              item._id === updatedLeaveFromServer._id
-                ? updatedLeaveFromServer
-                : item
-            )
-          );
-          setSelectedLeave(null);
-          setModalOpen(false);
-          console.log(
-            "Rejected and updated in the database:",
-            updatedLeaveFromServer
-          );
-        } else {
-          console.error("Failed to update leave status in the database");
-        }
-      } catch (error) {
-        console.error("Error updating leave status in the database:", error);
+        setSelectedLeave(null);
+        setModalOpen(false);
+        console.log("Rejected and updated in the database:", updatedLeaveFromServer);
+      } else {
+        console.error("Failed to update leave status in the database");
       }
+    } catch (error) {
+      console.error("Error updating leave status in the database:", error);
     }
-  };
-  
-  const handleApprove = async () => {
-    if (selectedLeave) {
-      const { selectedIndex, ...leave } = selectedLeave;
-  
-      const currentStatus = leave.status[selectedIndex].toLowerCase();
-  
-      if (currentStatus !== "pending" && currentStatus !== "rejected") {
-        console.log("This leave is already approved.");
-        return;
-      }
-  
-      // Deduct leaves only when approving
-      const updatedAvailableLeaves = leave.availableLeaves > 0 
-        ? leave.availableLeaves - leave.duration[selectedIndex] 
-        : leave.availableLeaves;
-  
-      const updatedUsedLeaves = leave.usedLeaves + leave.duration[selectedIndex];
-  
-      const updatedLeave = {
-        ...leave,
-        availableLeaves: updatedAvailableLeaves,
-        usedLeaves: updatedUsedLeaves,
-        status: leave.status.map((stat, index) =>
-          index === selectedIndex &&
-          (stat.toLowerCase() === "pending" || stat.toLowerCase() === "rejected")
-            ? "Approved"
-            : stat
-        ),
-      };
-  
-      try {
-        const response = await fetch(
-          `http://localhost:5001/leaverequests/${leave._id}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(updatedLeave),
-          }
+  }
+};
+
+const handleApprove = async () => {
+  if (selectedLeave) {
+    const { selectedIndex, ...leave } = selectedLeave;
+
+    const currentStatus = leave.status[selectedIndex].toLowerCase();
+
+    if (currentStatus !== "pending" && currentStatus !== "rejected") {
+      console.log("This leave is already approved.");
+      return;
+    }
+
+    const updatedLeave = {
+      ...leave,
+      availableLeaves: leave.availableLeaves > 0 ? leave.availableLeaves - 1 : leave.availableLeaves,
+      usedLeaves: leave.usedLeaves + 1,
+      status: leave.status.map((stat, index) =>
+        index === selectedIndex && (stat.toLowerCase() === "pending" || stat.toLowerCase() === "rejected")
+          ? "Approved"
+          : stat
+      ),
+    };
+
+    try {
+      const response = await fetch(`http://localhost:5001/leaverequests/${leave._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedLeave),
+      });
+
+      if (response.ok) {
+        const updatedLeaveFromServer = await response.json();
+        setLeaveHistory((prevHistory) =>
+          prevHistory.map((item) =>
+            item._id === updatedLeaveFromServer._id ? updatedLeaveFromServer : item
+          )
         );
-  
-        if (response.ok) {
-          const updatedLeaveFromServer = await response.json();
-          setLeaveHistory((prevHistory) =>
-            prevHistory.map((item) =>
-              item._id === updatedLeaveFromServer._id
-                ? updatedLeaveFromServer
-                : item
-            )
-          );
-          setSelectedLeave(null);
-          setModalOpen(false);
-          console.log(
-            "Approved and updated in the database:",
-            updatedLeaveFromServer
-          );
-        } else {
-          console.error("Failed to update leave in the database");
-        }
-      } catch (error) {
-        console.error("Error updating leave in the database:", error);
+        setSelectedLeave(null);
+        setModalOpen(false);
+        console.log("Approved and updated in the database:", updatedLeaveFromServer);
+      } else {
+        console.error("Failed to update leave in the database");
       }
+    } catch (error) {
+      console.error("Error updating leave in the database:", error);
     }
-  };
-  
-  
-  
+  }
+};
+
   const handleRowClick = (leave, index) => {
     setSelectedLeave({ ...leave, selectedIndex: index });
     setModalOpen(true); // Open the modal
