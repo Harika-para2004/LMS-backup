@@ -1,4 +1,3 @@
-
 const mongoose = require('mongoose');
 const LeavePolicy = require('./LeavePolicy'); // Import LeavePolicy schema
 
@@ -64,6 +63,7 @@ LeaveSchema.pre('save', async function (next) {
   if (!this.isModified('startDate') || !this.isModified('endDate')) return next();
 
   try {
+    // Calculate duration in days
     const duration = [];
     this.startDate.forEach((start, index) => {
       const end = this.endDate[index];
@@ -74,7 +74,7 @@ LeaveSchema.pre('save', async function (next) {
 
     this.duration = duration;
 
-    // Continue with the other fields as per your existing logic
+    // Fetch the leave policy for the given leaveType
     const policy = await LeavePolicy.findOne({ leaveType: this.leaveType });
     if (policy) {
       this.totalLeaves = policy.maxAllowedLeaves || 0;
