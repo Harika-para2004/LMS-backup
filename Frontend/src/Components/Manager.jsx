@@ -360,7 +360,6 @@ function LeaveRequests() {
     if (selectedLeave) {
       const { selectedIndex, ...leave } = selectedLeave;
   
-      // Check if the leave was approved
       const wasApproved = leave.status[selectedIndex] === "Approved";
   
       const updatedLeave = {
@@ -370,8 +369,12 @@ function LeaveRequests() {
             ? "Rejected"
             : stat
         ),
-        // Increase availableLeaves if the leave was previously approved
-        availableLeaves: wasApproved ? leave.availableLeaves + 1 : leave.availableLeaves,
+        availableLeaves: wasApproved 
+          ? leave.availableLeaves + leave.duration[selectedIndex] 
+          : leave.availableLeaves,
+        usedLeaves: wasApproved 
+          ? leave.usedLeaves - leave.duration[selectedIndex] 
+          : leave.usedLeaves,
       };
   
       try {
@@ -395,9 +398,8 @@ function LeaveRequests() {
                 : item
             )
           );
-          setSelectedLeave(null); // Close the selected leave details
-          setModalOpen(false); // Close the modal
-  
+          setSelectedLeave(null);
+          setModalOpen(false);
           console.log(
             "Rejected and updated in the database:",
             updatedLeaveFromServer
@@ -410,25 +412,29 @@ function LeaveRequests() {
       }
     }
   };
+  
   const handleApprove = async () => {
     if (selectedLeave) {
       const { selectedIndex, ...leave } = selectedLeave;
   
-      // Get the current status (normalize to lowercase for comparison)
       const currentStatus = leave.status[selectedIndex].toLowerCase();
   
-      // Only allow approval if the current status is pending or rejected.
       if (currentStatus !== "pending" && currentStatus !== "rejected") {
-        // Optionally, you can show a message that it's already approved.
         console.log("This leave is already approved.");
         return;
       }
   
+      // Deduct leaves only when approving
+      const updatedAvailableLeaves = leave.availableLeaves > 0 
+        ? leave.availableLeaves - leave.duration[selectedIndex] 
+        : leave.availableLeaves;
+  
+      const updatedUsedLeaves = leave.usedLeaves + leave.duration[selectedIndex];
+  
       const updatedLeave = {
         ...leave,
-        // Deduct one leave regardless, because now we're approving
-        availableLeaves: leave.availableLeaves - 1,
-        usedLeaves: leave.usedLeaves + 1,
+        availableLeaves: updatedAvailableLeaves,
+        usedLeaves: updatedUsedLeaves,
         status: leave.status.map((stat, index) =>
           index === selectedIndex &&
           (stat.toLowerCase() === "pending" || stat.toLowerCase() === "rejected")
@@ -474,7 +480,7 @@ function LeaveRequests() {
   };
   
   
-
+  
   const handleRowClick = (leave, index) => {
     setSelectedLeave({ ...leave, selectedIndex: index });
     setModalOpen(true); // Open the modal
