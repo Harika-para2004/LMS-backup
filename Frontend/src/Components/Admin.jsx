@@ -10,18 +10,26 @@ import {
   faClipboardList,
 } from "@fortawesome/free-solid-svg-icons";
 import { BASE_URL } from "../Config";
-import { MdCheckCircle, MdCancel, MdHourglassEmpty } from "react-icons/md";
+import { MdCheckCircle, MdCancel,MdWatchLater  } from "react-icons/md";
 import AddIcon from "@mui/icons-material/Add";
 import { FaEdit, FaTrash } from "react-icons/fa";
+import { AiFillFilePdf,AiOutlineClose, AiOutlineExclamationCircle } from "react-icons/ai";
 
 import {
   Box,
   Button,
   TextField,
   FormControl,
+  FormGroup,
+  FormControlLabel,
+  Checkbox,
   InputLabel,
   MenuItem,
+  RadioGroup,
+  FormLabel,
+  Radio,
   Select,
+  IconButton,
   Typography,
   Modal,
   ButtonBase,
@@ -276,39 +284,27 @@ function AdminDashboard() {
     setShowModal(false);
   };
 
-  // Function to fetch leave and employee data
-  const fetchLeaveAndEmployeeDetails = async () => {
+
+  const fetchLeaveHistory = async () => {
+    const excludeEmail = "admin@gmail.com"; // Replace with the email to exclude
     try {
-      const [leaveResponse, employeeResponse] = await Promise.all([
-        fetch(`${BASE_URL}leaverequests`),
-        fetch(`${BASE_URL}employee-list`),
-      ]);
-
-      const leaveData = await leaveResponse.json();
-      const employeeData = await employeeResponse.json();
-
-      console.log("Leave Data:", leaveData); // Inspect structure
-      console.log("Employee Data:", employeeData); // Inspect structure
-
-      const mergedData = leaveData.map((leave) => {
-        const employee = employeeData.find(
-          (emp) => emp.email === leave.email // Match based on email
-        );
-        return {
-          ...leave,
-          empid: employee?.id || "N/A",
-          empname: employee?.name || "N/A",
-        };
-      });
-      console.log("merge", mergedData);
-      setLeaveHistory(mergedData);
+      const response = await fetch("http://localhost:5001/leaverequests");
+      if (response.ok) {
+        const data = await response.json();
+        const filteredData = data.filter((item) => item.email !== excludeEmail); // Filter out records with the given email
+        setLeaveHistory(filteredData); // Update state with filtered data
+      } else {
+        console.error("Failed to fetch leave history");
+      }
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("Error fetching leave history:", error);
     }
   };
 
+
+
   useEffect(() => {
-    fetchLeaveAndEmployeeDetails();
+    fetchLeaveHistory();
   }, []);
 
   useEffect(() => {
@@ -370,69 +366,37 @@ function AdminDashboard() {
     fetchEmployees();
   }, []);
 
-  const handleApprove = async () => {
-    if (selectedLeave) {
-      const { selectedIndex, ...leave } = selectedLeave;
-      const updatedLeave = {
-        ...leave,
-        availableLeaves: leave.availableLeaves - 1,
-        usedLeaves: leave.usedLeaves + 1,
-        status: leave.status.map((stat, index) =>
-          index === selectedIndex && stat === "pending" ? "Approved" : stat
-        ),
-      };
-
-      try {
-        const response = await fetch(`${BASE_URL}leaverequests/${leave._id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(updatedLeave),
-        });
-
-        if (response.ok) {
-          const updatedLeaveFromServer = await response.json();
-          setLeaveHistory((prevHistory) =>
-            prevHistory.map((item) =>
-              item._id === updatedLeaveFromServer._id
-                ? updatedLeaveFromServer
-                : item
-            )
-          );
-          setSelectedLeave(null);
-          console.log(
-            "Approved and updated in the database:",
-            updatedLeaveFromServer
-          );
-        } else {
-          console.error("Failed to update leave in the database");
-        }
-      } catch (error) {
-        console.error("Error updating leave in the database:", error);
-      }
-    }
-  };
+  
   const handleReject = async () => {
     if (selectedLeave) {
       const { selectedIndex, ...leave } = selectedLeave;
-
+  
+      // Check if the leave was approved
+      const wasApproved = leave.status[selectedIndex] === "Approved";
+  
       const updatedLeave = {
         ...leave,
         status: leave.status.map((stat, index) =>
-          index === selectedIndex && stat === "pending" ? "Rejected" : stat
+          index === selectedIndex && (stat === "pending" || stat === "Approved")
+            ? "Rejected"
+            : stat
         ),
+        // Increase availableLeaves if the leave was previously approved
+        availableLeaves: wasApproved ? leave.availableLeaves + 1 : leave.availableLeaves,
       };
-
+  
       try {
-        const response = await fetch(`${BASE_URL}leaverequests/${leave._id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(updatedLeave),
-        });
-
+        const response = await fetch(
+          `http://localhost:5001/leaverequests/${leave._id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(updatedLeave),
+          }
+        );
+  
         if (response.ok) {
           const updatedLeaveFromServer = await response.json();
           setLeaveHistory((prevHistory) =>
@@ -444,7 +408,7 @@ function AdminDashboard() {
           );
           setSelectedLeave(null); // Close the selected leave details
           setModalOpen(false); // Close the modal
-
+  
           console.log(
             "Rejected and updated in the database:",
             updatedLeaveFromServer
@@ -457,11 +421,70 @@ function AdminDashboard() {
       }
     }
   };
-
-  const handleRowClick = (leave, index) => {
-    setSelectedLeave({ ...leave, selectedIndex: index });
-    setModalOpen(true); // Open the modal
+  const handleApprove = async () => {
+    if (selectedLeave) {
+      const { selectedIndex, ...leave } = selectedLeave;
+  
+      // Get the current status (normalize to lowercase for comparison)
+      const currentStatus = leave.status[selectedIndex].toLowerCase();
+  
+      // Only allow approval if the current status is pending or rejected.
+      if (currentStatus !== "pending" && currentStatus !== "rejected") {
+        // Optionally, you can show a message that it's already approved.
+        console.log("This leave is already approved.");
+        return;
+      }
+  
+      const updatedLeave = {
+        ...leave,
+        // Deduct one leave regardless, because now we're approving
+        availableLeaves: leave.availableLeaves - 1,
+        usedLeaves: leave.usedLeaves + 1,
+        status: leave.status.map((stat, index) =>
+          index === selectedIndex &&
+          (stat.toLowerCase() === "pending" || stat.toLowerCase() === "rejected")
+            ? "Approved"
+            : stat
+        ),
+      };
+  
+      try {
+        const response = await fetch(
+          `http://localhost:5001/leaverequests/${leave._id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(updatedLeave),
+          }
+        );
+  
+        if (response.ok) {
+          const updatedLeaveFromServer = await response.json();
+          setLeaveHistory((prevHistory) =>
+            prevHistory.map((item) =>
+              item._id === updatedLeaveFromServer._id
+                ? updatedLeaveFromServer
+                : item
+            )
+          );
+          setSelectedLeave(null);
+          setModalOpen(false);
+          console.log(
+            "Approved and updated in the database:",
+            updatedLeaveFromServer
+          );
+        } else {
+          console.error("Failed to update leave in the database");
+        }
+      } catch (error) {
+        console.error("Error updating leave in the database:", error);
+      }
+    }
   };
+  
+  
   const handleEdit = (index) => {
     setEditingRow(index);
     setFormData(holidays[index]);
@@ -640,22 +663,26 @@ function AdminDashboard() {
     }
   };
 
-  const handleFilterChange = (e) => {
-    setSelectedFilter(e.target.value);
+
+  const handleRowClick = (leave, index) => {
+    setSelectedLeave({ ...leave, selectedIndex: index });
+    setModalOpen(true); // Open the modal
   };
-
-  const filteredLeaveHistory = leaveHistory.filter((leave) =>
-    selectedFilter === "All"
-      ? true
-      : leave.status.some(
-          (status) => status.toLowerCase() === selectedFilter.toLowerCase()
-        )
-  );
-
   const handleCloseModal = () => {
     setModalOpen(false); // Close the modal
     setSelectedLeave(null); // Clear selected leave
   };
+  const handleFilterChange = (e) => {
+    setSelectedFilter(e.target.value);
+  };
+  
+  // Filter the leave history based on the selected filter
+  const filteredLeaveHistory = leaveHistory.filter((leave) =>
+    selectedFilter === "All"
+      ? true
+      : leave.status.some((status) => status.toLowerCase() === selectedFilter.toLowerCase())
+  );
+  const getDownloadLink = (attachments) => `http://localhost:5001/${attachments}`;
 
   const renderContent = () => {
     switch (selectedCategory) {
@@ -737,28 +764,37 @@ function AdminDashboard() {
                     helperText={errors.holidayName}
                     fullWidth
                   />
-                  <FormControl fullWidth>
-                    <InputLabel>Holiday Type</InputLabel>
-                    <Select
-                      name="holidayType"
-                      value={formData.holidayType}
-                      onChange={handleInputChange}
-                    >
-                      <MenuItem value="Mandatory">Mandatory</MenuItem>
-                      <MenuItem value="Optional">Optional</MenuItem>
-                    </Select>
-                    {errors.holidayType && (
-                      <p
-                        style={{
-                          color: "red",
-                          fontSize: "0.8rem",
-                          marginTop: "0.25rem",
-                        }}
-                      >
-                        {errors.holidayType}
-                      </p>
-                    )}
-                  </FormControl>
+                 <FormControl component="fieldset">
+  <FormLabel component="legend">Holiday Type</FormLabel>
+  <RadioGroup
+    name="holidayType"
+    value={formData.holidayType}
+    onChange={handleInputChange}
+    row
+  >
+    <FormControlLabel
+      value="Mandatory"
+      control={<Radio />}
+      label="Mandatory"
+    />
+    <FormControlLabel
+      value="Optional"
+      control={<Radio />}
+      label="Optional"
+    />
+  </RadioGroup>
+  {errors.holidayType && (
+    <p
+      style={{
+        color: "red",
+        fontSize: "0.8rem",
+        marginTop: "0.25rem",
+      }}
+    >
+      {errors.holidayType}
+    </p>
+  )}
+</FormControl>
                   <Box display="flex" justifyContent="flex-end">
                     <Button onClick={() => setShowModal(false)} sx={{ mr: 2 }}>
                       Cancel
@@ -895,103 +931,245 @@ function AdminDashboard() {
       case "leaverequests":
         return (
           <div className="history-container">
-            <h2 className="content-heading">Leave Requests</h2>
-            <table id="tb">
-              <thead>
-                <tr>
-                  <th>Leave Type</th>
-                  <th>From</th>
-                  <th>To</th>
-                  <th>Reason</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leaveHistory.map((leave) =>
-                  leave.startDate.map((startDate, index) => (
-                    <tr
-                      key={`${leave._id}-${index}`}
-                      onClick={() => handleRowClick(leave, index)}
-                    >
-                      <td>
-                        {leave.leaveType
-                          .toLowerCase()
-                          .replace(/\b\w/g, (char) => char.toUpperCase())}
-                      </td>
-                      <td>{new Date(startDate).toLocaleDateString()}</td>
-                      <td>
-                        {new Date(leave.endDate[index]).toLocaleDateString()}
-                      </td>
-                      <td>{(leave.reason[index] === null) ? 'N/A' : leave.reason[index]}</td>
-                      <td>{leave.status[index].toLowerCase()
-            .replace(/\b\w/g, (char) => char.toUpperCase())}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-            <Modal open={modalOpen} onClose={handleCloseModal}>
-              <Box
-                sx={{
-                  position: "absolute",
-                  top: "50%",
-                  left: "50%",
-                  transform: "translate(-50%, -50%)",
-                  width: 400,
-                  bgcolor: "var(--dark-blue)",
-                  boxShadow: 24,
-                  p: 4,
-                  borderRadius: "8px",
-                }}
-              >
-                {selectedLeave && (
-                  <div className="details-container">
-                    <h3>Leave Details</h3>
-                    <p>Employee Email: {selectedLeave.email}</p>
-                    <p>Leave Type: {selectedLeave.leaveType}</p>
-                    <p>
-                      From:{" "}
-                      {new Date(
-                        selectedLeave.startDate[selectedLeave.selectedIndex]
-                      ).toLocaleDateString()}
-                    </p>
-                    <p>
-                      To:{" "}
-                      {new Date(
-                        selectedLeave.endDate[selectedLeave.selectedIndex]
-                      ).toLocaleDateString()}
-                    </p>
-                    <p>
-                      Reason:{" "}
-                      {selectedLeave.reason[selectedLeave.selectedIndex]}
-                    </p>
-                    <p>
-                      Status:{" "}
-                      {selectedLeave.status[selectedLeave.selectedIndex]}
-                    </p>
-                    <p>Total Leaves: {selectedLeave.totalLeaves}</p>
-                    <p>Available Leaves: {selectedLeave.availableLeaves}</p>
-                    <p>Used Leaves: {selectedLeave.usedLeaves}</p>
-                    <div className="action-buttons">
-                      <button
-                        onClick={handleApprove}
-                        disabled={selectedLeave.availableLeaves === 0}
-                        style={{
-                          backgroundColor:
-                            selectedLeave.availableLeaves === 0
-                              ? "gray"
-                              : "#28a745",
-                        }}
-                      >
-                        Approve
-                      </button>{" "}
-                      <button onClick={handleReject}>Reject</button>
-                    </div>
-                  </div>
-                )}
-              </Box>
-            </Modal>
-          </div>
+          <h2>Leave Requests</h2>
+    
+          <div className="filter-container">
+ 
+      <FormGroup row sx={{ justifyContent: 'flex-end' }}>
+        <FormControlLabel
+          control={
+            <Checkbox
+              value="All"
+              checked={selectedFilter === "All"}
+              onChange={handleFilterChange}
+            />
+          }
+          label="All"
+        />
+        <FormControlLabel
+          control={
+            <Checkbox
+              value="Pending"
+              checked={selectedFilter === "Pending"}
+              onChange={handleFilterChange}
+            />
+          }
+          label="Pending"
+        />
+   <FormControlLabel
+          control={
+            <Checkbox
+              value="Approved"
+              checked={selectedFilter === "Approved"}
+              onChange={handleFilterChange}
+              sx={{
+                '&.Mui-checked': {
+                  color: selectedFilter === 'Approved' ? 'green' : 'default', // Changes checkbox color to green when checked
+                },
+              }}
+            />
+          }
+          label="Approved"
+        />
+        <FormControlLabel
+          control={
+            <Checkbox
+              value="Rejected"
+              checked={selectedFilter === "Rejected"}
+              onChange={handleFilterChange}
+              sx={{
+                '&.Mui-checked': {
+                  color: selectedFilter === 'Rejected' ? 'red' : 'default', // Changes checkbox color to green when checked
+                },
+              }}
+            />
+          }
+          label="Rejected"
+        />
+      </FormGroup>
+    </div>
+
+    
+          <table id="tb">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Leave Type</th>
+                <th>Duration</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Available</th>
+              <th>Document</th>
+              <th>Reason</th>
+
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+  {filteredLeaveHistory.map((leave) =>
+    leave.startDate.map((startDate, index) => {
+      // Only render rows where the specific status matches the selected filter
+      if (
+        selectedFilter === "All" ||
+        leave.status[index].toLowerCase() === selectedFilter.toLowerCase()
+      ) {
+        return (
+          <tr key={`${leave._id}-${index}`}>
+<td>{leave.empid || "N/A"}</td> {/* Access empid */}
+<td>{leave.empname || "N/A"}</td> {/* Access empname */}
+
+            <td>{leave.leaveType}</td>
+            <td>{leave.duration ? leave.duration[index] : "N/A"}</td>
+            <td>{new Date(startDate).toLocaleDateString()}</td>
+            <td>{new Date(leave.endDate[index]).toLocaleDateString()}</td>
+            <td>{leave.availableLeaves}</td>
+            <td>
+            {leave.attachments?.[index] ? (
+              <a href={getDownloadLink(leave.attachments[index])} download>
+                <AiFillFilePdf size={30} color="red" />
+              </a>
+            ) : (
+<AiOutlineExclamationCircle size={30} color="orange" style={{ cursor: 'default' }} />
+            )}
+          </td>
+            
+            <td>{leave.reason[index]}</td>
+            
+            <td>
+            {leave.status[index].toLowerCase() === "approved" && (
+    <button
+      onClick={() => handleRowClick(leave, index)}
+      style={{
+        color: "green",
+        display: "flex",
+        alignItems: "center",
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+     
+      }}
+    >
+<MdCheckCircle size={24} style={{ marginRight: "5px" }} />
+</button>
+  )}
+  {leave.status[index].toLowerCase() === "rejected" && (
+    <button
+      onClick={() => handleRowClick(leave, index)}
+      style={{
+        color: "red",
+        display: "flex",
+        alignItems: "center",
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+      }}
+    >
+      <MdCancel size={24} style={{ marginRight: "5px" }} /> 
+    </button>
+  )}
+                {leave.status[index].toLowerCase() !== "approved" &&
+    leave.status[index].toLowerCase() !== "rejected" && (
+      <button
+        onClick={() => handleRowClick(leave, index)}
+        style={{
+          display: "flex",
+          color:"blue",
+          alignItems: "center",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+        }}
+      >
+      <MdWatchLater size={24}/>
+        </button>
+    )}
+            </td>
+          </tr>
+        );
+      }
+      return null; // Skip rows that don't match the filter
+    })
+  )}
+</tbody>
+
+          </table>
+          <Modal open={modalOpen} onClose={handleCloseModal}>
+  <Box
+    sx={{
+      position: "absolute",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      width: 400,
+      bgcolor: "background.paper",
+      boxShadow: 24,
+      p: 4,
+      borderRadius: "10px",
+      textAlign: "center",
+    }}
+  >
+    {/* Close Icon */}
+    <IconButton
+      onClick={handleCloseModal}
+      sx={{
+        position: "absolute",
+        top: 10,
+        right: 10,
+        color: "gray",
+        "&:hover": { color: "black" },
+      }}
+    >
+      <AiOutlineClose size={24} />
+    </IconButton>
+    <h3 style={{ marginBottom: "20px" }}>Approve or Reject Request?</h3>
+
+    {/* Added code: Determine current status and toggle button enable/disable */}
+    {selectedLeave && (() => {
+      // Retrieve current status using the selected index
+      const currentStatus =
+        (selectedLeave.status &&
+          selectedLeave.status[selectedLeave.selectedIndex]) ||
+        "pending";
+
+      return (
+        <div className="action-buttons">
+          <button
+            onClick={handleApprove}
+            className="approve-btn"
+            disabled={currentStatus.toLowerCase() === "approved"}
+            style={{
+              opacity: currentStatus.toLowerCase() === "approved" ? 0.5 : 1,
+              cursor:
+                currentStatus.toLowerCase() === "approved"
+                  ? "not-allowed"
+                  : "pointer",
+            }}
+          >
+            ✅ Approve
+          </button>
+          <button
+            onClick={handleReject}
+            className="reject-btn"
+            disabled={currentStatus.toLowerCase() === "rejected"}
+            style={{
+              opacity: currentStatus.toLowerCase() === "rejected" ? 0.5 : 1,
+              cursor:
+                currentStatus.toLowerCase() === "rejected"
+                  ? "not-allowed"
+                  : "pointer",
+            }}
+          >
+            ❌ Reject
+          </button>
+        </div>
+      );
+    })()}
+  </Box>
+</Modal>
+
+        </div>
+        
         );
 
       case "employee-list":

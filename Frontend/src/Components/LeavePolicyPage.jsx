@@ -36,7 +36,7 @@ function LeavePolicyPage() {
   
     setFormData({
       ...formData,
-      [name]: name === "leaveType" ? value.toUpperCase() : value, // Convert leaveType to uppercase
+      [name]:  value, // Convert leaveType to uppercase
     });
   };
   

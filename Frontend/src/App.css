@@ -1,11 +1,11 @@
 /* Quadface Colors */
+/* Quadface Colors */
 
 :root {
   --primary-blue: #00D7FF;  /* Bright Blue */
-  --dark-blue: #21BB88;    /* Dark Blue */
   --deep-blue: #313896;    /* Deep Blue */
   --purple: #9F32B2;       /* Purple */
-  
+    --dark-blue: #21BB88;    
   --light-bg: #f8f9fa;     /* Neutral Light Background */
   --shadow-color: rgba(0, 0, 0, 0.15);
   /* --highlight-color: #9f32b2; */
@@ -1218,3 +1218,188 @@ body {
 .error {
   color: red;
 }
+
+
+.content-heading {
+  font-size: 30px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 10px;
+  color: #384959;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-box {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 80%;
+  max-height: 80%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  position: relative;
+}
+
+.close-modal-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.view-attachment-btn {
+  padding: 6px 12px;
+  background-color:red;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.view-attachment-btn:hover {
+  background-color: #0056b3;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.history-container {
+  position: relative;
+  padding: 20px;
+}
+
+.pagination-numbered {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  position: absolute;
+  top: 10px; /* Positioned at the bottom */
+  right: 20px;  /* Positioned to the right */
+  margin-top: 20px;
+}
+
+.pagination-numbered button {
+  padding: 5px 10px;
+  background-color: var(--deep-blue);
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.pagination-numbered .arrow {
+  padding: 5px 10px;
+  background-color: var(--primary-blue);
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.pagination-numbered button:disabled {
+  background-color: #ddd;
+  cursor: not-allowed;
+}
+
+.pagination-numbered .page-numbers {
+  display: flex;
+  gap: 5px;
+}
+
+.pagination-numbered .page-numbers button.active {
+  background-color:green;
+}
+
+.pagination-numbered button:hover {
+  background-color: #0056b3;
+}
+
+.pagination-numbered button[disabled]:hover {
+  background-color: #ddd;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 400px;
+  position: relative;
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: red;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.error {
+  color: red;
+}
+
+
+.holiday-container, .leave-policy-container {
+  position: relative;
+  width: 100%;
+}
+
+.holiday-divider, .leave-policy-divider {
+  width: 100%;
+  height: 2px;
+  background-color: #333;
+  margin: 8px 0;
+  cursor: pointer;
+}
+
+.holiday-table-section, .leave-policy-section {
+  display: block;
+}
+
+.leave-policy-section .MuiCard-root {
+  transition: transform 0.2s ease-in-out;
+}
+
+.leave-policy-section .MuiCard-root:hover {
+  transform: scale(1.05);
+}
+
+
+

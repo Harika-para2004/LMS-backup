@@ -31,47 +31,54 @@ app.use("/api/leave-policies",leavepolicyRoutes);
 const upload = multer({ dest: "uploads/" });
 const path = require("path");
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
 app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
   const { email } = req.query;
-  const { leaveType, applyDate, startDate, endDate, reason } = req.body;
+  const { empname, empid, leaveType, startDate, endDate, reason } = req.body; // Removed applyDate as it should be derived from the current date
   const filePath = req.file ? req.file.path : null;
 
   try {
     let leaveRecord = await Leave.findOne({ email, leaveType });
 
+    // Create a new leave record or update an existing one
     if (leaveRecord) {
+      // Update existing leave record
       leaveRecord.startDate.push(new Date(startDate));
       leaveRecord.endDate.push(new Date(endDate));
       leaveRecord.status.push("pending");
 
       if (filePath) {
         leaveRecord.attachments.push(filePath);
+      } else {
+        leaveRecord.attachments.push(""); // Push an empty string when no file is provided
       }
-
+      
       if (reason) {
-        leaveRecord.reason = leaveRecord.reason || []; // Ensure it's an array
-        leaveRecord.reason.push(reason);
+        leaveRecord.reason.push(reason); // Ensure reason is pushed
       }
     } else {
+      // Create a new leave record
       leaveRecord = new Leave({
         email,
-        applyDate,
+        empname,
+        empid,
+        applyDate: new Date(), // Setting current date as applyDate
         leaveType,
         startDate: [new Date(startDate)],
         endDate: [new Date(endDate)],
         reason: reason ? [reason] : [], // Add reason only if provided
         status: ["pending"],
-        attachments: filePath ? [filePath] : [],
+        attachments: [filePath ? filePath : ""] // Always create an attachments array with an entry (empty string if no file)
       });
     }
 
     await leaveRecord.save();
     res.status(200).json({ message: "Leave application submitted successfully" });
   } catch (error) {
+    console.error("Error updating leave record:", error); // Log the error for debugging
     res.status(500).json({ error: "Error updating leave record" });
   }
 });
+
 
 
 app.get("/leave-history", async (req, res) => {
@@ -83,22 +90,20 @@ app.get("/leave-history", async (req, res) => {
   try {
     const leaveHistory = await Leave.find({ email });
 
-    console.log(leaveHistory);
-    const formattedHistory = leaveHistory.map((leave) => {
-      return leave.startDate.map((start, index) => {
-        const duration = leave.duration && leave.duration[index] ? leave.duration[index] : "N/A"; // Add fallback for missing duration
-        // console.log("Duration for this leave:", leave.duration[index]);
-        return {
+    const formattedHistory = leaveHistory
+      .map((leave) => {
+        return leave.startDate.map((start, index) => ({
           leaveType: leave.leaveType,
-          applyDate: new Date(leave.applyDate).toLocaleDateString(),
+          applyDate: new Date(leave.applyDate).toLocaleDateString(), // Format and include apply date
           startDate: new Date(start).toLocaleDateString(),
           endDate: new Date(leave.endDate[index]).toLocaleDateString(),
-          duration,
-          reason: leave.reason[index] || "N/A",
+          reason: leave.reason[index],
           status: leave.status[index] || "Pending",
-        };
-      });
-    }).flat();
+          duration:leave.duration[index],
+          attachments:leave.attachments[index]
+        }));
+      })
+      .flat();
 
     res.status(200).json(formattedHistory);
   } catch (error) {
@@ -128,73 +133,11 @@ app.get("/leavesummary", async (req, res) => {
     res.status(500).send("Server Error");
   }
 });
-
-// app.get("/leaverequests", async (req, res) => {
-//   try {
-//     const excludeEmail = req.query.excludeEmail; // Get email to exclude from query parameters
-//     const query = excludeEmail ? { email: { $ne: excludeEmail } } : {}; // Filter out the email
-//     const leaveRequests = await Leave.find(query); // Query the database
-//     res.json(leaveRequests);
-//   } catch (error) {
-//     console.error("Error fetching leave requests:", error);
-//     res.status(500).send("Server error");
-//   }
-// });
-
 app.get("/leaverequests", async (req, res) => {
   try {
-    const { email, excludeEmail } = req.query;
-
-    let matchQuery = {};
-    if (email) {
-      matchQuery.email = email; // Fetch leave requests for a specific employee
-    } else if (excludeEmail) {
-      matchQuery.email = { $ne: excludeEmail }; // Exclude leave requests for a specific email
-    }
-
-    const leaveRequests = await Leave.aggregate([
-      {
-        $match: matchQuery, // Apply the filter condition
-      },
-      {
-        $lookup: {
-          from: "signups_cols", // The actual collection name in MongoDB
-          localField: "email",
-          foreignField: "email",
-          as: "employeeDetails",
-        },
-      },
-      {
-        $unwind: {
-          path: "$employeeDetails",
-          preserveNullAndEmptyArrays: true, // Keep records even if no user details exist
-        },
-      },
-      {
-        $project: {
-          _id: 1,
-          empid: "$employeeDetails.empid",
-          empname: "$employeeDetails.empname",
-          email: 1,
-          leaveType: 1,
-          applyDate: 1,
-          startDate: 1,
-          endDate: 1,
-          reason: 1,
-          status: 1,
-          totalLeaves: 1,
-          usedLeaves: 1,
-          availableLeaves: 1,
-          attachments: 1,
-          duration:1,
-        },
-      },
-    ]);
-
-    if (!leaveRequests.length) {
-      return res.status(404).json({ message: "No leave records found" });
-    }
-
+    const excludeEmail = req.query.excludeEmail; // Get email to exclude from query parameters
+    const query = excludeEmail ? { email: { $ne: excludeEmail } } : {}; // Filter out the email
+    const leaveRequests = await Leave.find(query); // Query the database
     res.json(leaveRequests);
   } catch (error) {
     console.error("Error fetching leave requests:", error);
@@ -203,113 +146,23 @@ app.get("/leaverequests", async (req, res) => {
 });
 
 
-// app.put("/leaverequests/:id", async (req, res) => {
-//   try {
-//     const leaveId = req.params.id;
-//     const updatedData = req.body;
-
-//     const leave = await Leave.findByIdAndUpdate(leaveId, updatedData, {
-//       new: true,
-//     });
-
-//     if (leave) {
-//       res.status(200).json(leave);
-//     } else {
-//       res.status(404).json({ message: "Leave request not found" });
-//     }
-//   } catch (error) {
-//     console.error("Error updating leave request:", error);
-//     res.status(500).json({ message: "An error occurred" });
-//   }
-// });
-
 app.put("/leaverequests/:id", async (req, res) => {
   try {
     const leaveId = req.params.id;
     const updatedData = req.body;
 
-    // Validate ObjectId format
-    if (!mongoose.Types.ObjectId.isValid(leaveId)) {
-      return res.status(400).json({ message: "Invalid Leave ID" });
-    }
-
-    // Allowed fields for update
-    const allowedFields = [
-      "status",
-      "availableLeaves",
-      "usedLeaves",
-      "leaveType",
-      "startDate",
-      "endDate",
-      "reason",
-      "attachments",
-      "duration"
-    ];
-    
-    const updatePayload = {};
-    Object.keys(updatedData).forEach((key) => {
-      if (allowedFields.includes(key)) {
-        updatePayload[key] = updatedData[key];
-      }
+    const leave = await Leave.findByIdAndUpdate(leaveId, updatedData, {
+      new: true,
     });
 
-    // Update the leave request in MongoDB
-    const leave = await Leave.findByIdAndUpdate(leaveId, updatePayload, { new: true });
-
-    if (!leave) {
-      return res.status(404).json({ message: "Leave request not found" });
+    if (leave) {
+      res.status(200).json(leave);
+    } else {
+      res.status(404).json({ message: "Leave request not found" });
     }
-
-    // Fetch the updated leave request with employee details
-    const updatedLeaveWithEmployee = await Leave.aggregate([
-      { $match: { _id: new mongoose.Types.ObjectId(leaveId) } },
-      {
-        $lookup: {
-          from: "signups_cols",
-          localField: "email",
-          foreignField: "email",
-          as: "employeeDetails",
-        },
-      },
-      {
-        $unwind: {
-          path: "$employeeDetails",
-          preserveNullAndEmptyArrays: true, // Keep record even if no user details exist
-        },
-      },
-      {
-        $project: {
-          _id: 1,
-          empid: "$employeeDetails.empid",
-          empname: "$employeeDetails.empname",
-          email: 1,
-          leaveType: 1,
-          applyDate: 1,
-          startDate: 1,
-          endDate: 1,
-          reason: 1,
-          status: 1,
-          totalLeaves: 1,
-          usedLeaves: 1,
-          availableLeaves: 1,
-          attachments: 1,
-          duration: 1,
-        },
-      },
-    ]);
-
-    if (!updatedLeaveWithEmployee.length) {
-      return res.status(404).json({ message: "Leave updated, but employee details not found" });
-    }
-
-    res.status(200).json({
-      message: "Leave updated successfully",
-      updatedLeave: updatedLeaveWithEmployee[0], // Send the updated leave with employee details
-    });
-
   } catch (error) {
     console.error("Error updating leave request:", error);
-    res.status(500).json({ message: "An error occurred while updating leave request" });
+    res.status(500).json({ message: "An error occurred" });
   }
 });
 
@@ -352,7 +205,6 @@ app.get("/holidays", async (req, res) => {
     res.status(500).json({ message: "Server Error", error: err.message }); // Include error message
   }
 });
-
 app.get("/employee-list", async (req, res) => {
   try {
     const employees = await User.find();

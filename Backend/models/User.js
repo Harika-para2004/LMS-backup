@@ -11,6 +11,6 @@ const userSchema = new mongoose.Schema({
 
 });
 
-const User = mongoose.model('signups_col', userSchema);
+const User = mongoose.model('signups_cols', userSchema);
 
 module.exports = User;

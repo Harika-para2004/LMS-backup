@@ -2,37 +2,17 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import logo from "./../assets/img/quadfacelogo-hd.png";
-import { Modal, Box, Select } from "@mui/material";
+import { Modal, Box,IconButton } from "@mui/material";
 import Profile from "../assets/img/profile.png";
 import { useNavigate } from "react-router-dom";
-
-import {
-  TextField,
-  MenuItem,
-  Button,
-  TextareaAutosize,
-  Typography,
-} from "@mui/material";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faChartLine,
-  faPaperPlane,
-  faCalendarPlus,
-  faCalendarCheck,
-  faFileAlt,
-  faHistory,
-  faUser,
-  faSignOutAlt,
-  faUserCircle,
-  faKey,
-} from "@fortawesome/free-solid-svg-icons";
+import { BASE_URL } from "../Config"; 
+import { MdCheckCircle, MdCancel,MdWatchLater  } from "react-icons/md";
+import { FormGroup, FormControlLabel, Checkbox } from "@mui/material";
 import LeaveHistory from "./LeaveHistory";
 import ApplyLeave from "./ApplyLeave";
 import Sidebar from "./Sidebar";
 import ProfilePage from "./ProfilePage";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle"; // Approved Icon
-import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty"; // Pending Icon
-import CancelIcon from "@mui/icons-material/Cancel"; // Rejected Icon
+import { AiFillFilePdf,AiOutlineClose, AiOutlineExclamationCircle } from "react-icons/ai";
 
 function LeaveRequests() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -52,7 +32,10 @@ function LeaveRequests() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [userData, setUserData] = useState(null);
   const [file, setFile] = useState(null);
+  const [selectedFilter, setSelectedFilter] = useState("All");
+  const [error,setError]=useState("");
   const navigate = useNavigate();
+  const [leavepolicyRef,setLeavePolicyRef]=useState([]);
 
   const [errors, setErrors] = useState({
     leaveType: "",
@@ -70,215 +53,12 @@ function LeaveRequests() {
   });
   const [mergedLeaveData, setMergedLeaveData] = useState([]);
 
-  const statusOptions = [
-    {
-      label: "Pending",
-      value: "pending",
-      icon: <HourglassEmptyIcon color="warning" />,
-    },
-    {
-      label: "Approved",
-      value: "approved",
-      icon: <CheckCircleIcon color="success" />,
-    },
-    {
-      label: "Rejected",
-      value: "rejected",
-      icon: <CancelIcon color="error" />,
-    },
-  ];
-
-  // const handleStatusChange = async (leave, index, newStatus) => {
-  //   try {
-  //     // Find the leave record
-  //     console.log(leavehistory);
-  //     console.log(leave);
-  //     // const leaveToUpdate = leavehistory.find((leave) => leave._id === leaveId);
-  //     // if (!leaveToUpdate) return console.error("Leave not found");
-
-  //     // Prevent unnecessary API calls if status hasn't changed
-  //     if (leave.status[index] === newStatus) return;
-
-  //     // Update the status in the object
-  //     const updatedLeave = {
-  //       ...leave,
-  //       availableLeaves: leave.availableLeaves - 1,
-  //       usedLeaves: leave.usedLeaves + 1,
-  //       status: leave.status.map((stat, index) =>
-  //         index === selectedIndex && stat === "pending" ? "Approved" : stat
-  //       ),
-  //     };
-
-  //     try {
-  //       const response = await fetch(
-  //         `http://localhost:5001/leaverequests/${leave._id}`,
-  //         {
-  //           method: "PUT",
-  //           headers: {
-  //             "Content-Type": "application/json",
-  //           },
-  //           body: JSON.stringify(updatedLeave),
-  //         }
-  //       );
-
-  //       if (response.ok) {
-  //         const updatedLeaveFromServer = await response.json();
-  //         setLeavehistory((prevHistory) =>
-  //           prevHistory.map((item) =>
-  //             item._id === updatedLeaveFromServer._id
-  //               ? updatedLeaveFromServer
-  //               : item
-  //           )
-  //         );
-  //         setSelectedLeave(null);
-  //         setModalOpen(false);
-  //         console.log(
-  //           "Approved and updated in the database:",
-  //           updatedLeaveFromServer
-  //         );
-  //       } else {
-  //         console.error("Failed to update leave in the database");
-  //       }
-  //     } catch (error) {
-  //       console.error("Error updating leave in the database:", error);
-  //     }
-  //   }
-  //   catch(error){
-  //     console.error("Error updating leave:", error);
-  //   }
-  // };
-
-  const handleStatusChange = async (leave, index, newStatus) => {
-    try {
-      console.log("Current leave data:", leave);
-      console.log("Updating status at index:", index, "to:", newStatus);
-
-      // Prevent unnecessary API calls if the status hasn't changed
-      if (leave.status[index] === newStatus) return;
-
-      // Update the status and handle leave balance changes
-      const updatedLeave = {
-        ...leave,
-        availableLeaves:
-          newStatus === "approved"
-            ? leave.availableLeaves - 1
-            : leave.availableLeaves,
-        usedLeaves:
-          newStatus === "approved" ? leave.usedLeaves + 1 : leave.usedLeaves,
-        status: leave.status.map((stat, i) => (i === index ? newStatus : stat)),
-      };
-
-      console.log("Updated leave data:", updatedLeave);
-
-      const response = await fetch(
-        `http://localhost:5001/leaverequests/${leave._id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(updatedLeave),
-        }
-      );
-
-      if (response.ok) {
-        const updatedLeaveFromServer = await response.json();
-
-        setLeavehistory((prevHistory) =>
-          prevHistory.map((item) =>
-            item._id === updatedLeaveFromServer._id
-              ? updatedLeaveFromServer
-              : item
-          )
-        );
-
-        console.log(
-          "Leave successfully updated in the database:",
-          updatedLeaveFromServer
-        );
-      } else {
-        console.error("Failed to update leave in the database");
-      }
-    } catch (error) {
-      console.error("Error updating leave:", error);
-    }
-  };
-
-  const handleApprove = async () => {
-    if (selectedLeave) {
-      const { selectedIndex, ...leave } = selectedLeave;
-      const updatedLeave = {
-        ...leave,
-        availableLeaves: leave.availableLeaves - 1,
-        usedLeaves: leave.usedLeaves + 1,
-        status: leave.status.map((stat, index) =>
-          index === selectedIndex && stat === "pending" ? "Approved" : stat
-        ),
-      };
-
-      try {
-        const response = await fetch(
-          `http://localhost:5001/leaverequests/${leave._id}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(updatedLeave),
-          }
-        );
-
-        if (response.ok) {
-          const updatedLeaveFromServer = await response.json();
-          setLeavehistory((prevHistory) =>
-            prevHistory.map((item) =>
-              item._id === updatedLeaveFromServer._id
-                ? updatedLeaveFromServer
-                : item
-            )
-          );
-          setSelectedLeave(null);
-          setModalOpen(false);
-          console.log(
-            "Approved and updated in the database:",
-            updatedLeaveFromServer
-          );
-        } else {
-          console.error("Failed to update leave in the database");
-        }
-      } catch (error) {
-        console.error("Error updating leave in the database:", error);
-      }
-    }
-  };
-
-  useEffect(() => {
-    const storedUserData = localStorage.getItem("userData");
-    console.log(storedUserData);
-    if (storedUserData) {
-      try {
-        const parsedUserData = JSON.parse(storedUserData);
-        if (parsedUserData) {
-          setUserData(parsedUserData);
-          setUsername(parsedUserData.empname || "");
-          setEmpid(parsedUserData.empid || "");
-
-          setEmail(parsedUserData.email || "");
-          setProject(parsedUserData.project || "");
-        }
-      } catch (error) {
-        console.error("Error parsing userData from localStorage:", error);
-      }
-    }
-  }, []);
-
   useEffect(() => {
     const fetchLeavePolicies = async () => {
       try {
         // Fetch leave policies (default leave types)
-        const policyResponse = await axios.get(
-          "http://localhost:5001/api/leave-policies"
-        );
+        const policyResponse = await axios.get("http://localhost:5001/api/leave-policies");
+        setLeavePolicyRef(policyResponse.data.data)
         const leavePolicies = policyResponse.data.data;
 
         // Convert applied leave data (leaveData) into a map for easy lookup
@@ -307,17 +87,14 @@ function LeaveRequests() {
     };
 
     fetchLeavePolicies();
-  }, [leaveData]);
+  }, [leaveData]); 
   const [leavePolicies, setLeavePolicies] = useState([]);
-
   useEffect(() => {
     const fetchLeavePolicies = async () => {
       try {
-        const response = await axios.get(
-          "http://localhost:5001/api/leave-policies"
-        );
+        const response = await axios.get("http://localhost:5001/api/leave-policies");
         console.log("API Response:", response.data);
-
+  
         // Check if response.data is an array
         if (Array.isArray(response.data)) {
           const leaveTypes = response.data.map((policy) => policy.leaveType);
@@ -325,9 +102,7 @@ function LeaveRequests() {
         }
         // Check if data is nested
         else if (response.data.data && Array.isArray(response.data.data)) {
-          const leaveTypes = response.data.data.map(
-            (policy) => policy.leaveType
-          );
+          const leaveTypes = response.data.data.map((policy) => policy.leaveType);
           setLeavePolicies(leaveTypes);
         }
         // Handle single object response
@@ -342,37 +117,24 @@ function LeaveRequests() {
         setLeavePolicies([]);
       }
     };
-
+  
     fetchLeavePolicies();
   }, []);
   const sortHolidaysByMonthAndCustomDay = (holidayList) => {
-    const monthNames = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  
     return [...holidayList].sort((a, b) => {
       const [dayA, monthA] = a.date.split("-");
       const [dayB, monthB] = b.date.split("-");
-
+  
       const monthIndexA = monthNames.indexOf(monthA);
       const monthIndexB = monthNames.indexOf(monthB);
-
+  
       // First, compare months
       if (monthIndexA !== monthIndexB) {
         return monthIndexA - monthIndexB;
       }
-
+  
       // If months are the same, compare days (numerically)
       return parseInt(dayA, 10) - parseInt(dayB, 10);
     });
@@ -385,10 +147,10 @@ function LeaveRequests() {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
         const data = await response.json();
-
+  
         // Sort the fetched holidays before setting the state
         const sortedHolidays = sortHolidaysByMonthAndCustomDay(data);
-
+  
         // Set the sorted holidays
         setHolidays(sortedHolidays);
       } catch (error) {
@@ -396,18 +158,18 @@ function LeaveRequests() {
         setError("Failed to fetch holidays.");
       }
     };
-
+  
     fetchHolidays();
   }, []);
 
-  const fetchLeaveHistory = async () => {
+  const fetchLeavehistory = async () => {
     try {
       const response = await fetch(
         `http://localhost:5001/leave-history?email=${email}`
       );
       if (response.ok) {
         const data = await response.json();
-        setLeaveHistory(data);
+        setLeavehistory(data);
       } else {
         console.error("Failed to fetch leave history");
       }
@@ -418,18 +180,18 @@ function LeaveRequests() {
 
   useEffect(() => {
     if (selectedCategory === "history") {
-      fetchLeaveHistory();
+      fetchLeavehistory();
     }
   }, [selectedCategory]);
 
-  const fetchLeavehistory = async () => {
+  const fetchLeaveHistory = async () => {
     const excludeEmail = "manager@gmail.com"; // Replace with the email to exclude
     try {
       const response = await fetch("http://localhost:5001/leaverequests");
       if (response.ok) {
         const data = await response.json();
         const filteredData = data.filter((item) => item.email !== excludeEmail); // Filter out records with the given email
-        setLeavehistory(filteredData); // Update state with filtered data
+        setLeaveHistory(filteredData); // Update state with filtered data
       } else {
         console.error("Failed to fetch leave history");
       }
@@ -438,14 +200,24 @@ function LeaveRequests() {
     }
   };
 
-  useEffect(() => {
-    fetchLeavehistory();
-  }, []);
 
   useEffect(() => {
-    const storedUserData = JSON.parse(localStorage.getItem("userData"));
+    const storedUserData = localStorage.getItem("userData");
+    console.log(storedUserData);
     if (storedUserData) {
-      setEmail(storedUserData.email || "");
+      try {
+        const parsedUserData = JSON.parse(storedUserData);
+        if (parsedUserData) {
+          setUserData(parsedUserData);
+          setUsername(parsedUserData.empname || "");
+          setEmpid(parsedUserData.empid || "");
+
+          setEmail(parsedUserData.email || "");
+          setProject(parsedUserData.project || "");
+        }
+      } catch (error) {
+        console.error("Error parsing userData from localStorage:", error);
+      }
     }
   }, []);
 
@@ -458,7 +230,7 @@ function LeaveRequests() {
           );
           if (response.ok) {
             const data = await response.json();
-            // console.log(data);
+            console.log(data);
             setLeaveData(data);
           } else {
             console.error("Failed to fetch leave data");
@@ -470,6 +242,10 @@ function LeaveRequests() {
       fetchLeaveData();
     }
   }, [email]);
+
+  useEffect(() => {
+    fetchLeaveHistory();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -504,18 +280,19 @@ function LeaveRequests() {
   // };
   const handleLogout = () => {
     localStorage.clear();
-    navigate("/login"); // Redirects user after logout
+    navigate("/login");  // Redirects user after logout
   };
-
   const getTodayDate = () => {
     const today = new Date();
     return today.toISOString().split("T")[0];
   };
-
+ 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
+  
     const { leaveType, startDate, endDate, reason } = formData;
+  
+    // Validate required fields
     if (!leaveType || !startDate || !endDate) {
       setErrors({
         leaveType: leaveType ? "" : "Required field",
@@ -524,7 +301,8 @@ function LeaveRequests() {
       });
       return;
     }
-
+  
+    // Validate date logic
     if (new Date(endDate) < new Date(startDate)) {
       setErrors((prevErrors) => ({
         ...prevErrors,
@@ -532,55 +310,70 @@ function LeaveRequests() {
       }));
       return;
     }
+    // Prepare form data to send
     const applyDate = getTodayDate();
     const formDataToSend = new FormData();
     formDataToSend.append("email", email);
+    formDataToSend.append("empname", username);
+    formDataToSend.append("empid", empid);
     formDataToSend.append("leaveType", leaveType);
     formDataToSend.append("applyDate", applyDate);
     formDataToSend.append("startDate", startDate);
     formDataToSend.append("endDate", endDate);
-
+    
+    // Append file and reason if they exist
+   
     if (file) {
       formDataToSend.append("attachment", file);
+    } else {
+      // If no file, append an empty string (or null if you prefer)
+      formDataToSend.append("attachment", "");
     }
+    
     if (reason) {
       formDataToSend.append("reason", reason);
-    } else {
-      formDataToSend.append("reason", "N/A");
+    }else{
+      formDataToSend.append("reason", null);
+
     }
-
     try {
-      const response = await fetch(
-        `http://localhost:5001/apply-leave?email=${email}`,
-        {
-          method: "POST",
-          body: formDataToSend,
-        }
-      );
-
+      const response = await fetch(`http://localhost:5001/apply-leave?email=${email}`, {
+        method: "POST",
+        body: formDataToSend,
+      });
+  
       if (!response.ok) {
-        throw new Error("Failed to submit form. Please try again later.");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to submit form. Please try again later.");
       }
-
+  
       const result = await response.json();
       alert(result.message);
+      // Optionally reset form data or perform any other necessary actions after submission
     } catch (error) {
       console.error("Error submitting form:", error);
-      alert("An error occurred while submitting the form.");
+      alert(error.message); // Display the error message to the user
     }
   };
-
+  
   const handleReject = async () => {
     if (selectedLeave) {
       const { selectedIndex, ...leave } = selectedLeave;
-
+  
+      // Check if the leave was approved
+      const wasApproved = leave.status[selectedIndex] === "Approved";
+  
       const updatedLeave = {
         ...leave,
         status: leave.status.map((stat, index) =>
-          index === selectedIndex && stat === "pending" ? "Rejected" : stat
+          index === selectedIndex && (stat === "pending" || stat === "Approved")
+            ? "Rejected"
+            : stat
         ),
+        // Increase availableLeaves if the leave was previously approved
+        availableLeaves: wasApproved ? leave.availableLeaves + 1 : leave.availableLeaves,
       };
-
+  
       try {
         const response = await fetch(
           `http://localhost:5001/leaverequests/${leave._id}`,
@@ -592,10 +385,10 @@ function LeaveRequests() {
             body: JSON.stringify(updatedLeave),
           }
         );
-
+  
         if (response.ok) {
           const updatedLeaveFromServer = await response.json();
-          setLeavehistory((prevHistory) =>
+          setLeaveHistory((prevHistory) =>
             prevHistory.map((item) =>
               item._id === updatedLeaveFromServer._id
                 ? updatedLeaveFromServer
@@ -604,7 +397,7 @@ function LeaveRequests() {
           );
           setSelectedLeave(null); // Close the selected leave details
           setModalOpen(false); // Close the modal
-
+  
           console.log(
             "Rejected and updated in the database:",
             updatedLeaveFromServer
@@ -617,16 +410,90 @@ function LeaveRequests() {
       }
     }
   };
+  const handleApprove = async () => {
+    if (selectedLeave) {
+      const { selectedIndex, ...leave } = selectedLeave;
+  
+      // Get the current status (normalize to lowercase for comparison)
+      const currentStatus = leave.status[selectedIndex].toLowerCase();
+  
+      // Only allow approval if the current status is pending or rejected.
+      if (currentStatus !== "pending" && currentStatus !== "rejected") {
+        // Optionally, you can show a message that it's already approved.
+        console.log("This leave is already approved.");
+        return;
+      }
+  
+      const updatedLeave = {
+        ...leave,
+        // Deduct one leave regardless, because now we're approving
+        availableLeaves: leave.availableLeaves - 1,
+        usedLeaves: leave.usedLeaves + 1,
+        status: leave.status.map((stat, index) =>
+          index === selectedIndex &&
+          (stat.toLowerCase() === "pending" || stat.toLowerCase() === "rejected")
+            ? "Approved"
+            : stat
+        ),
+      };
+  
+      try {
+        const response = await fetch(
+          `http://localhost:5001/leaverequests/${leave._id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(updatedLeave),
+          }
+        );
+  
+        if (response.ok) {
+          const updatedLeaveFromServer = await response.json();
+          setLeaveHistory((prevHistory) =>
+            prevHistory.map((item) =>
+              item._id === updatedLeaveFromServer._id
+                ? updatedLeaveFromServer
+                : item
+            )
+          );
+          setSelectedLeave(null);
+          setModalOpen(false);
+          console.log(
+            "Approved and updated in the database:",
+            updatedLeaveFromServer
+          );
+        } else {
+          console.error("Failed to update leave in the database");
+        }
+      } catch (error) {
+        console.error("Error updating leave in the database:", error);
+      }
+    }
+  };
+  
+  
 
   const handleRowClick = (leave, index) => {
     setSelectedLeave({ ...leave, selectedIndex: index });
-    setModalOpen(true);
+    setModalOpen(true); // Open the modal
   };
-
   const handleCloseModal = () => {
     setModalOpen(false); // Close the modal
     setSelectedLeave(null); // Clear selected leave
   };
+  const handleFilterChange = (e) => {
+    setSelectedFilter(e.target.value);
+  };
+  
+  // Filter the leave history based on the selected filter
+  const filteredLeaveHistory = leaveHistory.filter((leave) =>
+    selectedFilter === "All"
+      ? true
+      : leave.status.some((status) => status.toLowerCase() === selectedFilter.toLowerCase())
+  );
+  const getDownloadLink = (attachments) => `http://localhost:5001/${attachments}`;
 
   const renderContent = () => {
     switch (selectedCategory) {
@@ -704,15 +571,17 @@ function LeaveRequests() {
             holidays={holidays}
             getTodayDate={getTodayDate}
             leavePolicies={leavePolicies} // Pass leave policies here
+            leavepolicyRef={leavepolicyRef}
           />
         );
 
-      case "profile":
+        case "profile":
         return (
           <ProfilePage
             Profile={Profile}
             username={username}
             empid={empid}
+            email={email}
             project={project}
             leaveData={leaveData}
           />
@@ -721,163 +590,252 @@ function LeaveRequests() {
       case "leaverequests":
         return (
           <div className="history-container">
-            <h2 className="content-heading">Leave Requests</h2>
-            <table id="tb">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Leave Type</th>
-                  <th>Duration</th>
-                  <th>From</th>
-                  <th>To</th>
-                  <th>Available</th>
-                  <th>Reason</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leavehistory.map((leave) =>
-                  leave.startDate.map((startDate, index) => (
-                    <tr key={`${leave._id}-${index}`}>
-                      <td>{leave.empid}</td>
-                      <td>{leave.empname}</td>
-                      <td>{leave.leaveType}</td>
-                      <td>{leave.duration ? leave.duration[index] : "N/A"}</td>
-                      <td>{new Date(startDate).toLocaleDateString()}</td>
-                      <td>
-                        {new Date(leave.endDate[index]).toLocaleDateString()}
-                      </td>
-                      <td>{leave.availableLeaves}</td>
-                      <td>{leave.reason[index]}</td>
-                      {/* <td onClick={() => handleRowClick(leave, index)}>
-                      <button
-                        style={{ color: "white", backgroundColor: "green" }}
-                      >
-                        {leave.status[index]}
-                      </button>
-                    </td> */}
-                      <td>
-                        <Select
-                          value={leave.status?.[index] ?? ""}
-                          onChange={(e) =>
-                            handleStatusChange(leave, index, e.target.value)
-                          }
-                          variant="outlined"
-                          size="small"
-                          sx={{
-                            backgroundColor:
-                              leave.status?.[index] === "approved"
-                                ? "lightgreen"
-                                : leave.status?.[index] === "rejected"
-                                ? "lightcoral"
-                                : "lightyellow",
-                            fontSize: "14px",
-                            width: "120px",
-                            textAlign: "center",
-                          }}
-                        >
-                          {statusOptions.map((option) => (
-                            <MenuItem key={option.value} value={option.value}>
-                              {option.icon} {option.label}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+          <h2>Leave Requests</h2>
+    
+          <div className="filter-container">
+ 
+      <FormGroup row sx={{ justifyContent: 'flex-end' }}>
+        <FormControlLabel
+          control={
+            <Checkbox
+              value="All"
+              checked={selectedFilter === "All"}
+              onChange={handleFilterChange}
+            />
+          }
+          label="All"
+        />
+        <FormControlLabel
+          control={
+            <Checkbox
+              value="Pending"
+              checked={selectedFilter === "Pending"}
+              onChange={handleFilterChange}
+            />
+          }
+          label="Pending"
+        />
+   <FormControlLabel
+          control={
+            <Checkbox
+              value="Approved"
+              checked={selectedFilter === "Approved"}
+              onChange={handleFilterChange}
+              sx={{
+                '&.Mui-checked': {
+                  color: selectedFilter === 'Approved' ? 'green' : 'default', // Changes checkbox color to green when checked
+                },
+              }}
+            />
+          }
+          label="Approved"
+        />
+        <FormControlLabel
+          control={
+            <Checkbox
+              value="Rejected"
+              checked={selectedFilter === "Rejected"}
+              onChange={handleFilterChange}
+              sx={{
+                '&.Mui-checked': {
+                  color: selectedFilter === 'Rejected' ? 'red' : 'default', // Changes checkbox color to green when checked
+                },
+              }}
+            />
+          }
+          label="Rejected"
+        />
+      </FormGroup>
+    </div>
 
-            <Modal open={modalOpen} onClose={handleCloseModal}>
-              <Box
-                sx={{
-                  position: "absolute",
-                  top: "50%",
-                  left: "50%",
-                  transform: "translate(-50%, -50%)",
-                  width: 400,
-                  bgcolor: "var(--dark-blue)",
-                  boxShadow: 24,
-                  p: 4,
-                  borderRadius: "8px",
-                }}
-              >
-                {selectedLeave && (
-                  <>
-                    <h3>Leave Details</h3>
-                    <p>Employee Email: {selectedLeave.email}</p>
-                    <p>Leave Type: {selectedLeave.leaveType}</p>
-                    <p>
-                      From:{" "}
-                      {new Date(
-                        selectedLeave.startDate[selectedLeave.selectedIndex]
-                      ).toLocaleDateString()}
-                    </p>
-                    <p>
-                      To:{" "}
-                      {new Date(
-                        selectedLeave.endDate[selectedLeave.selectedIndex]
-                      ).toLocaleDateString()}
-                    </p>
-                    <p>
-                      Reason:{" "}
-                      {selectedLeave.reason[selectedLeave.selectedIndex]}
-                    </p>
-                    <p>
-                      Status:{" "}
-                      {selectedLeave.status[selectedLeave.selectedIndex]}
-                    </p>
-                    <p>Total Leaves: {selectedLeave.totalLeaves}</p>
-                    <p>Available Leaves: {selectedLeave.availableLeaves}</p>
-                    <p>Used Leaves: {selectedLeave.usedLeaves}</p>
+    
+          <table id="tb">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Leave Type</th>
+                <th>Duration</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Available</th>
+              <th>Document</th>
+              <th>Reason</th>
 
-                    {selectedLeave.attachments &&
-                      selectedLeave.attachments[
-                        selectedLeave.selectedIndex
-                      ] && (
-                        <div className="pdf-container">
-                          <a
-                            href={`http://localhost:5001/${
-                              selectedLeave.attachments[
-                                selectedLeave.selectedIndex
-                              ]
-                            }`}
-                            download
-                          >
-                            View Document
-                          </a>
-                        </div>
-                      )}
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+  {filteredLeaveHistory.map((leave) =>
+    leave.startDate.map((startDate, index) => {
+      // Only render rows where the specific status matches the selected filter
+      if (
+        selectedFilter === "All" ||
+        leave.status[index].toLowerCase() === selectedFilter.toLowerCase()
+      ) {
+        return (
+          <tr key={`${leave._id}-${index}`}>
+<td>{leave.empid || "N/A"}</td> {/* Access empid */}
+<td>{leave.empname || "N/A"}</td> {/* Access empname */}
 
-                    <div className="action-buttons">
-                      {/* Disable Approve button if Available Leaves are 0 */}
-                      <button
-                        onClick={handleApprove}
-                        disabled={selectedLeave.availableLeaves === 0}
-                        style={{
-                          backgroundColor:
-                            selectedLeave.availableLeaves === 0
-                              ? "gray"
-                              : "#28a745",
-                        }}
-                      >
-                        Approve
-                      </button>
-                      <button onClick={handleReject}>Reject</button>
-                      <button onClick={handleCloseModal}>Close</button>
-                    </div>
-                  </>
-                )}
-              </Box>
-            </Modal>
-          </div>
+            <td>{leave.leaveType}</td>
+            <td>{leave.duration ? leave.duration[index] : "N/A"}</td>
+            <td>{new Date(startDate).toLocaleDateString()}</td>
+            <td>{new Date(leave.endDate[index]).toLocaleDateString()}</td>
+            <td>{leave.availableLeaves}</td>
+            <td>
+            {leave.attachments?.[index] ? (
+              <a href={getDownloadLink(leave.attachments[index])} download>
+                <AiFillFilePdf size={30} color="red" />
+              </a>
+            ) : (
+<AiOutlineExclamationCircle size={30} color="orange" style={{ cursor: 'default' }} />
+            )}
+          </td>
+            
+            <td>{leave.reason[index]}</td>
+            
+            <td>
+            {leave.status[index].toLowerCase() === "approved" && (
+    <button
+      onClick={() => handleRowClick(leave, index)}
+      style={{
+        color: "green",
+        display: "flex",
+        alignItems: "center",
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+     
+      }}
+    >
+<MdCheckCircle size={24} style={{ marginRight: "5px" }} />
+</button>
+  )}
+  {leave.status[index].toLowerCase() === "rejected" && (
+    <button
+      onClick={() => handleRowClick(leave, index)}
+      style={{
+        color: "red",
+        display: "flex",
+        alignItems: "center",
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+      }}
+    >
+      <MdCancel size={24} style={{ marginRight: "5px" }} /> 
+    </button>
+  )}
+                {leave.status[index].toLowerCase() !== "approved" &&
+    leave.status[index].toLowerCase() !== "rejected" && (
+      <button
+        onClick={() => handleRowClick(leave, index)}
+        style={{
+          display: "flex",
+          color:"blue",
+          alignItems: "center",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+        }}
+      >
+      <MdWatchLater size={24}/>
+        </button>
+    )}
+            </td>
+          </tr>
+        );
+      }
+      return null; // Skip rows that don't match the filter
+    })
+  )}
+</tbody>
+
+          </table>
+          <Modal open={modalOpen} onClose={handleCloseModal}>
+  <Box
+    sx={{
+      position: "absolute",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      width: 400,
+      bgcolor: "background.paper",
+      boxShadow: 24,
+      p: 4,
+      borderRadius: "10px",
+      textAlign: "center",
+    }}
+  >
+    {/* Close Icon */}
+    <IconButton
+      onClick={handleCloseModal}
+      sx={{
+        position: "absolute",
+        top: 10,
+        right: 10,
+        color: "gray",
+        "&:hover": { color: "black" },
+      }}
+    >
+      <AiOutlineClose size={24} />
+    </IconButton>
+    <h3 style={{ marginBottom: "20px" }}>Approve or Reject Request?</h3>
+
+    {/* Added code: Determine current status and toggle button enable/disable */}
+    {selectedLeave && (() => {
+      // Retrieve current status using the selected index
+      const currentStatus =
+        (selectedLeave.status &&
+          selectedLeave.status[selectedLeave.selectedIndex]) ||
+        "pending";
+
+      return (
+        <div className="action-buttons">
+          <button
+            onClick={handleApprove}
+            className="approve-btn"
+            disabled={currentStatus.toLowerCase() === "approved"}
+            style={{
+              opacity: currentStatus.toLowerCase() === "approved" ? 0.5 : 1,
+              cursor:
+                currentStatus.toLowerCase() === "approved"
+                  ? "not-allowed"
+                  : "pointer",
+            }}
+          >
+            ✅ Approve
+          </button>
+          <button
+            onClick={handleReject}
+            className="reject-btn"
+            disabled={currentStatus.toLowerCase() === "rejected"}
+            style={{
+              opacity: currentStatus.toLowerCase() === "rejected" ? 0.5 : 1,
+              cursor:
+                currentStatus.toLowerCase() === "rejected"
+                  ? "not-allowed"
+                  : "pointer",
+            }}
+          >
+            ❌ Reject
+          </button>
+        </div>
+      );
+    })()}
+  </Box>
+</Modal>
+
+        </div>
+        
         );
       case "reports":
         return <div className="profile-content">Reports Content</div>;
       case "history":
-        return <LeaveHistory leaveHistory={leaveHistory} />;
+        return (
+          <LeaveHistory leaveHistory={leavehistory}/>
+        );
       default:
         return null;
     }

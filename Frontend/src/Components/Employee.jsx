@@ -44,6 +44,7 @@ const App = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [profileImage, setProfileImage] = useState(Profile);
   const [file, setFile] = useState(null);
+  const [error, setError] = useState("")
   const [errors, setErrors] = useState({
     leaveType: "",
     from: "",
@@ -60,12 +61,14 @@ const App = () => {
     reason: "",
   });
   const [leavePolicies, setLeavePolicies] = useState([]);
+  const [leavepolicyRef,setLeavePolicyRef]=useState([]);
   useEffect(() => {
     const fetchLeavePolicies = async () => {
       try {
         const response = await axios.get("http://localhost:5001/api/leave-policies");
         console.log("API Response:", response.data);
-  
+        
+        setLeavePolicyRef(response.data.data)
         // Check if response.data is an array
         if (Array.isArray(response.data)) {
           const leaveTypes = response.data.map((policy) => policy.leaveType);
@@ -114,11 +117,11 @@ const App = () => {
       });
     }
   };
-
   const getTodayDate = () => {
     const today = new Date();
     return today.toISOString().split("T")[0];
   };
+
 
   // const handleFileChange = (event) => {
   //   const file = event.target.files[0];
@@ -142,11 +145,12 @@ const App = () => {
     localStorage.clear();
     navigate("/login");  // Redirects user after logout
   };
-
   const handleSubmit = async (event) => {
     event.preventDefault();
-
+  
     const { leaveType, startDate, endDate, reason } = formData;
+  
+    // Validate required fields
     if (!leaveType || !startDate || !endDate) {
       setErrors({
         leaveType: leaveType ? "" : "Required field",
@@ -155,7 +159,8 @@ const App = () => {
       });
       return;
     }
-
+  
+    // Validate date logic
     if (new Date(endDate) < new Date(startDate)) {
       setErrors((prevErrors) => ({
         ...prevErrors,
@@ -163,48 +168,52 @@ const App = () => {
       }));
       return;
     }
-    
+    // Prepare form data to send
     const applyDate = getTodayDate();
     const formDataToSend = new FormData();
     formDataToSend.append("email", email);
+    formDataToSend.append("empname", username);
+    formDataToSend.append("empid", empid);
     formDataToSend.append("leaveType", leaveType);
     formDataToSend.append("applyDate", applyDate);
     formDataToSend.append("startDate", startDate);
     formDataToSend.append("endDate", endDate);
-
+    
+    // Append file and reason if they exist
+   
     if (file) {
       formDataToSend.append("attachment", file);
-    }else {
-      // If no file, append null value
-      formDataToSend.append("attachment", null);
+    } else {
+      // If no file, append an empty string (or null if you prefer)
+      formDataToSend.append("attachment", "");
     }
+    
     if (reason) {
       formDataToSend.append("reason", reason);
     }else{
       formDataToSend.append("reason", null);
 
     }
-
     try {
-      const response = await fetch(
-        `http://localhost:5001/apply-leave?email=${email}`,
-        {
-          method: "POST",
-          body: formDataToSend,
-        }
-      );
-
+      const response = await fetch(`http://localhost:5001/apply-leave?email=${email}`, {
+        method: "POST",
+        body: formDataToSend,
+      });
+  
       if (!response.ok) {
-        throw new Error("Failed to submit form. Please try again later.");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to submit form. Please try again later.");
       }
-
+  
       const result = await response.json();
       alert(result.message);
+      // Optionally reset form data or perform any other necessary actions after submission
     } catch (error) {
       console.error("Error submitting form:", error);
-      alert("An error occurred while submitting the form.");
+      alert(error.message); // Display the error message to the user
     }
   };
+  
 
   useEffect(() => {
     const storedUserData = localStorage.getItem("userData");
@@ -225,7 +234,7 @@ const App = () => {
       }
     }
   }, []);
-  
+  console.log(username)
   const sortHolidaysByMonthAndCustomDay = (holidayList) => {
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   
@@ -314,47 +323,6 @@ const App = () => {
     }
   }, [selectedCategory]);
 
-  const handleUpdateProfile = async () => {
-    try {
-      const response = await fetch(`http://localhost:5001/update-profile`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          designation,
-          project,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        alert(data.message || "Profile updated successfully!");
-        setUserData((prevData) => ({
-          ...prevData,
-          email,
-          designation,
-          project,
-        }));
-        localStorage.setItem(
-          "userData",
-          JSON.stringify({
-            ...userData,
-            email,
-            designation,
-            project,
-          })
-        );
-      } else {
-        alert("Failed to update profile. Please try again.");
-      }
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      alert("An error occurred. Please try again.");
-    }
-  };
-
  
 
   const renderContent = () => {
@@ -371,6 +339,7 @@ const App = () => {
           holidays={holidays}
           getTodayDate={getTodayDate}
           leavePolicies={leavePolicies} 
+          leavepolicyRef={leavepolicyRef}
         />
 
         );
@@ -381,6 +350,7 @@ const App = () => {
             Profile={Profile}
             username={username}
             empid={empid}
+            email={email}
             project={project}
             leaveData={leaveData}
           />
