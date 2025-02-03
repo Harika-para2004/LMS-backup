@@ -143,7 +143,7 @@ const App = () => {
   // };
   const handleLogout = () => {
     localStorage.clear();
-    navigate("/login");  // Redirects user after logout
+    navigate("/");  // Redirects user after logout
   };
   const handleSubmit = async (event) => {
     event.preventDefault();

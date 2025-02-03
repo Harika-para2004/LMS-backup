@@ -1,8 +1,13 @@
 import React, { useState } from "react";
 import { AiFillFilePdf, AiOutlineExclamationCircle } from "react-icons/ai";
-import { MdCheckCircle, MdCancel,MdWatchLater } from "react-icons/md";
+import { MdCheckCircle, MdCancel, MdWatchLater } from "react-icons/md";
 import { FiSlash } from "react-icons/fi";
-import { FiChevronLeft, FiChevronRight, FiSkipBack, FiSkipForward } from "react-icons/fi";
+import {
+  FiChevronLeft,
+  FiChevronRight,
+  FiSkipBack,
+  FiSkipForward,
+} from "react-icons/fi";
 import { Pagination } from "@mui/material";
 
 const LeaveHistory = ({ leaveHistory }) => {
@@ -27,7 +32,7 @@ const LeaveHistory = ({ leaveHistory }) => {
   const getStatusIcon = (status) => {
     switch (status) {
       case "pending":
-        return <MdWatchLater  size={30} color="blue" />;
+        return <MdWatchLater size={30} color="blue" />;
       case "Approved":
         return <MdCheckCircle size={30} color="green" />;
       case "Rejected":
@@ -38,7 +43,7 @@ const LeaveHistory = ({ leaveHistory }) => {
   };
 
   const truncateReason = (reason) => {
-    if (!reason) return '';
+    if (!reason) return "";
     const words = reason.split(" ");
     if (words.length > 1) {
       return words.slice(0, 1).join(" ") + "...";
@@ -46,7 +51,8 @@ const LeaveHistory = ({ leaveHistory }) => {
     return reason;
   };
 
-  const getDownloadLink = (attachments) => `http://localhost:5001/${attachments}`;
+  const getDownloadLink = (attachments) =>
+    `http://localhost:5001/${attachments}`;
 
   const changePage = (page) => {
     setCurrentPage(page);
@@ -92,13 +98,16 @@ const LeaveHistory = ({ leaveHistory }) => {
                 <td>{leave.leaveType || "N/A"}</td>
                 <td>{leave.startDate || "N/A"}</td>
                 <td>{leave.endDate || "N/A"}</td>
-                <td>{leave.duration }</td>
-                <td>{leave.reason === "null" || !leave.reason ? (
-"N/A"                  ) : (
+                <td>{leave.duration}</td>
+                <td>
+                  {leave.reason === "null" || !leave.reason ? (
+                    "N/A"
+                  ) : (
                     <span className="reason-text" title={leave.reason}>
                       {truncateReason(leave.reason)}
                     </span>
-                  )}</td>
+                  )}
+                </td>
                 <td>
                   {leave.attachments ? (
                     <a href={getDownloadLink(leave.attachments)} download>
@@ -113,7 +122,10 @@ const LeaveHistory = ({ leaveHistory }) => {
             ))
           ) : (
             <tr>
-              <td colSpan="7" style={{ textAlign: "center", fontStyle: "italic" }}>
+              <td
+                colSpan="7"
+                style={{ textAlign: "center", fontStyle: "italic" }}
+              >
                 No leave history available.
               </td>
             </tr>
@@ -124,14 +136,14 @@ const LeaveHistory = ({ leaveHistory }) => {
       {/* Pagination Controls (Positioned at Bottom Right) */}
       <div className="pagination-numbered">
         <button
-        className="arrow"
+          className="arrow"
           onClick={() => changePage(1)}
           disabled={currentPage === 1}
         >
           <FiSkipBack size={20} />
         </button>
         <button
-        className="arrow"
+          className="arrow"
           onClick={() => changePage(currentPage - 1)}
           disabled={currentPage === 1}
         >
@@ -152,14 +164,14 @@ const LeaveHistory = ({ leaveHistory }) => {
         </div>
 
         <button
-        className="arrow"
+          className="arrow"
           onClick={() => changePage(currentPage + 1)}
           disabled={currentPage === totalPages}
         >
           <FiChevronRight size={20} />
         </button>
         <button
-        className="arrow"
+          className="arrow"
           onClick={() => changePage(totalPages)}
           disabled={currentPage === totalPages}
         >

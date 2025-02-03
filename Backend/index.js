@@ -4,12 +4,16 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const authRoutes = require("./routes/authRoutes");
 const leavepolicyRoutes = require("./routes/LeavePolicyRoutes");
-
 const Leave = require("./models/Leave");
 const User = require("./models/User");
 const bcrypt = require("bcrypt");
 const Holiday = require("./models/Holiday");
-const multer = require('multer');
+const multer = require("multer");
+const path = require("path");
+const excelJS = require("exceljs");
+const pdfkit = require("pdfkit");
+const fs = require("fs");
+const upload = multer({ dest: "uploads/" });
 
 dotenv.config();
 
@@ -27,10 +31,9 @@ mongoose
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/leave-policies",leavepolicyRoutes);
-const upload = multer({ dest: "uploads/" });
-const path = require("path");
+app.use("/api/leave-policies", leavepolicyRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
   const { email } = req.query;
   const { empname, empid, leaveType, startDate, endDate, reason } = req.body; // Removed applyDate as it should be derived from the current date
@@ -51,7 +54,7 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
       } else {
         leaveRecord.attachments.push(""); // Push an empty string when no file is provided
       }
-      
+
       if (reason) {
         leaveRecord.reason.push(reason); // Ensure reason is pushed
       }
@@ -67,19 +70,19 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
         endDate: [new Date(endDate)],
         reason: reason ? [reason] : [], // Add reason only if provided
         status: ["pending"],
-        attachments: [filePath ? filePath : ""] // Always create an attachments array with an entry (empty string if no file)
+        attachments: [filePath ? filePath : ""], // Always create an attachments array with an entry (empty string if no file)
       });
     }
 
     await leaveRecord.save();
-    res.status(200).json({ message: "Leave application submitted successfully" });
+    res
+      .status(200)
+      .json({ message: "Leave application submitted successfully" });
   } catch (error) {
     console.error("Error updating leave record:", error); // Log the error for debugging
     res.status(500).json({ error: "Error updating leave record" });
   }
 });
-
-
 
 app.get("/leave-history", async (req, res) => {
   const { email } = req.query;
@@ -99,8 +102,8 @@ app.get("/leave-history", async (req, res) => {
           endDate: new Date(leave.endDate[index]).toLocaleDateString(),
           reason: leave.reason[index],
           status: leave.status[index] || "Pending",
-          duration:leave.duration[index],
-          attachments:leave.attachments[index]
+          duration: leave.duration[index],
+          attachments: leave.attachments[index],
         }));
       })
       .flat();
@@ -145,7 +148,6 @@ app.get("/leaverequests", async (req, res) => {
   }
 });
 
-
 app.put("/leaverequests/:id", async (req, res) => {
   try {
     const leaveId = req.params.id;
@@ -166,13 +168,14 @@ app.put("/leaverequests/:id", async (req, res) => {
   }
 });
 
-
 app.put("/updatepassword", async (req, res) => {
   const { email, newPassword } = req.body;
 
   // Validate input
   if (!email || !newPassword) {
-    return res.status(400).json({ message: "Email and new password are required." });
+    return res
+      .status(400)
+      .json({ message: "Email and new password are required." });
   }
 
   try {
@@ -215,7 +218,6 @@ app.get("/employee-list", async (req, res) => {
   }
 });
 
-
 // Create a new holiday
 app.post("/holidays", async (req, res) => {
   const { date, name, type } = req.body;
@@ -225,17 +227,19 @@ app.post("/holidays", async (req, res) => {
   }
 
   const holidayDate = new Date(date);
-  const dayOfWeek = holidayDate.toLocaleString("en-us", { weekday: "long" }); 
+  const dayOfWeek = holidayDate.toLocaleString("en-us", { weekday: "long" });
 
   const newHoliday = new Holiday({ date, day: dayOfWeek, name, type });
-  console.log(newHoliday)
+  console.log(newHoliday);
 
   try {
     const savedHoliday = await newHoliday.save();
-    res.status(201).json(savedHoliday); 
+    res.status(201).json(savedHoliday);
   } catch (err) {
     console.error("Error saving holiday:", err);
-    res.status(500).json({ message: "Error creating holiday", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Error creating holiday", error: err.message });
   }
 });
 
@@ -269,7 +273,7 @@ app.put("/holidays/:id", async (req, res) => {
   }
 });
 app.put("/updateEmployeeList/:id", async (req, res) => {
-  const { empid, empname, email,project } = req.body;
+  const { empid, empname, email, project } = req.body;
 
   try {
     if (!empid || !empname || !email || !project) {
@@ -277,7 +281,7 @@ app.put("/updateEmployeeList/:id", async (req, res) => {
     }
     const updatedEmployee = await User.findByIdAndUpdate(
       req.params.id,
-      { empid,empname,email,project },
+      { empid, empname, email, project },
       { new: true }
     );
 
@@ -309,6 +313,7 @@ app.delete("/holidays/:id", async (req, res) => {
       .json({ message: "Error deleting holiday", error: err.message });
   }
 });
+
 app.delete("/employee-del/:id", async (req, res) => {
   try {
     // Check if the employee exists
@@ -323,11 +328,137 @@ app.delete("/employee-del/:id", async (req, res) => {
 
     res.json({ message: "Employee deleted successfully" });
   } catch (err) {
-    res.status(500).json({ message: "Error deleting employee", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Error deleting employee", error: err.message });
   }
 });
 
 // Start server
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
+});
+
+app.get("/reports", async (req, res) => {
+  try {
+    const { project, search } = req.query;
+    let query = {};
+
+    if (project) query.project = project;
+    if (search) {
+      query.$or = [
+        { empname: new RegExp(search, "i") },
+        { empid: new RegExp(search, "i") },
+      ];
+    }
+
+    // Fetch employees based on project & search
+    const employees = await User.find(query);
+
+    // Fetch leave data for each employee
+    const reports = await Promise.all(
+      employees.map(async (employee) => {
+        const leaves = await Leave.find({ email: employee.email });
+
+        return {
+          empid: employee.empid,
+          empname: employee.empname,
+          project: employee.project,
+          email: employee.email,
+          leaves: leaves.flatMap((leave) =>
+            leave.startDate.map((start, index) => ({
+              leaveType: leave.leaveType,
+              startDate: new Date(start).toLocaleDateString(),
+              endDate: leave.endDate[index]
+                ? new Date(leave.endDate[index]).toLocaleDateString()
+                : "N/A",
+              status: leave.status[index] || "Pending",
+              reason: leave.reason[index] || "No reason provided",
+              duration: leave.duration[index] || "N/A",
+              attachments: leave.attachments[index] || [],
+            }))
+          ),
+        };
+      })
+    );
+
+    console.log(reports);
+    res.status(200).json(reports);
+  } catch (error) {
+    console.error("Error fetching reports:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
+
+// Export Report to Excel
+app.get("/reports/export-excel", async (req, res) => {
+  try {
+    const { project } = req.query;
+    let query = {};
+    if (project) query.project = project;
+    const employees = await User.find(query);
+    const workbook = new excelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Reports");
+    worksheet.columns = [
+      { header: "Employee ID", key: "empid" },
+      { header: "Name", key: "empname" },
+      { header: "Project", key: "project" },
+      { header: "Leave Type", key: "leaveType" },
+      { header: "Start Date", key: "startDate" },
+      { header: "End Date", key: "endDate" },
+      { header: "Status", key: "status" },
+    ];
+    for (const emp of employees) {
+      const leaves = await Leave.find({ email: emp.email });
+      leaves.forEach((leave) => {
+        worksheet.addRow({
+          empid: emp.empid,
+          empname: emp.empname,
+          project: emp.project,
+          leaveType: leave.leaveType,
+          startDate: leave.startDate,
+          endDate: leave.endDate,
+          status: leave.status,
+        });
+      });
+    }
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=leave_reports.xlsx"
+    );
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error("Error exporting Excel:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
+// Export Report to PDF
+app.get("/reports/export-pdf", async (req, res) => {
+  try {
+    const { project } = req.query;
+    let query = {};
+    if (project) query.project = project;
+    const employees = await User.find(query);
+    const doc = new pdfkit();
+    const filePath = "reports.pdf";
+    doc.pipe(fs.createWriteStream(filePath));
+    doc.fontSize(12).text("Leave Reports", { align: "center" });
+    doc.moveDown();
+    employees.forEach((emp) => {
+      doc
+        .fontSize(10)
+        .text(
+          `ID: ${emp.empid}, Name: ${emp.empname}, Project: ${emp.project}`
+        );
+      doc.moveDown();
+    });
+    doc.end();
+    res.download(filePath, "leave_reports.pdf", () => fs.unlinkSync(filePath));
+  } catch (error) {
+    console.error("Error exporting PDF:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
 });
