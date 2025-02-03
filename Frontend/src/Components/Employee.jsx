@@ -28,6 +28,8 @@ import ProfilePage from "./ProfilePage";
 import LeaveHistory from "./LeaveHistory";
 import ApplyLeave from "./ApplyLeave";
 import Sidebar from "./Sidebar";
+import { formatDate } from "../utils/dateUtlis";
+
 
 const App = () => {
   const [selectedCategory, setSelectedCategory] = useState("apply-leave");
@@ -52,6 +54,7 @@ const App = () => {
     reason: "",
     mismatch: "",
   });
+
 
   const [formData, setFormData] = useState({
     leaveType: "",

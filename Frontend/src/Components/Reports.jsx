@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 // import "./Reports.css";
+import { formatDate } from "../utils/dateUtlis";
 
 const Reports = () => {
   const [reports, setReports] = useState([]);
@@ -102,7 +103,7 @@ const Reports = () => {
                       <td>{leave.leaveType.toLowerCase()
           .replace(/\b\w/g, (char) => char.toUpperCase())}</td>
                       <td>{leave.startDate}</td>
-                      <td>{leave.endDate}</td>
+                      <td>{formatDate(leave.endDate)}</td>
                       <td>{leave.status.toLowerCase()
           .replace(/\b\w/g, (char) => char.toUpperCase())}</td>
                     </tr>

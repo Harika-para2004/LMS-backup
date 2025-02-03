@@ -2,17 +2,17 @@
 /* Quadface Colors */
 
 :root {
-  --primary-blue: #00D7FF;  /* Bright Blue */
+  --primary-blue: #026677;  /* Bright Blue */
   --deep-blue: #313896;    /* Deep Blue */
   --purple: #9F32B2;       /* Purple */
-    --dark-blue: #21BB88;    
+  /* --dark-blue: rgba(46, 131, 146, 0.8);     */
+  --dark-blue: #408591;    
   --light-bg: #f8f9fa;     /* Neutral Light Background */
   --shadow-color: rgba(0, 0, 0, 0.15);
   /* --highlight-color: #9f32b2; */
   --secondary-blue: rgba(0, 215, 255, 0.8);
   --lighter-dark-blue: #4B849C;            
   --secondary-purple: rgba(159, 50, 178, 0.85); 
-
   --text-dark: #333333;
   --text-light: #ffffff;
   --card-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
@@ -68,6 +68,11 @@ body, html {
   font-family: 'Arial', sans-serif;
 }
 
+.emp-list-container{
+  max-width: 800px;
+  margin: auto;
+}
+
 .dashboard-container {
   display: flex;
   flex-direction: column;
@@ -89,7 +94,7 @@ body, html {
 
 .dashboard-container .main-content {
   flex: 1;
-  padding: 0 30px;
+  padding: 40px 30px;
   /* overflow: hidden; */
   background-color: #F7F8FA;
   overflow-y: auto;
@@ -106,7 +111,7 @@ body, html {
   justify-content: space-between;
   align-items: center;
   box-sizing: border-box;
-  padding-top: 90px;
+  padding-top: 45px;
   padding-bottom: 30px;
 }
 
@@ -421,6 +426,11 @@ body, html {
 }
 
 /* Holidays Table */
+
+ .holiday-cal-container{
+  max-width: 800px;
+  margin: auto;
+ }
  .hc-head{
   display: flex;
   justify-content: center;
@@ -684,15 +694,77 @@ body, html {
   margin-bottom: 5px;
   
 }
+/* 
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+}
 
-.employee-name {
-  max-width: 150px; /* Adjust width as needed */
+.emp-name {
+  max-width: 100px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   display: inline-block;
   vertical-align: middle;
   cursor: pointer;
+}
+
+.tooltip-text {
+  visibility: hidden;
+  background-color: black;
+  color: #fff;
+  text-align: center;
+  padding: 5px 10px;
+  border-radius: 5px;
+  position: absolute;
+  left: 50%;
+  bottom: 125%; 
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  z-index: 10;
+}
+
+.tooltip-container:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+} */
+
+.emp-name {
+  max-width: 100px; /* Adjust width as needed */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+  vertical-align: middle;
+  cursor: pointer;
+  position: relative;
+}
+
+.emp-name:hover::after {
+  content: attr(data-fullname); /* Show full name */
+  position: absolute;
+  background-color: black;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  white-space: nowrap;
+  left: 50%;
+  bottom: 120%;
+  transform: translateX(-50%);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease-in-out;
+  z-index: 10;
+}
+
+.emp-name:hover::after {
+  opacity: 1;
+  visibility: visible;
 }
 
 
@@ -859,7 +931,8 @@ body, html {
 
 .history-container table th, table td {
   padding: 4px;
-  text-align: center;
+  text-align: left;
+  font-size: 14px;
   border: 1px solid #ddd;
 }
 
@@ -1427,11 +1500,13 @@ body {
   font-family: Arial, sans-serif;
 } */
 
-/* Title */
-/* .reports-container {
+.reports-container {
   text-align: center;
   color: #333;
-} */
+  max-width: 800px;
+  margin: auto;
+  padding-top: 20px;
+}
 
 /* Filters */
 .reports-container .filters {
@@ -1439,6 +1514,7 @@ body {
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 20px;
+  
 }
 
 .reports-container .filters input,
@@ -1465,11 +1541,14 @@ body {
   background: var(--dark-blue);
   color: white;
   padding: 10px;
+  font-size: 16px;
 }
 
 .reports-container td {
   padding: 10px;
   border-bottom: 1px solid #ddd;
+  font-size: 14px;
+
 }
 
 .reports-container tr:hover {

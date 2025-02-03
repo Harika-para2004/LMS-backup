@@ -186,7 +186,10 @@ const Sidebar = ({
                 <img src={profileImage} alt="Profile" />
               </div>
               <div className="profile-details">
-                <p className="emp-name">{username}</p>
+                <div className="tooltip-container">
+                <p className="emp-name" data-fullname={username}>{username}</p>
+                {/* <span className="tooltip-text">{username}</span> */}
+                </div>
                 <p className="emp-id">Emp ID: {empid}</p>
               </div>
             </div>

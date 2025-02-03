@@ -9,6 +9,7 @@ import {
   FiSkipForward,
 } from "react-icons/fi";
 import { Pagination } from "@mui/material";
+import { formatDate } from "../utils/dateUtlis";
 
 const LeaveHistory = ({ leaveHistory }) => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -96,8 +97,8 @@ const LeaveHistory = ({ leaveHistory }) => {
             currentLeaves.map((leave, index) => (
               <tr key={index}>
                 <td>{leave.leaveType || "N/A"}</td>
-                <td>{leave.startDate || "N/A"}</td>
-                <td>{leave.endDate || "N/A"}</td>
+                <td>{formatDate(leave.startDate) || "N/A"}</td>
+                <td>{formatDate(leave.endDate) || "N/A"}</td>
                 <td>{leave.duration}</td>
                 <td>
                   {leave.reason === "null" || !leave.reason ? (

@@ -368,7 +368,11 @@ app.get("/reports", async (req, res) => {
           leaves: leaves.flatMap((leave) =>
             leave.startDate.map((start, index) => ({
               leaveType: leave.leaveType,
-              startDate: new Date(start).toLocaleDateString(),
+              startDate: new Date(start).toLocaleDateString("en-GB", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              }),
               endDate: leave.endDate[index]
                 ? new Date(leave.endDate[index]).toLocaleDateString()
                 : "N/A",
@@ -389,7 +393,6 @@ app.get("/reports", async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 });
-
 
 // Export Report to Excel
 app.get("/reports/export-excel", async (req, res) => {

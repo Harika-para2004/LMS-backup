@@ -18,6 +18,8 @@ import {
   AiOutlineExclamationCircle,
 } from "react-icons/ai";
 import Reports from "./Reports";
+import { formatDate } from "../utils/dateUtlis";
+
 
 function LeaveRequests() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -618,7 +620,7 @@ function LeaveRequests() {
       case "leaverequests":
         return (
           <div className="history-container">
-            <h2>Leave Requests</h2>
+            <h2 className="content-heading" >Leave Requests</h2>
 
             <div className="filter-container">
               <FormGroup row sx={{ justifyContent: "flex-end" }}>
@@ -713,6 +715,7 @@ function LeaveRequests() {
                             {leave.duration ? leave.duration[index] : "N/A"}
                           </td>
                           <td>{new Date(startDate).toLocaleDateString()}</td>
+                          {/* <td>{formatDate(startDate)}</td> */}
                           <td>
                             {new Date(
                               leave.endDate[index]
@@ -735,7 +738,7 @@ function LeaveRequests() {
                               />
                             )}
                           </td>
-                          <td>{leave.reason ? leave.reason[index] : "N/A"}</td>
+                          <td>{ leave.reason[index] === "null" ? "N/A" : leave.reason[index]}</td>
                           <td>
                             {leave.status[index].toLowerCase() ===
                               "approved" && (

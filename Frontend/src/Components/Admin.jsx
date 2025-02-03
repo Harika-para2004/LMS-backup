@@ -10,10 +10,14 @@ import {
   faClipboardList,
 } from "@fortawesome/free-solid-svg-icons";
 import { BASE_URL } from "../Config";
-import { MdCheckCircle, MdCancel,MdWatchLater  } from "react-icons/md";
+import { MdCheckCircle, MdCancel, MdWatchLater } from "react-icons/md";
 import AddIcon from "@mui/icons-material/Add";
 import { FaEdit, FaTrash } from "react-icons/fa";
-import { AiFillFilePdf,AiOutlineClose, AiOutlineExclamationCircle } from "react-icons/ai";
+import {
+  AiFillFilePdf,
+  AiOutlineClose,
+  AiOutlineExclamationCircle,
+} from "react-icons/ai";
 
 import {
   Box,
@@ -36,6 +40,7 @@ import {
 } from "@mui/material";
 import LeavePolicyPage from "./LeavePolicyPage";
 import Sidebar from "./Sidebar";
+import Reports from "./Reports";
 
 function AdminDashboard() {
   const [selectedCategory, setSelectedCategory] = useState("holiday-calendar");
@@ -284,7 +289,6 @@ function AdminDashboard() {
     setShowModal(false);
   };
 
-
   const fetchLeaveHistory = async () => {
     const excludeEmail = "admin@gmail.com"; // Replace with the email to exclude
     try {
@@ -300,8 +304,6 @@ function AdminDashboard() {
       console.error("Error fetching leave history:", error);
     }
   };
-
-
 
   useEffect(() => {
     fetchLeaveHistory();
@@ -366,103 +368,124 @@ function AdminDashboard() {
     fetchEmployees();
   }, []);
 
-const handleReject = async () => {
-  if (selectedLeave) {
-    const { selectedIndex, ...leave } = selectedLeave;
+  const handleReject = async () => {
+    if (selectedLeave) {
+      const { selectedIndex, ...leave } = selectedLeave;
 
-    const wasApproved = leave.status[selectedIndex] === "Approved";
+      const wasApproved = leave.status[selectedIndex] === "Approved";
 
-    const updatedLeave = {
-      ...leave,
-      status: leave.status.map((stat, index) =>
-        index === selectedIndex && (stat === "pending" || stat === "Approved")
-          ? "Rejected"
-          : stat
-      ),
-      availableLeaves: wasApproved ? leave.availableLeaves + 1 : leave.availableLeaves,
-      usedLeaves: wasApproved ? leave.usedLeaves - 1 : leave.usedLeaves,
-    };
+      const updatedLeave = {
+        ...leave,
+        status: leave.status.map((stat, index) =>
+          index === selectedIndex && (stat === "pending" || stat === "Approved")
+            ? "Rejected"
+            : stat
+        ),
+        availableLeaves: wasApproved
+          ? leave.availableLeaves + 1
+          : leave.availableLeaves,
+        usedLeaves: wasApproved ? leave.usedLeaves - 1 : leave.usedLeaves,
+      };
 
-    try {
-      const response = await fetch(`http://localhost:5001/leaverequests/${leave._id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedLeave),
-      });
-
-      if (response.ok) {
-        const updatedLeaveFromServer = await response.json();
-        setLeaveHistory((prevHistory) =>
-          prevHistory.map((item) =>
-            item._id === updatedLeaveFromServer._id ? updatedLeaveFromServer : item
-          )
+      try {
+        const response = await fetch(
+          `http://localhost:5001/leaverequests/${leave._id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(updatedLeave),
+          }
         );
-        setSelectedLeave(null);
-        setModalOpen(false);
-        console.log("Rejected and updated in the database:", updatedLeaveFromServer);
-      } else {
-        console.error("Failed to update leave status in the database");
+
+        if (response.ok) {
+          const updatedLeaveFromServer = await response.json();
+          setLeaveHistory((prevHistory) =>
+            prevHistory.map((item) =>
+              item._id === updatedLeaveFromServer._id
+                ? updatedLeaveFromServer
+                : item
+            )
+          );
+          setSelectedLeave(null);
+          setModalOpen(false);
+          console.log(
+            "Rejected and updated in the database:",
+            updatedLeaveFromServer
+          );
+        } else {
+          console.error("Failed to update leave status in the database");
+        }
+      } catch (error) {
+        console.error("Error updating leave status in the database:", error);
       }
-    } catch (error) {
-      console.error("Error updating leave status in the database:", error);
     }
-  }
-};
+  };
 
-const handleApprove = async () => {
-  if (selectedLeave) {
-    const { selectedIndex, ...leave } = selectedLeave;
+  const handleApprove = async () => {
+    if (selectedLeave) {
+      const { selectedIndex, ...leave } = selectedLeave;
 
-    const currentStatus = leave.status[selectedIndex].toLowerCase();
+      const currentStatus = leave.status[selectedIndex].toLowerCase();
 
-    if (currentStatus !== "pending" && currentStatus !== "rejected") {
-      console.log("This leave is already approved.");
-      return;
-    }
+      if (currentStatus !== "pending" && currentStatus !== "rejected") {
+        console.log("This leave is already approved.");
+        return;
+      }
 
-    const updatedLeave = {
-      ...leave,
-      availableLeaves: leave.availableLeaves > 0 ? leave.availableLeaves - 1 : leave.availableLeaves,
-      usedLeaves: leave.usedLeaves + 1,
-      status: leave.status.map((stat, index) =>
-        index === selectedIndex && (stat.toLowerCase() === "pending" || stat.toLowerCase() === "rejected")
-          ? "Approved"
-          : stat
-      ),
-    };
+      const updatedLeave = {
+        ...leave,
+        availableLeaves:
+          leave.availableLeaves > 0
+            ? leave.availableLeaves - 1
+            : leave.availableLeaves,
+        usedLeaves: leave.usedLeaves + 1,
+        status: leave.status.map((stat, index) =>
+          index === selectedIndex &&
+          (stat.toLowerCase() === "pending" ||
+            stat.toLowerCase() === "rejected")
+            ? "Approved"
+            : stat
+        ),
+      };
 
-    try {
-      const response = await fetch(`http://localhost:5001/leaverequests/${leave._id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedLeave),
-      });
-
-      if (response.ok) {
-        const updatedLeaveFromServer = await response.json();
-        setLeaveHistory((prevHistory) =>
-          prevHistory.map((item) =>
-            item._id === updatedLeaveFromServer._id ? updatedLeaveFromServer : item
-          )
+      try {
+        const response = await fetch(
+          `http://localhost:5001/leaverequests/${leave._id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(updatedLeave),
+          }
         );
-        setSelectedLeave(null);
-        setModalOpen(false);
-        console.log("Approved and updated in the database:", updatedLeaveFromServer);
-      } else {
-        console.error("Failed to update leave in the database");
-      }
-    } catch (error) {
-      console.error("Error updating leave in the database:", error);
-    }
-  }
-};
 
-  
-  
+        if (response.ok) {
+          const updatedLeaveFromServer = await response.json();
+          setLeaveHistory((prevHistory) =>
+            prevHistory.map((item) =>
+              item._id === updatedLeaveFromServer._id
+                ? updatedLeaveFromServer
+                : item
+            )
+          );
+          setSelectedLeave(null);
+          setModalOpen(false);
+          console.log(
+            "Approved and updated in the database:",
+            updatedLeaveFromServer
+          );
+        } else {
+          console.error("Failed to update leave in the database");
+        }
+      } catch (error) {
+        console.error("Error updating leave in the database:", error);
+      }
+    }
+  };
+
   const handleEdit = (index) => {
     setEditingRow(index);
     setFormData(holidays[index]);
@@ -641,7 +664,6 @@ const handleApprove = async () => {
     }
   };
 
-
   const handleRowClick = (leave, index) => {
     setSelectedLeave({ ...leave, selectedIndex: index });
     setModalOpen(true); // Open the modal
@@ -653,20 +675,23 @@ const handleApprove = async () => {
   const handleFilterChange = (e) => {
     setSelectedFilter(e.target.value);
   };
-  
+
   // Filter the leave history based on the selected filter
   const filteredLeaveHistory = leaveHistory.filter((leave) =>
     selectedFilter === "All"
       ? true
-      : leave.status.some((status) => status.toLowerCase() === selectedFilter.toLowerCase())
+      : leave.status.some(
+          (status) => status.toLowerCase() === selectedFilter.toLowerCase()
+        )
   );
-  const getDownloadLink = (attachments) => `http://localhost:5001/${attachments}`;
+  const getDownloadLink = (attachments) =>
+    `http://localhost:5001/${attachments}`;
 
   const renderContent = () => {
     switch (selectedCategory) {
       case "holiday-calendar":
         return (
-          <div>
+          <div className="holiday-cal-container">
             {/* <div className="hc-head">
               <Button
                 variant="contained"
@@ -742,37 +767,37 @@ const handleApprove = async () => {
                     helperText={errors.holidayName}
                     fullWidth
                   />
-                 <FormControl component="fieldset">
-  <FormLabel component="legend">Holiday Type</FormLabel>
-  <RadioGroup
-    name="holidayType"
-    value={formData.holidayType}
-    onChange={handleInputChange}
-    row
-  >
-    <FormControlLabel
-      value="Mandatory"
-      control={<Radio />}
-      label="Mandatory"
-    />
-    <FormControlLabel
-      value="Optional"
-      control={<Radio />}
-      label="Optional"
-    />
-  </RadioGroup>
-  {errors.holidayType && (
-    <p
-      style={{
-        color: "red",
-        fontSize: "0.8rem",
-        marginTop: "0.25rem",
-      }}
-    >
-      {errors.holidayType}
-    </p>
-  )}
-</FormControl>
+                  <FormControl component="fieldset">
+                    <FormLabel component="legend">Holiday Type</FormLabel>
+                    <RadioGroup
+                      name="holidayType"
+                      value={formData.holidayType}
+                      onChange={handleInputChange}
+                      row
+                    >
+                      <FormControlLabel
+                        value="Mandatory"
+                        control={<Radio />}
+                        label="Mandatory"
+                      />
+                      <FormControlLabel
+                        value="Optional"
+                        control={<Radio />}
+                        label="Optional"
+                      />
+                    </RadioGroup>
+                    {errors.holidayType && (
+                      <p
+                        style={{
+                          color: "red",
+                          fontSize: "0.8rem",
+                          marginTop: "0.25rem",
+                        }}
+                      >
+                        {errors.holidayType}
+                      </p>
+                    )}
+                  </FormControl>
                   <Box display="flex" justifyContent="flex-end">
                     <Button onClick={() => setShowModal(false)} sx={{ mr: 2 }}>
                       Cancel
@@ -820,79 +845,84 @@ const handleApprove = async () => {
                 </tr>
               </thead>
               <tbody>
-                {holidays ? holidays.map((holiday, index) => (
-                  <tr key={holiday._id}>
-                    {editingRow === index ? (
-                      <>
-                        <td>
-                          <input
-                            type="text"
-                            name="date"
-                            value={formData.date}
-                            onChange={handleInputChange}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            name="day"
-                            value={formData.day}
-                            onChange={handleInputChange}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            name="name"
-                            value={formData.name.toLowerCase()
-                              .replace(/\b\w/g, (char) => char.toUpperCase())}
-                            onChange={handleInputChange}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            name="type"
-                            value={formData.type}
-                            onChange={handleInputChange}
-                          />
-                        </td>
-                        <td>
-                          <button onClick={() => handleSave(index)}>
-                            Save
-                          </button>
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td>
-                          {holiday.date.split("-").slice(0, 2).join("-")}{" "}
-                          {/* Display without the year */}
-                        </td>
-                        <td>{holiday.day}</td>
-                        <td>{holiday.name}</td>
-                        <td>{holiday.type}</td>
-                        <td>
-                          <button onClick={() => handleEdit(index)}>
-                            <FaEdit size={20} color="blue" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteHoliday(holiday._id)}
-                            style={{
-                              border: "none",
-                              background: "none",
-                              cursor: "pointer",
-                            }}
-                          >
-                            <FaTrash size={20} color="red" />
-                          </button>
-                        </td>
-                      </>
-                    )}
+                {holidays ? (
+                  holidays.map((holiday, index) => (
+                    <tr key={holiday._id}>
+                      {editingRow === index ? (
+                        <>
+                          <td>
+                            <input
+                              type="text"
+                              name="date"
+                              value={formData.date}
+                              onChange={handleInputChange}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              name="day"
+                              value={formData.day}
+                              onChange={handleInputChange}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              name="name"
+                              value={formData.name
+                                .toLowerCase()
+                                .replace(/\b\w/g, (char) => char.toUpperCase())}
+                              onChange={handleInputChange}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              name="type"
+                              value={formData.type}
+                              onChange={handleInputChange}
+                            />
+                          </td>
+                          <td>
+                            <button onClick={() => handleSave(index)}>
+                              Save
+                            </button>
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td>
+                            {holiday.date.split("-").slice(0, 2).join("-")}{" "}
+                            {/* Display without the year */}
+                          </td>
+                          <td>{holiday.day}</td>
+                          <td>{holiday.name}</td>
+                          <td>{holiday.type}</td>
+                          <td>
+                            <button onClick={() => handleEdit(index)}>
+                              <FaEdit size={20} color="blue" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteHoliday(holiday._id)}
+                              style={{
+                                border: "none",
+                                background: "none",
+                                cursor: "pointer",
+                              }}
+                            >
+                              <FaTrash size={20} color="red" />
+                            </button>
+                          </td>
+                        </>
+                      )}
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td>No Holidays available</td>
                   </tr>
-                )) : 
-                <tr><td>No Holidays available</td></tr>
-                }
+                )}
               </tbody>
             </table>
           </div>
@@ -904,255 +934,281 @@ const handleApprove = async () => {
           </div>
         );
       case "reports":
-        return <div></div>;
+        return <Reports />;
 
       case "leaverequests":
         return (
           <div className="history-container">
-          <h2>Leave Requests</h2>
-    
-          <div className="filter-container">
- 
-      <FormGroup row sx={{ justifyContent: 'flex-end' }}>
-        <FormControlLabel
-          control={
-            <Checkbox
-              value="All"
-              checked={selectedFilter === "All"}
-              onChange={handleFilterChange}
-            />
-          }
-          label="All"
-        />
-        <FormControlLabel
-          control={
-            <Checkbox
-              value="Pending"
-              checked={selectedFilter === "Pending"}
-              onChange={handleFilterChange}
-            />
-          }
-          label="Pending"
-        />
-   <FormControlLabel
-          control={
-            <Checkbox
-              value="Approved"
-              checked={selectedFilter === "Approved"}
-              onChange={handleFilterChange}
-              sx={{
-                '&.Mui-checked': {
-                  color: selectedFilter === 'Approved' ? 'green' : 'default', // Changes checkbox color to green when checked
-                },
-              }}
-            />
-          }
-          label="Approved"
-        />
-        <FormControlLabel
-          control={
-            <Checkbox
-              value="Rejected"
-              checked={selectedFilter === "Rejected"}
-              onChange={handleFilterChange}
-              sx={{
-                '&.Mui-checked': {
-                  color: selectedFilter === 'Rejected' ? 'red' : 'default', // Changes checkbox color to green when checked
-                },
-              }}
-            />
-          }
-          label="Rejected"
-        />
-      </FormGroup>
-    </div>
+            <h2>Leave Requests</h2>
 
-    
-          <table id="tb">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Leave Type</th>
-                <th>Duration</th>
-                <th>From</th>
-                <th>To</th>
-                <th>Available</th>
-              <th>Document</th>
-              <th>Reason</th>
+            <div className="filter-container">
+              <FormGroup row sx={{ justifyContent: "flex-end" }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      value="All"
+                      checked={selectedFilter === "All"}
+                      onChange={handleFilterChange}
+                    />
+                  }
+                  label="All"
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      value="Pending"
+                      checked={selectedFilter === "Pending"}
+                      onChange={handleFilterChange}
+                    />
+                  }
+                  label="Pending"
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      value="Approved"
+                      checked={selectedFilter === "Approved"}
+                      onChange={handleFilterChange}
+                      sx={{
+                        "&.Mui-checked": {
+                          color:
+                            selectedFilter === "Approved" ? "green" : "default", // Changes checkbox color to green when checked
+                        },
+                      }}
+                    />
+                  }
+                  label="Approved"
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      value="Rejected"
+                      checked={selectedFilter === "Rejected"}
+                      onChange={handleFilterChange}
+                      sx={{
+                        "&.Mui-checked": {
+                          color:
+                            selectedFilter === "Rejected" ? "red" : "default", // Changes checkbox color to green when checked
+                        },
+                      }}
+                    />
+                  }
+                  label="Rejected"
+                />
+              </FormGroup>
+            </div>
 
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-  {filteredLeaveHistory.map((leave) =>
-    leave.startDate.map((startDate, index) => {
-      // Only render rows where the specific status matches the selected filter
-      if (
-        selectedFilter === "All" ||
-        leave.status[index].toLowerCase() === selectedFilter.toLowerCase()
-      ) {
-        return (
-          <tr key={`${leave._id}-${index}`}>
-<td>{leave.empid || "N/A"}</td> {/* Access empid */}
-<td>{leave.empname || "N/A"}</td> {/* Access empname */}
+            <table id="tb">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Leave Type</th>
+                  <th>Duration</th>
+                  <th>From</th>
+                  <th>To</th>
+                  <th>Available</th>
+                  <th>Document</th>
+                  <th>Reason</th>
 
-            <td>{leave.leaveType}</td>
-            <td>{leave.duration ? leave.duration[index] : "N/A"}</td>
-            <td>{new Date(startDate).toLocaleDateString()}</td>
-            <td>{new Date(leave.endDate[index]).toLocaleDateString()}</td>
-            <td>{leave.availableLeaves}</td>
-            <td>
-            {leave.attachments?.[index] ? (
-              <a href={getDownloadLink(leave.attachments[index])} download>
-                <AiFillFilePdf size={30} color="red" />
-              </a>
-            ) : (
-<AiOutlineExclamationCircle size={30} color="orange" style={{ cursor: 'default' }} />
-            )}
-          </td>
-            
-            <td>{leave.reason[index]}</td>
-            
-            <td>
-            {leave.status[index].toLowerCase() === "approved" && (
-    <button
-      onClick={() => handleRowClick(leave, index)}
-      style={{
-        color: "green",
-        display: "flex",
-        alignItems: "center",
-        background: "none",
-        border: "none",
-        cursor: "pointer",
-     
-      }}
-    >
-<MdCheckCircle size={24} style={{ marginRight: "5px" }} />
-</button>
-  )}
-  {leave.status[index].toLowerCase() === "rejected" && (
-    <button
-      onClick={() => handleRowClick(leave, index)}
-      style={{
-        color: "red",
-        display: "flex",
-        alignItems: "center",
-        background: "none",
-        border: "none",
-        cursor: "pointer",
-      }}
-    >
-      <MdCancel size={24} style={{ marginRight: "5px" }} /> 
-    </button>
-  )}
-                {leave.status[index].toLowerCase() !== "approved" &&
-    leave.status[index].toLowerCase() !== "rejected" && (
-      <button
-        onClick={() => handleRowClick(leave, index)}
-        style={{
-          display: "flex",
-          color:"blue",
-          alignItems: "center",
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-        }}
-      >
-      <MdWatchLater size={24}/>
-        </button>
-    )}
-            </td>
-          </tr>
-        );
-      }
-      return null; // Skip rows that don't match the filter
-    })
-  )}
-</tbody>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredLeaveHistory.map((leave) =>
+                  leave.startDate.map((startDate, index) => {
+                    // Only render rows where the specific status matches the selected filter
+                    if (
+                      selectedFilter === "All" ||
+                      leave.status[index].toLowerCase() ===
+                        selectedFilter.toLowerCase()
+                    ) {
+                      return (
+                        <tr key={`${leave._id}-${index}`}>
+                          <td>{leave.empid || "N/A"}</td> {/* Access empid */}
+                          <td>{leave.empname || "N/A"}</td>{" "}
+                          {/* Access empname */}
+                          <td>{leave.leaveType}</td>
+                          <td>
+                            {leave.duration ? leave.duration[index] : "N/A"}
+                          </td>
+                          <td>{new Date(startDate).toLocaleDateString()}</td>
+                          <td>
+                            {new Date(
+                              leave.endDate[index]
+                            ).toLocaleDateString()}
+                          </td>
+                          <td>{leave.availableLeaves}</td>
+                          <td>
+                            {leave.attachments?.[index] ? (
+                              <a
+                                href={getDownloadLink(leave.attachments[index])}
+                                download
+                              >
+                                <AiFillFilePdf size={30} color="red" />
+                              </a>
+                            ) : (
+                              <AiOutlineExclamationCircle
+                                size={30}
+                                color="orange"
+                                style={{ cursor: "default" }}
+                              />
+                            )}
+                          </td>
+                          <td>{leave.reason[index]}</td>
+                          <td>
+                            {leave.status[index].toLowerCase() ===
+                              "approved" && (
+                              <button
+                                onClick={() => handleRowClick(leave, index)}
+                                style={{
+                                  color: "green",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  background: "none",
+                                  border: "none",
+                                  cursor: "pointer",
+                                }}
+                              >
+                                <MdCheckCircle
+                                  size={24}
+                                  style={{ marginRight: "5px" }}
+                                />
+                              </button>
+                            )}
+                            {leave.status[index].toLowerCase() ===
+                              "rejected" && (
+                              <button
+                                onClick={() => handleRowClick(leave, index)}
+                                style={{
+                                  color: "red",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  background: "none",
+                                  border: "none",
+                                  cursor: "pointer",
+                                }}
+                              >
+                                <MdCancel
+                                  size={24}
+                                  style={{ marginRight: "5px" }}
+                                />
+                              </button>
+                            )}
+                            {leave.status[index].toLowerCase() !== "approved" &&
+                              leave.status[index].toLowerCase() !==
+                                "rejected" && (
+                                <button
+                                  onClick={() => handleRowClick(leave, index)}
+                                  style={{
+                                    display: "flex",
+                                    color: "blue",
+                                    alignItems: "center",
+                                    background: "none",
+                                    border: "none",
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  <MdWatchLater size={24} />
+                                </button>
+                              )}
+                          </td>
+                        </tr>
+                      );
+                    }
+                    return null; // Skip rows that don't match the filter
+                  })
+                )}
+              </tbody>
+            </table>
+            <Modal open={modalOpen} onClose={handleCloseModal}>
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  width: 400,
+                  bgcolor: "background.paper",
+                  boxShadow: 24,
+                  p: 4,
+                  borderRadius: "10px",
+                  textAlign: "center",
+                }}
+              >
+                {/* Close Icon */}
+                <IconButton
+                  onClick={handleCloseModal}
+                  sx={{
+                    position: "absolute",
+                    top: 10,
+                    right: 10,
+                    color: "gray",
+                    "&:hover": { color: "black" },
+                  }}
+                >
+                  <AiOutlineClose size={24} />
+                </IconButton>
+                <h3 style={{ marginBottom: "20px" }}>
+                  Approve or Reject Request?
+                </h3>
 
-          </table>
-          <Modal open={modalOpen} onClose={handleCloseModal}>
-  <Box
-    sx={{
-      position: "absolute",
-      top: "50%",
-      left: "50%",
-      transform: "translate(-50%, -50%)",
-      width: 400,
-      bgcolor: "background.paper",
-      boxShadow: 24,
-      p: 4,
-      borderRadius: "10px",
-      textAlign: "center",
-    }}
-  >
-    {/* Close Icon */}
-    <IconButton
-      onClick={handleCloseModal}
-      sx={{
-        position: "absolute",
-        top: 10,
-        right: 10,
-        color: "gray",
-        "&:hover": { color: "black" },
-      }}
-    >
-      <AiOutlineClose size={24} />
-    </IconButton>
-    <h3 style={{ marginBottom: "20px" }}>Approve or Reject Request?</h3>
+                {/* Added code: Determine current status and toggle button enable/disable */}
+                {selectedLeave &&
+                  (() => {
+                    // Retrieve current status using the selected index
+                    const currentStatus =
+                      (selectedLeave.status &&
+                        selectedLeave.status[selectedLeave.selectedIndex]) ||
+                      "pending";
 
-    {/* Added code: Determine current status and toggle button enable/disable */}
-    {selectedLeave && (() => {
-      // Retrieve current status using the selected index
-      const currentStatus =
-        (selectedLeave.status &&
-          selectedLeave.status[selectedLeave.selectedIndex]) ||
-        "pending";
-
-      return (
-        <div className="action-buttons">
-          <button
-            onClick={handleApprove}
-            className="approve-btn"
-            disabled={currentStatus.toLowerCase() === "approved"}
-            style={{
-              opacity: currentStatus.toLowerCase() === "approved" ? 0.5 : 1,
-              cursor:
-                currentStatus.toLowerCase() === "approved"
-                  ? "not-allowed"
-                  : "pointer",
-            }}
-          >
-            ✅ Approve
-          </button>
-          <button
-            onClick={handleReject}
-            className="reject-btn"
-            disabled={currentStatus.toLowerCase() === "rejected"}
-            style={{
-              opacity: currentStatus.toLowerCase() === "rejected" ? 0.5 : 1,
-              cursor:
-                currentStatus.toLowerCase() === "rejected"
-                  ? "not-allowed"
-                  : "pointer",
-            }}
-          >
-            ❌ Reject
-          </button>
-        </div>
-      );
-    })()}
-  </Box>
-</Modal>
-
-        </div>
-        
+                    return (
+                      <div className="action-buttons">
+                        <button
+                          onClick={handleApprove}
+                          className="approve-btn"
+                          disabled={currentStatus.toLowerCase() === "approved"}
+                          style={{
+                            opacity:
+                              currentStatus.toLowerCase() === "approved"
+                                ? 0.5
+                                : 1,
+                            cursor:
+                              currentStatus.toLowerCase() === "approved"
+                                ? "not-allowed"
+                                : "pointer",
+                          }}
+                        >
+                          ✅ Approve
+                        </button>
+                        <button
+                          onClick={handleReject}
+                          className="reject-btn"
+                          disabled={currentStatus.toLowerCase() === "rejected"}
+                          style={{
+                            opacity:
+                              currentStatus.toLowerCase() === "rejected"
+                                ? 0.5
+                                : 1,
+                            cursor:
+                              currentStatus.toLowerCase() === "rejected"
+                                ? "not-allowed"
+                                : "pointer",
+                          }}
+                        >
+                          ❌ Reject
+                        </button>
+                      </div>
+                    );
+                  })()}
+              </Box>
+            </Modal>
+          </div>
         );
 
       case "employee-list":
         return (
-          <>
+          <div className="emp-list-container">
             {/* <Button
               variant="contained"
               onClick={() => handleAddEmployeeClick()}
@@ -1178,14 +1234,14 @@ const handleApprove = async () => {
                 variant="contained"
                 onClick={() => handleAddEmployeeClick()}
                 sx={{
-                  position: "absolute",
+                  // position: "absolute",
                   backgroundColor: "#006600",
-                  right: 0,
-                  textTransform: "none",
+                  // right: 0,
+                  // textTransform: "none",
 
-                  marginRight: "35px",
-                  display: "flex",
-                  alignItems: "center",
+                  // marginRight: "35px",
+                  // display: "flex",
+                  // alignItems: "center",
                   gap: 1, // Add spacing between text and icon
                   "&:focus": {
                     outline: "none",
@@ -1209,99 +1265,103 @@ const handleApprove = async () => {
                 </tr>
               </thead>
               <tbody>
-                { employeeList ? employeeList.map((emp, index) => (
-                  <tr key={emp._id}>
-                    {editingRow === index ? (
-                      <>
-                        <td>
-                          <input
-                            type="text"
-                            name="empname"
-                            value={empData.empname.toLowerCase()
-                              .replace(/\b\w/g, (char) => char.toUpperCase())}
-                            onChange={handleEmployeeData}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            name="empname"
-                            value={empData.empname}
-                            onChange={handleEmployeeData}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            name="email"
-                            value={empData.email}
-                            onChange={handleEmployeeData}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            name="role"
-                            value={empData.role}
-                            onChange={handleEmployeeData}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            name="project"
-                            value={empData.project.toLowerCase()
-                              .replace(/\b\w/g, (char) => char.toUpperCase())}
-                            onChange={handleEmployeeData}
-                          />
-                        </td>
+                {employeeList ? (
+                  employeeList.map((emp, index) => (
+                    <tr key={emp._id}>
+                      {editingRow === index ? (
+                        <>
+                          <td>
+                            <input
+                              type="text"
+                              name="empid"
+                              value={empData.empid}
+                              onChange={handleEmployeeData}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              name="empname"
+                              value={empData.empname}
+                              onChange={handleEmployeeData}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              name="email"
+                              value={empData.email}
+                              onChange={handleEmployeeData}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              name="role"
+                              value={empData.role}
+                              onChange={handleEmployeeData}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              name="project"
+                              value={empData.project
+                                .toLowerCase()
+                                .replace(/\b\w/g, (char) => char.toUpperCase())}
+                              onChange={handleEmployeeData}
+                            />
+                          </td>
 
-                        <td>
-                          <button onClick={() => handleSave1(index)}>
-                            Save
-                          </button>
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td>{emp.empid}</td>
-                        <td>{emp.empname}</td>
-                        <td>{emp.email}</td>
-                        <td>{emp.role}</td>
-                        <td>{emp.project}</td>
-                        <td>
-                          <button
-                            onClick={() => handleEditEmployee(index)}
-                            style={{
-                              border: "none",
-                              background: "none",
-                              cursor: "pointer",
-                            }}
-                          >
-                            <FaEdit size={20} color="blue" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteEmployee(emp._id)}
-                            style={{
-                              border: "none",
-                              background: "none",
-                              cursor: "pointer",
-                            }}
-                          >
-                            <FaTrash size={20} color="red" />
-                          </button>
-                        </td>
-                      </>
-                    )}
+                          <td>
+                            <button onClick={() => handleSave1(index)}>
+                              Save
+                            </button>
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td>{emp.empid}</td>
+                          <td>{emp.empname.toLowerCase()
+          .replace(/\b\w/g, (char) => char.toUpperCase())}</td>
+                          <td>{emp.email}</td>
+                          <td>{emp.role}</td>
+                          <td>{emp.project.toLowerCase()
+          .replace(/\b\w/g, (char) => char.toUpperCase())}</td>
+                          <td>
+                            <button
+                              onClick={() => handleEditEmployee(index)}
+                              style={{
+                                border: "none",
+                                background: "none",
+                                cursor: "pointer",
+                              }}
+                            >
+                              <FaEdit size={20} color="blue" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteEmployee(emp._id)}
+                              style={{
+                                border: "none",
+                                background: "none",
+                                cursor: "pointer",
+                              }}
+                            >
+                              <FaTrash size={20} color="red" />
+                            </button>
+                          </td>
+                        </>
+                      )}
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td>No Employees Available</td>
                   </tr>
-                )) : 
-                <tr>
-                  <td>No Employees Available</td>
-                </tr>
-                }
+                )}
               </tbody>
             </table>
-          </>
+          </div>
         );
 
       default:
