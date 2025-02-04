@@ -349,6 +349,7 @@ app.get("/reports", async (req, res) => {
       query.$or = [
         { empname: new RegExp(search, "i") },
         { empid: new RegExp(search, "i") },
+        { project: new RegExp(search, "i") },
       ];
     }
 
@@ -386,7 +387,7 @@ app.get("/reports", async (req, res) => {
       })
     );
 
-    console.log(reports);
+    // console.log(reports);
     res.status(200).json(reports);
   } catch (error) {
     console.error("Error fetching reports:", error);
@@ -394,42 +395,104 @@ app.get("/reports", async (req, res) => {
   }
 });
 
-// Export Report to Excel
 app.get("/reports/export-excel", async (req, res) => {
   try {
-    const { project } = req.query;
+    let { project, reports } = req.query;
     let query = {};
     if (project) query.project = project;
-    const employees = await User.find(query);
+    console.log("reports:", reports);
+    if (typeof reports === "string") {
+      try {
+        reports = JSON.parse(reports);
+      } catch (error) {
+        console.error("Error parsing reports:", error);
+        reports = [];
+      }
+    }
+
+    // const employees = await User.find(query);
+    const employees = Array.isArray(reports)
+      ? reports.map((report) => report.email)
+      : [];
+    console.log(employees);
     const workbook = new excelJS.Workbook();
     const worksheet = workbook.addWorksheet("Reports");
+
     worksheet.columns = [
-      { header: "Employee ID", key: "empid" },
-      { header: "Name", key: "empname" },
-      { header: "Project", key: "project" },
-      { header: "Leave Type", key: "leaveType" },
-      { header: "Start Date", key: "startDate" },
-      { header: "End Date", key: "endDate" },
-      { header: "Status", key: "status" },
+      { header: "Employee ID", key: "empid", width: 15 },
+      { header: "Name", key: "empname", width: 25 },
+      { header: "Email", key: "email", width: 30 },
+      { header: "Project", key: "project", width: 25 },
+      { header: "Leave Type", key: "leaveType", width: 20 },
+      { header: "Start Date", key: "startDate", width: 15 },
+      { header: "End Date", key: "endDate", width: 15 },
+      { header: "Status", key: "status", width: 15 },
     ];
-    for (const emp of employees) {
-      const leaves = await Leave.find({ email: emp.email });
-      leaves.forEach((leave) => {
-        worksheet.addRow({
-          empid: emp.empid,
-          empname: emp.empname,
-          project: emp.project,
-          leaveType: leave.leaveType,
-          startDate: leave.startDate,
-          endDate: leave.endDate,
-          status: leave.status,
-        });
-      });
+
+    let allReports = [];
+
+    for (const empemail of employees) {
+      const empl = await User.find({ email: empemail });
+      for (const emp of empl) {
+        const leaves = await Leave.find({ email: empemail });
+        console.log(emp);
+        if (leaves.length > 0) {
+          leaves.forEach((leave, index) => {
+            leave.startDate.forEach((start, i) => {
+              allReports.push({
+                empid: emp.empid,
+                empname: formatName(emp.empname),
+                email: emp.email || "N/A",
+                project: formatName(emp.project),
+                leaveType: formatName(leave.leaveType),
+                startDate: new Date(start), // Convert to Date for sorting
+                endDate: formatDate(leave.endDate[i]),
+                status: formatName(leave.status[i] || "Pending"),
+              });
+            });
+          });
+        } else {
+          allReports.push({
+            empid: emp.empid,
+            empname: formatName(emp.empname),
+            email: emp.email || "N/A",
+            project: formatName(emp.project),
+            leaveType: "N/A",
+            startDate: new Date(0), // Default earliest date for sorting
+            endDate: "N/A",
+            status: "No Leaves",
+          });
+        }
+      }
     }
+
+    // **Sorting logic: First by name (A-Z), then by startDate (earliest first)**
+    allReports.sort((a, b) => {
+      if (a.empname < b.empname) return -1;
+      if (a.empname > b.empname) return 1;
+      return a.startDate - b.startDate; // Sort by date if names are same
+    });
+
+    // Add sorted data to the worksheet
+    allReports.forEach((report) => {
+      worksheet.addRow({
+        ...report,
+        startDate:
+          report.startDate.getTime() === 0
+            ? "N/A"
+            : formatDate(report.startDate),
+      });
+    });
+
     res.setHeader(
       "Content-Disposition",
       "attachment; filename=leave_reports.xlsx"
     );
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+
     await workbook.xlsx.write(res);
     res.end();
   } catch (error) {
@@ -437,6 +500,16 @@ app.get("/reports/export-excel", async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 });
+
+// Helper function to format names like in frontend
+const formatName = (str) =>
+  str
+    ? str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
+    : "N/A";
+
+// Helper function to format dates properly
+const formatDate = (date) =>
+  date ? new Date(date).toLocaleDateString("en-GB") : "N/A";
 
 // Export Report to PDF
 app.get("/reports/export-pdf", async (req, res) => {

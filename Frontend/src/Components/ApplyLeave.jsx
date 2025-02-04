@@ -29,6 +29,8 @@ const ApplyLeave = ({
 }) => {
   const [showHolidays, setShowHolidays] = useState(false);
   const [showLeavePolicies, setShowLeavePolicies] = useState(false);
+  const year = new Date().getFullYear();
+
   return (
     <div className="leave-management-container">
       <div className="apply-leave-section apply-leave-container">
@@ -193,7 +195,7 @@ const ApplyLeave = ({
         onMouseEnter={() => setShowHolidays(true)}
         onMouseLeave={() => setShowHolidays(false)}
       >
-        <h2 className="section-title">Holiday Calendar</h2>
+        <h2 className="section-title">Holiday Calendar {year}</h2>
         {/* <hr className="holiday-divider" /> */}
 
         {showHolidays && (

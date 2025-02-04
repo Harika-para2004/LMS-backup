@@ -46,7 +46,9 @@ const App = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [profileImage, setProfileImage] = useState(Profile);
   const [file, setFile] = useState(null);
-  const [error, setError] = useState("")
+  const [error, setError] = useState("");
+  const year = new Date().getFullYear();
+
   const [errors, setErrors] = useState({
     leaveType: "",
     from: "",

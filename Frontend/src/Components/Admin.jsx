@@ -63,6 +63,8 @@ function AdminDashboard() {
   const [employeeList, setEmpList] = useState([]);
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [modalOpen, setModalOpen] = useState(false);
+  const year = new Date().getFullYear();
+
   // const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
 
   const [empData, setEmpData] = useState({
@@ -814,7 +816,7 @@ function AdminDashboard() {
             )}
 
             <div className="header">
-              <h2 className="content-heading">Holiday Calendar</h2>
+              <h2 className="content-heading">Holiday Calendar {year}</h2>
               <Button
                 variant="contained"
                 onClick={() => setShowModal(true)}

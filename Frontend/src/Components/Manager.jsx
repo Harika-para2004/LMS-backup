@@ -43,6 +43,7 @@ function LeaveRequests() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const [leavepolicyRef, setLeavePolicyRef] = useState([]);
+  const year = new Date().getFullYear();
 
   const [errors, setErrors] = useState({
     leaveType: "",

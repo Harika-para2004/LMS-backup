@@ -25,11 +25,17 @@ const Reports = () => {
   };
 
   const exportExcel = async () => {
-    await exportFile("http://localhost:5001/reports/export-excel", "leave_reports.xlsx");
+    await exportFile(
+      `http://localhost:5001/reports/export-excel?reports=${JSON.stringify(reports)}`,
+      "leave_reports.xlsx"
+    );
   };
 
   const exportPDF = async () => {
-    await exportFile("http://localhost:5001/reports/export-pdf", "leave_reports.pdf");
+    await exportFile(
+      `http://localhost:5001/reports/export-pdf?reports=${reports}`,
+      "leave_reports.pdf"
+    );
   };
 
   const exportFile = async (url, filename) => {
@@ -48,6 +54,50 @@ const Reports = () => {
     }
   };
 
+  // Helper function to format names like in the frontend
+  const formatName = (str) =>
+    str
+      ? str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
+      : "N/A";
+
+  // Helper function to format dates properly
+  const formatDate = (date) =>
+    date ? new Date(date).toLocaleDateString("en-GB") : "N/A";
+
+  const sortedReports = reports
+    .flatMap((report) =>
+      report.leaves.length > 0
+        ? report.leaves.map((leave) => ({
+            empname: formatName(report.empname),
+            empid: report.empid,
+            email: report.email || "N/A",
+            project: formatName(report.project),
+            leaveType: formatName(leave.leaveType),
+            startDate: new Date(leave.startDate),
+            endDate: formatDate(leave.endDate),
+            status: formatName(leave.status),
+          }))
+        : [
+            {
+              empname: formatName(report.empname),
+              empid: report.empid,
+              email: report.email || "N/A",
+              project: formatName(report.project),
+              leaveType: "N/A",
+              startDate: new Date(0), // Default earliest date for sorting
+              endDate: "N/A",
+              status: "No Leaves",
+            },
+          ]
+    )
+    .sort((a, b) => {
+      // const empidA = Number(a.empid);
+      // const empidB = Number(b.empid);
+      if (a.empid < b.empid) return -1;
+      if (a.empid > b.empid) return 1;
+      return a.startDate - b.startDate; // Sort by start date if names are same
+    });
+
   return (
     <div className="reports-container">
       <h2 className="content-heading">Leave Reports</h2>
@@ -60,18 +110,22 @@ const Reports = () => {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <select value={project} onChange={(e) => setProject(e.target.value)}>
+        <div className="export-buttons">
+          <button onClick={exportExcel} className="btn-excel">
+            Export Excel
+          </button>
+          <button onClick={exportPDF} className="btn-pdf">
+            Export PDF
+          </button>
+        </div>
+        {/* <select value={project} onChange={(e) => setProject(e.target.value)}>
           <option value="">All Projects</option>
           <option value="Project A">Project A</option>
           <option value="Project B">Project B</option>
-        </select>
+        </select> */}
       </div>
 
       {/* Export Buttons */}
-      <div className="export-buttons">
-        <button onClick={exportExcel} className="btn-excel">Export Excel</button>
-        <button onClick={exportPDF} className="btn-pdf">Export PDF</button>
-      </div>
 
       {/* Table */}
       <div className="table-container">
@@ -89,42 +143,26 @@ const Reports = () => {
             </tr>
           </thead>
           <tbody>
-            {reports.length > 0 ? (
-              reports.map((report, index) =>
-                report.leaves.length > 0 ? (
-                  report.leaves.map((leave, leaveIndex) => (
-                    <tr key={`${index}-${leaveIndex}`}>
-                      <td>{report.empname.toLowerCase()
-          .replace(/\b\w/g, (char) => char.toUpperCase())}</td>
-                      <td>{report.empid}</td>
-                      <td>{report.email || "N/A"}</td>
-                      <td>{report.project.toLowerCase()
-          .replace(/\b\w/g, (char) => char.toUpperCase())}</td>
-                      <td>{leave.leaveType.toLowerCase()
-          .replace(/\b\w/g, (char) => char.toUpperCase())}</td>
-                      <td>{leave.startDate}</td>
-                      <td>{formatDate(leave.endDate)}</td>
-                      <td>{leave.status.toLowerCase()
-          .replace(/\b\w/g, (char) => char.toUpperCase())}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr key={index}>
-                    <td>{report.empname.toLowerCase()
-          .replace(/\b\w/g, (char) => char.toUpperCase())}</td>
-                    <td>{report.empid}</td>
-                    <td>{report.email || "N/A"}</td>
-                    <td>{report.project.toLowerCase()
-          .replace(/\b\w/g, (char) => char.toUpperCase())}</td>
-                    <td colSpan="4" className="no-leaves">
-                      No Leaves
-                    </td>
-                  </tr>
-                )
-              )
+            {sortedReports.length > 0 ? (
+              sortedReports.map((report, index) => (
+                <tr key={index}>
+                  <td>{report.empname}</td>
+                  <td>{report.empid}</td>
+                  <td>{report.email}</td>
+                  <td>{report.project}</td>
+                  <td>{report.leaveType}</td>
+                  <td>
+                    {report.startDate.getTime() === 0
+                      ? "N/A"
+                      : formatDate(report.startDate)}
+                  </td>
+                  <td>{report.endDate}</td>
+                  <td>{report.status}</td>
+                </tr>
+              ))
             ) : (
               <tr>
-                <td className="no-reports" colSpan="7">
+                <td className="no-reports" colSpan="8">
                   No reports found.
                 </td>
               </tr>
@@ -132,8 +170,6 @@ const Reports = () => {
           </tbody>
         </table>
       </div>
-
-      
     </div>
   );
 };
