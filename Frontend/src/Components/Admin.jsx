@@ -75,6 +75,7 @@ function AdminDashboard() {
     gender: "",
     project: "",
     role: "",
+    managerEmail:""
   });
   const sortHolidaysByMonthAndCustomDay = (holidayList) => {
     const monthNames = [
@@ -326,8 +327,10 @@ function AdminDashboard() {
         }
 
         const data = await response.json();
+        const sortedHolidays = sortHolidaysByMonthAndCustomDay(data);
 
-        setHolidays(data);
+        // Set the sorted holidays
+        setHolidays(sortedHolidays);
       } catch (error) {
         console.error("Error fetching holidays:", error);
         setError("Failed to fetch holidays. Please try again later."); // Update error state for UI
@@ -1455,19 +1458,32 @@ function AdminDashboard() {
             </Select>
           </FormControl>
           <FormControl fullWidth>
-            <InputLabel id="role-label">Role</InputLabel>
-            <Select
-              labelId="role-label"
-              id="role"
-              name="role"
-              value={empData.role}
-              onChange={handleChange}
-              label="Role"
-            >
-              <MenuItem value="Manager">Manager</MenuItem>
-              <MenuItem value="Employee">Employee</MenuItem>
-            </Select>
-          </FormControl>
+  <InputLabel id="role-label">Role</InputLabel>
+  <Select
+    labelId="role-label"
+    id="role"
+    name="role"
+    value={empData.role}
+    onChange={handleChange}
+    label="Role"
+  >
+    <MenuItem value="Manager">Manager</MenuItem>
+    <MenuItem value="Employee">Employee</MenuItem>
+  </Select>
+</FormControl>
+
+{/* Show Manager Email input only if role is Employee */}
+{empData.role === "Employee" && (
+  <TextField
+    fullWidth
+    margin="normal"
+    label="Manager Email"
+    name="managerEmail"
+    value={empData.managerEmail || ""}
+    onChange={handleChange}
+  />
+)}
+
           <TextField
             label="Project"
             name="project"

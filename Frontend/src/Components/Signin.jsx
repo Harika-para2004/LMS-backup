@@ -67,7 +67,7 @@ const LoginForm = () => {
         <form onSubmit={handleSubmit} className="form__content">
           <div>
             {" "}
-            <h2 style={{ textAlign: "center" }}>Welcome,Back</h2>
+            <h2 style={{ textAlign: "center" }}>Welcome</h2>
             <br />
           </div>
           <div className="form__div form__div-one">

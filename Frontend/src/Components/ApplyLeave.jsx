@@ -3,6 +3,8 @@ import { DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import dayjs from "dayjs";
+import { formatDate } from "../utils/dateUtlis";
+
 import {
   Grid,
   TextField,
@@ -82,7 +84,8 @@ const ApplyLeave = ({
               {errors.from && <span className="req">{errors.from}</span>}
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DatePicker
-                  value={formData.startDate ? dayjs(formData.startDate) : null}
+                format="DD/MM/YYYY"
+                  value={formData.startDate ? (dayjs(formData.startDate)) : null}
                   onChange={(newValue) =>
                     handleInputChange({
                       target: { name: "startDate", value: newValue },
@@ -119,6 +122,7 @@ const ApplyLeave = ({
               {errors.to && <span className="req">{errors.to}</span>}
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DatePicker
+                format="DD/MM/YYYY"
                   value={formData.endDate ? dayjs(formData.endDate) : null}
                   onChange={(newValue) =>
                     handleInputChange({

@@ -27,6 +27,7 @@ function LeaveRequests() {
   const [selectedLeave, setSelectedLeave] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("leaverequests");
   const [leaveData, setLeaveData] = useState([]);
+  const [managerEmail, setmanagerEmail] = useState("");
   const [email, setEmail] = useState("");
   const [empid, setEmpid] = useState("");
   const [username, setUsername] = useState("");
@@ -212,13 +213,12 @@ function LeaveRequests() {
   }, [selectedCategory]);
 
   const fetchLeaveHistory = async () => {
-    const excludeEmail = "manager@gmail.com"; // Replace with the email to exclude
+
     try {
-      const response = await fetch("http://localhost:5001/leaverequests");
+      const response = await fetch(`http://localhost:5001/leaverequests?excludeEmail=${email}`);
       if (response.ok) {
         const data = await response.json();
-        const filteredData = data.filter((item) => item.email !== excludeEmail); // Filter out records with the given email
-        setLeaveHistory(filteredData); // Update state with filtered data
+        setLeaveHistory(data); // Directly set the filtered data from backend
       } else {
         console.error("Failed to fetch leave history");
       }
@@ -237,7 +237,7 @@ function LeaveRequests() {
           setUserData(parsedUserData);
           setUsername(parsedUserData.empname || "");
           setEmpid(parsedUserData.empid || "");
-
+          setmanagerEmail(parsedUserData.managerEmail || "")
           setEmail(parsedUserData.email || "");
           setProject(parsedUserData.project || "");
         }
@@ -268,11 +268,9 @@ function LeaveRequests() {
       fetchLeaveData();
     }
   }, [email]);
-
   useEffect(() => {
     fetchLeaveHistory();
-  }, []);
-
+  }, [email]);
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });

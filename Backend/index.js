@@ -36,7 +36,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
   const { email } = req.query;
-  const { empname, empid, leaveType, startDate, endDate, reason } = req.body; // Removed applyDate as it should be derived from the current date
+  const { empname, empid, leaveType, startDate, endDate, reason,managerEmail } = req.body; // Removed applyDate as it should be derived from the current date
   const filePath = req.file ? req.file.path : null;
 
   try {
@@ -64,6 +64,7 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
         email,
         empname,
         empid,
+        managerEmail,
         applyDate: new Date(), // Setting current date as applyDate
         leaveType,
         startDate: [new Date(startDate)],
@@ -138,16 +139,22 @@ app.get("/leavesummary", async (req, res) => {
 });
 app.get("/leaverequests", async (req, res) => {
   try {
-    const excludeEmail = req.query.excludeEmail; // Get email to exclude from query parameters
-    const query = excludeEmail ? { email: { $ne: excludeEmail } } : {}; // Filter out the email
-    const leaveRequests = await Leave.find(query); // Query the database
+    const excludeEmail = req.query.excludeEmail; // Get manager's email from query parameters
+
+    if (!excludeEmail) {
+      return res.status(400).json({ message: "Manager email is required" });
+    }
+
+    const query = { managerEmail: excludeEmail }; // Fetch requests where managerEmail matches excludeEmail
+    console.log("Query:", query); // Debugging
+
+    const leaveRequests = await Leave.find(query); // Query the database correctly
     res.json(leaveRequests);
   } catch (error) {
     console.error("Error fetching leave requests:", error);
     res.status(500).send("Server error");
   }
 });
-
 app.put("/leaverequests/:id", async (req, res) => {
   try {
     const leaveId = req.params.id;

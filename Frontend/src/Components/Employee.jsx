@@ -37,6 +37,7 @@ const App = () => {
   const [username, setUsername] = useState("");
   const [empid, setEmpid] = useState("");
   const [email, setEmail] = useState("");
+  const [managerEmail,setmanagerEmail]=useState("");
   const [designation, setDesignation] = useState("");
   const [project, setProject] = useState("");
   const [holidays, setHolidays] = useState([]);
@@ -179,6 +180,7 @@ const App = () => {
     formDataToSend.append("email", email);
     formDataToSend.append("empname", username);
     formDataToSend.append("empid", empid);
+    formDataToSend.append("managerEmail",managerEmail);
     formDataToSend.append("leaveType", leaveType);
     formDataToSend.append("applyDate", applyDate);
     formDataToSend.append("startDate", startDate);
@@ -230,7 +232,7 @@ const App = () => {
           setUserData(parsedUserData);
           setUsername(parsedUserData.empname || "");
           setEmpid(parsedUserData.empid || "");
-
+          setmanagerEmail(parsedUserData.managerEmail || "")
           setEmail(parsedUserData.email || "");
           setProject(parsedUserData.project || "");
         }

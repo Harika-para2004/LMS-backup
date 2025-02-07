@@ -22,13 +22,6 @@ const LeaveHistory = ({ leaveHistory }) => {
     currentPage * itemsPerPage
   );
 
-  const calculateDuration = (startDate, endDate) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const durationInMs = end - start;
-    const durationInDays = durationInMs / (1000 * 60 * 60 * 24) + 1;
-    return durationInDays > 0 ? durationInDays.toFixed(0) : 0;
-  };
 
   const getStatusIcon = (status) => {
     switch (status) {

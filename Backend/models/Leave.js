@@ -7,7 +7,8 @@ const LeaveSchema = new mongoose.Schema({
     required: true,
   },
   empname: { type: String, required: true }, // Ensure this is required
-  empid: { type: String, required: true },  
+  empid: { type: String, required: true },
+  managerEmail:{type:String},   
   leaveType: {
     type: String,
     required: true,

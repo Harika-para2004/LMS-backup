@@ -5,7 +5,7 @@ const nodemailer = require('nodemailer');
 
 const router = express.Router();
 router.post('/addEmployee', async (req, res) => {
-  const { empname,empid, email, password,gender, project ,role} = req.body;
+  const { empname,empid, email, password,gender, project ,role,managerEmail} = req.body;
 /* app name:lmsappgmail*/
 /* password:jmfe rmka otnc upxe*/
 
@@ -24,7 +24,8 @@ router.post('/addEmployee', async (req, res) => {
       password: hashedPassword,
       gender,
       project,
-      role
+      role,
+      ...(role === "Employee" && { managerEmail })
     });
 
     await newUser.save();
@@ -99,6 +100,7 @@ router.get('/user/:userId', async (req, res) => {
       gender:user.gender,
       project: user.project,
       role: user.role, // Add role here
+      managerEmail:user.managerEmail,
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
