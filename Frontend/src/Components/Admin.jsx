@@ -18,6 +18,7 @@ import {
   AiOutlineClose,
   AiOutlineExclamationCircle,
 } from "react-icons/ai";
+import { faSearch } from "@fortawesome/free-solid-svg-icons";
 
 import {
   Box,
@@ -64,7 +65,8 @@ function AdminDashboard() {
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [modalOpen, setModalOpen] = useState(false);
   const year = new Date().getFullYear();
-
+  const [searchTerm, setSearchTerm] = useState("");
+  const filteredEmployees = employeeList.filter((emp)=> emp.empname.toLowerCase().includes(searchTerm.toLowerCase()));
   // const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
 
   const [empData, setEmpData] = useState({
@@ -820,6 +822,7 @@ function AdminDashboard() {
 
             <div className="header">
               <h2 className="content-heading">Holiday Calendar {year}</h2>
+     
               <Button
                 variant="contained"
                 onClick={() => setShowModal(true)}
@@ -1214,27 +1217,20 @@ function AdminDashboard() {
       case "employee-list":
         return (
           <div className="emp-list-container">
-            {/* <Button
-              variant="contained"
-              onClick={() => handleAddEmployeeClick()}
-              sx={{
-                position: "absolute",
-                backgroundColor: "#313896",
-                right: 0,
-
-                marginRight: "35px",
-                display: "flex",
-                alignItems: "center",
-                gap: 1, 
-                "&:focus": {
-                  outline: "none",
-                },
-              }}
-            >
-              <AddIcon /> Add Employee
-            </Button> */}
             <div className="header">
               <h2 className="content-heading">Employee Details</h2>
+              <TextField
+                  variant="outlined"
+                  size="small"
+                  placeholder="Search Employee"
+                  value={searchTerm}
+                  onChange={(e)=>setSearchTerm(e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <FontAwesomeIcon icon={faSearch} style={{ marginRight: "10px"}}/>
+                    ),
+                  }}
+                />
               <Button
                 variant="contained"
                 onClick={() => handleAddEmployeeClick()}
@@ -1271,7 +1267,7 @@ function AdminDashboard() {
               </thead>
               <tbody>
                 {employeeList ? (
-                  employeeList.map((emp, index) => (
+                  filteredEmployees.map((emp, index) => (
                     <tr key={emp._id}>
                       {editingRow === index ? (
                         <>
@@ -1365,6 +1361,7 @@ function AdminDashboard() {
                   </tr>
                 )}
               </tbody>
+        
             </table>
           </div>
         );
