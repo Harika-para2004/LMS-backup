@@ -36,7 +36,15 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
   const { email } = req.query;
-  const { empname, empid, leaveType, startDate, endDate, reason,managerEmail } = req.body; // Removed applyDate as it should be derived from the current date
+  const {
+    empname,
+    empid,
+    leaveType,
+    startDate,
+    endDate,
+    reason,
+    managerEmail,
+  } = req.body; // Removed applyDate as it should be derived from the current date
   const filePath = req.file ? req.file.path : null;
 
   try {
@@ -407,7 +415,7 @@ app.get("/reports/export-excel", async (req, res) => {
     let { project, reports } = req.query;
     let query = {};
     if (project) query.project = project;
-    console.log("reports:", reports);
+    // console.log("reports:", reports);
     if (typeof reports === "string") {
       try {
         reports = JSON.parse(reports);
@@ -419,9 +427,11 @@ app.get("/reports/export-excel", async (req, res) => {
 
     // const employees = await User.find(query);
     const employees = Array.isArray(reports)
-      ? reports.map((report) => report.email)
-      : [];
-    console.log(employees);
+    ? reports
+        .filter((report) => report.email !== "admin@gmail.com") 
+        .map((report) => report.email) 
+    : [];
+
     const workbook = new excelJS.Workbook();
     const worksheet = workbook.addWorksheet("Reports");
 
@@ -518,28 +528,161 @@ const formatName = (str) =>
 const formatDate = (date) =>
   date ? new Date(date).toLocaleDateString("en-GB") : "N/A";
 
+const formatLeaveDate = (date) => {
+  if (!date || date === "N/A" || date === "Invalid date") return "N/A";
+  return moment(date).isValid() ? moment(date).format("DD/MM/YYYY") : "N/A";
+};
+
 // Export Report to PDF
+// app.get("/reports/export-pdf", async (req, res) => {
+//   try {
+//     const { project } = req.query;
+//     let query = {};
+//     if (project) query.project = project;
+//     const employees = await User.find(query);
+//     const doc = new pdfkit();
+//     const filePath = "reports.pdf";
+//     doc.pipe(fs.createWriteStream(filePath));
+//     doc.fontSize(12).text("Leave Reports", { align: "center" });
+//     doc.moveDown();
+//     employees.forEach((emp) => {
+//       doc
+//         .fontSize(10)
+//         .text(
+//           `ID: ${emp.empid}, Name: ${emp.empname}, Project: ${emp.project}`
+//         );
+//       doc.moveDown();
+//     });
+//     doc.end();
+//     res.download(filePath, "leave_reports.pdf", () => fs.unlinkSync(filePath));
+//   } catch (error) {
+//     console.error("Error exporting PDF:", error);
+//     res.status(500).json({ message: "Server Error" });
+//   }
+// });
+
+// const PDFDocument = require("pdfkit");
+
+// app.get("/reports/export-pdf", async (req, res) => {
+//   try {
+//     const { project } = req.query;
+//     let query = {};
+//     if (project) query.project = project;
+//     const employees = await User.find(query);
+
+//     // Set response headers
+//     res.setHeader("Content-Type", "application/pdf");
+//     res.setHeader("Content-Disposition", "attachment; filename=leave_reports.pdf");
+
+//     const doc = new PDFDocument();
+//     doc.pipe(res); // Stream PDF directly to response
+
+//     // Title
+//     doc.fontSize(16).text("Leave Reports", { align: "center" });
+//     doc.moveDown(2);
+
+//     // Table Headers
+//     doc.fontSize(12).text("ID | Name | Project", { underline: true });
+//     doc.moveDown();
+
+//     // Employee Data
+//     employees.forEach((emp) => {
+//       doc.text(`${emp.empid} | ${emp.empname} | ${emp.project}`);
+//       doc.moveDown();
+//     });
+
+//     doc.end();
+//   } catch (error) {
+//     console.error("Error exporting PDF:", error);
+//     res.status(500).json({ message: "Server Error" });
+//   }
+// });
+
+const PDFDocument = require("pdfkit");
+const moment = require("moment");
+
 app.get("/reports/export-pdf", async (req, res) => {
   try {
-    const { project } = req.query;
+    const { project, reports } = req.query;
     let query = {};
     if (project) query.project = project;
-    const employees = await User.find(query);
-    const doc = new pdfkit();
-    const filePath = "reports.pdf";
-    doc.pipe(fs.createWriteStream(filePath));
-    doc.fontSize(12).text("Leave Reports", { align: "center" });
-    doc.moveDown();
-    employees.forEach((emp) => {
-      doc
-        .fontSize(10)
-        .text(
-          `ID: ${emp.empid}, Name: ${emp.empname}, Project: ${emp.project}`
-        );
-      doc.moveDown();
+
+    let employees = [];
+    if (typeof reports === "string") {
+      try {
+        employees = JSON.parse(reports);
+        if (!Array.isArray(employees)) employees = [];
+      } catch (error) {
+        console.error("Error parsing reports:", error);
+        employees = [];
+      }
+    }
+
+    employees = employees.filter((emp) => emp.email !== "admin@gmail.com");
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=leave_reports.pdf"
+    );
+
+    const doc = new PDFDocument({ margin: 40 });
+    doc.pipe(res);
+
+    // **Title**
+    doc
+      .fontSize(18)
+      .text("Leave Reports", { align: "center", underline: true });
+    doc.moveDown(2);
+
+    // **Table Headers**
+    const headers = [
+      "ID",
+      "Name",
+      "Email",
+      "Project",
+      "Leave Type",
+      "Start Date",
+      "End Date",
+      "Status",
+    ];
+
+    doc.font("Helvetica-Bold").fontSize(12);
+    headers.forEach((header, i) => {
+      doc.text(header, 40 + i * 80, doc.y, { continued: true });
     });
+    doc.moveDown();
+
+    // **Table Content**
+    doc.font("Helvetica").fontSize(10);
+    employees.forEach((emp) => {
+      const leavesData =
+        emp.leaves && emp.leaves.length > 0
+          ? emp.leaves
+          : [
+              {
+                leaveType: "N/A",
+                startDate: "N/A",
+                endDate: "N/A",
+                status: "No Leaves",
+              },
+            ];
+
+      leavesData.forEach((leave) => {
+        doc
+          .text(emp.empid, 40, doc.y, { continued: true })
+          .text(emp.empname, 120, doc.y, { continued: true })
+          .text(emp.email || "N/A", 200, doc.y, { continued: true })
+          .text(emp.project, 300, doc.y, { continued: true })
+          .text(leave.leaveType || "N/A", 380, doc.y, { continued: true })
+          .text(formatLeaveDate(leave.startDate), 460, doc.y, {continued: true})
+          .text(formatLeaveDate(leave.endDate), 540, doc.y, { continued: true })
+          .text(leave.status || "Pending", 620, doc.y);
+        doc.moveDown();
+      });
+    });
+
     doc.end();
-    res.download(filePath, "leave_reports.pdf", () => fs.unlinkSync(filePath));
   } catch (error) {
     console.error("Error exporting PDF:", error);
     res.status(500).json({ message: "Server Error" });

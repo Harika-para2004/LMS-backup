@@ -26,14 +26,24 @@ const Reports = () => {
 
   const exportExcel = async () => {
     await exportFile(
-      `http://localhost:5001/reports/export-excel?reports=${JSON.stringify(reports)}`,
+      `http://localhost:5001/reports/export-excel?reports=${JSON.stringify(
+        reports
+      )}`,
       "leave_reports.xlsx"
     );
   };
 
+  // const exportPDF = async () => {
+  //   await exportFile(
+  //     `http://localhost:5001/reports/export-pdf?reports=${reports}`,
+  //     "leave_reports.pdf"
+  //   );
+  // };
   const exportPDF = async () => {
     await exportFile(
-      `http://localhost:5001/reports/export-pdf?reports=${reports}`,
+      `http://localhost:5001/reports/export-pdf?reports=${encodeURIComponent(
+        JSON.stringify(reports)
+      )}`,
       "leave_reports.pdf"
     );
   };
@@ -93,8 +103,8 @@ const Reports = () => {
     .sort((a, b) => {
       // const empidA = Number(a.empid);
       // const empidB = Number(b.empid);
-      if (a.empid < b.empid) return -1;
-      if (a.empid > b.empid) return 1;
+      if (a.empname < b.empname) return -1;
+      if (a.empname > b.empname) return 1;
       return a.startDate - b.startDate; // Sort by start date if names are same
     });
 
@@ -144,7 +154,9 @@ const Reports = () => {
           </thead>
           <tbody>
             {sortedReports.length > 0 ? (
-              sortedReports.map((report, index) => (
+              sortedReports
+              .filter((report) => report.email !== "admin@gmail.com") 
+              .map((report, index) => (
                 <tr key={index}>
                   <td>{report.empname}</td>
                   <td>{report.empid}</td>
