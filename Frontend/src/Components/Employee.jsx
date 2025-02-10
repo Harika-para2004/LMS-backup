@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import "../App.css";
 import Profile from "../assets/img/profile.png";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import logo from "./../assets/img/quadfacelogo-hd.png";
 import Grid from "@mui/material/Grid";
 import axios from "axios";
@@ -49,6 +49,8 @@ const App = () => {
   const [file, setFile] = useState(null);
   const [error, setError] = useState("");
   const year = new Date().getFullYear();
+  const navigate = useNavigate(); // Correct usage of useNavigate
+
 
   const [errors, setErrors] = useState({
     leaveType: "",
@@ -147,10 +149,12 @@ const App = () => {
   // const handleLogout = () => {
   //   window.location.href = "/login";
   // };
-  const handleLogout = () => {
+  const handleLogout = (e) => {
+    e.preventDefault();
     localStorage.clear();
     navigate("/");  // Redirects user after logout
   };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
   

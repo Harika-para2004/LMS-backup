@@ -123,13 +123,17 @@ function LeavePolicyPage() {
 
       {showForm && (
         <form onSubmit={handleSubmit} className="form-container styled-form">
-          <h3 style={{ marginBottom:"20px" }} >{formData.policyId ? "Edit" : "Create"} Leave Policy</h3>
+          <h3 style={{ marginBottom: "20px" }}>
+            {formData.policyId ? "Edit" : "Create"} Leave Policy
+          </h3>
           <div className="form-group">
             <label>Leave Type</label>
             <input
               type="text"
               name="leaveType"
-              value={formData.leaveType}
+              value={formData.leaveType
+                .toLowerCase()
+                .replace(/\b\w/g, (char) => char.toUpperCase())}
               onChange={handleChange}
               required
               placeholder="Leave Type"

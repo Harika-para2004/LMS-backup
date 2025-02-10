@@ -49,6 +49,36 @@ img {
     height: auto;
 }
 
+
+
+
+
+/* Subtle Underline Effect
+.website-heading::after {
+    content: "";
+    display: block;
+    width: 100px;
+    height: 4px;
+    background-color: #007bff;
+    margin: 10px auto 0;
+    border-radius: 2px;
+} */
+
+
+
+
+
+/* @media screen and (max-width: 768px) {
+    .website-heading {
+        font-size: 2rem;
+        margin-top: 30px;
+    }
+
+    .website-heading::after {
+        width: 80px;
+    }
+}  */
+
 /*===== FORM =====*/
 .login-l-form {
     position: relative;

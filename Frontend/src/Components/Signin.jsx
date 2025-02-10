@@ -55,76 +55,148 @@ const LoginForm = () => {
   };
 
   return (
+    // <div className="l-form">
+    //   <div className="shape2"></div>
+    //   <div className="shape1"></div>
+
+    //   <div className="form">
+    //     <div className="circle"></div>
+    //     <img src={logo} alt="Quadface Logo" className="logo1" />
+    //     <img src={authImage} alt="Authentication" className="form__img" />
+
+    //     <form onSubmit={handleSubmit} className="form__content">
+    //       <div>
+    //         {" "}
+    //         <h2 style={{ textAlign: "center" }}>Welcome</h2>
+    //         <br />
+    //       </div>
+    //       <div className="form__div form__div-one">
+    //         <div className="form__icon">
+    //           <i className="bx bx-user-circle"></i>
+    //         </div>
+
+    //         <div className="form__div-input">
+    //           <input
+    //             type="email"
+    //             id="email"
+    //             name="email"
+    //             className="form__input"
+    //             value={formData.email}
+    //             onChange={handleInputChange}
+    //             placeholder=" "
+    //             required
+    //           />
+    //           <label htmlFor="email" className="form__label">
+    //             Email
+    //           </label>
+    //         </div>
+    //       </div>
+
+    //       <div className="form__div">
+    //         <div className="form__icon">
+    //           <i className="bx bx-lock"></i>
+    //         </div>
+
+    //         <div className="form__div-input">
+    //           <input
+    //             type={passwordVisible ? "text" : "password"} // Toggle input type based on visibility
+    //             id="password"
+    //             name="password"
+    //             className="form__input"
+    //             value={formData.password}
+    //             onChange={handleInputChange}
+    //             placeholder=" "
+    //             required
+    //           />
+    //           <label htmlFor="password" className="form__label">
+    //             Password
+    //           </label>
+    //           <span className="eye-icon" onClick={togglePasswordVisibility}>
+    //             {passwordVisible ? <AiFillEyeInvisible /> : <AiFillEye />}
+    //           </span>
+    //         </div>
+    //       </div>
+
+    //       <a href="#" className="form__forgot">
+    //         Forgot Password?
+    //       </a>
+
+    //       <input type="submit" className="form__button" value="Sign In" />
+    //     </form>
+    //   </div>
+    // </div>
     <div className="l-form">
-      <div className="shape2"></div>
-      <div className="shape1"></div>
+  <div className="shape2"></div>
+  <div className="shape1"></div>
 
-      <div className="form">
-        <div className="circle"></div>
-        <img src={logo} alt="Quadface Logo" className="logo1" />
-        <img src={authImage} alt="Authentication" className="form__img" />
+  {/* Website Heading */}
+  <h1 className="website-heading">LEAVE MANAGEMENT SYSTEM</h1>
+  {/* <header className="header">
+    <img src={logo} alt="QuadFace Logo" className="logo1" />
+    <h1 className="title">Leave Management System</h1>
+</header> */}
 
-        <form onSubmit={handleSubmit} className="form__content">
-          <div>
-            {" "}
-            <h2 style={{ textAlign: "center" }}>Welcome</h2>
-            <br />
-          </div>
-          <div className="form__div form__div-one">
-            <div className="form__icon">
-              <i className="bx bx-user-circle"></i>
-            </div>
 
-            <div className="form__div-input">
-              <input
-                type="email"
-                id="email"
-                name="email"
-                className="form__input"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder=" "
-                required
-              />
-              <label htmlFor="email" className="form__label">
-                Email
-              </label>
-            </div>
-          </div>
+  <div className="form">
+    <div className="circle"></div>
+    <img src={logo} alt="Quadface Logo" className="logo1" />
+    <img src={authImage} alt="Authentication" className="form__img" />
 
-          <div className="form__div">
-            <div className="form__icon">
-              <i className="bx bx-lock"></i>
-            </div>
-
-            <div className="form__div-input">
-              <input
-                type={passwordVisible ? "text" : "password"} // Toggle input type based on visibility
-                id="password"
-                name="password"
-                className="form__input"
-                value={formData.password}
-                onChange={handleInputChange}
-                placeholder=" "
-                required
-              />
-              <label htmlFor="password" className="form__label">
-                Password
-              </label>
-              <span className="eye-icon" onClick={togglePasswordVisibility}>
-                {passwordVisible ? <AiFillEyeInvisible /> : <AiFillEye />}
-              </span>
-            </div>
-          </div>
-
-          <a href="#" className="form__forgot">
-            Forgot Password?
-          </a>
-
-          <input type="submit" className="form__button" value="Sign In" />
-        </form>
+    <form onSubmit={handleSubmit} className="form__content">
+      <div>
+        <h2 className="welcome-text">Welcome</h2>
+        <br />
       </div>
-    </div>
+
+      <div className="form__div form__div-one">
+        <div className="form__icon">
+          <i className="bx bx-user-circle"></i>
+        </div>
+
+        <div className="form__div-input">
+          <input
+            type="email"
+            id="email"
+            name="email"
+            className="form__input"
+            value={formData.email}
+            onChange={handleInputChange}
+            placeholder=" "
+            required
+          />
+          <label htmlFor="email" className="form__label">Email</label>
+        </div>
+      </div>
+
+      <div className="form__div">
+        <div className="form__icon">
+          <i className="bx bx-lock"></i>
+        </div>
+
+        <div className="form__div-input">
+          <input
+            type={passwordVisible ? "text" : "password"}
+            id="password"
+            name="password"
+            className="form__input"
+            value={formData.password}
+            onChange={handleInputChange}
+            placeholder=" "
+            required
+          />
+          <label htmlFor="password" className="form__label">Password</label>
+          <span className="eye-icon" onClick={togglePasswordVisibility}>
+            {passwordVisible ? <AiFillEyeInvisible /> : <AiFillEye />}
+          </span>
+        </div>
+      </div>
+
+      <a href="#" className="form__forgot">Forgot Password?</a>
+      <input type="submit" className="form__button" value="Sign In" />
+    </form>
+  </div>
+</div>
+
   );
 };
 

@@ -111,15 +111,27 @@ const ApplyLeave = ({
               {errors.from && <span className="req">{errors.from}</span>}
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DatePicker
-                  value={formData.startDate ? dayjs(formData.startDate) : null}
+                  value={
+                    formData.startDate
+                      ? dayjs(formData.startDate, "DD/MM/YYYY")
+                      : null
+                  }
                   onChange={(newValue) =>
                     handleInputChange({
-                      target: { name: "startDate", value: newValue },
+                      target: {
+                        name: "startDate",
+                        value: newValue
+                          ? dayjs(newValue).format("DD/MM/YYYY")
+                          : "",
+                      },
                     })
                   }
+                  format="DD/MM/YYYY"
                   shouldDisableDate={(date) =>
-                    holidays.some((holiday) =>
-                      dayjs(holiday.date).isSame(date, "day")
+                    holidays.some(
+                      (holiday) =>
+                        holiday.type === "Mandatory" &&
+                        dayjs(holiday.date).isSame(date, "day")
                     )
                   }
                   disablePast
@@ -148,23 +160,41 @@ const ApplyLeave = ({
               {errors.to && <span className="req">{errors.to}</span>}
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DatePicker
-                  value={formData.endDate ? dayjs(formData.endDate) : null}
+                  value={
+                    formData.startDate
+                      ? dayjs(formData.startDate, "DD/MM/YYYY")
+                      : null
+                  }
                   onChange={(newValue) =>
                     handleInputChange({
-                      target: { name: "endDate", value: newValue },
+                      target: {
+                        name: "startDate",
+                        value: newValue
+                          ? dayjs(newValue).format("DD/MM/YYYY")
+                          : "",
+                      },
                     })
                   }
+                  format="DD/MM/YYYY"
                   shouldDisableDate={(date) =>
-                    holidays.some((holiday) =>
-                      dayjs(holiday.date).isSame(date, "day")
+                    holidays.some(
+                      (holiday) =>
+                        holiday.type === "Mandatory" &&
+                        dayjs(holiday.date).isSame(date, "day")
                     )
-                  }
-                  minDate={
-                    formData.startDate ? dayjs(formData.startDate) : dayjs()
                   }
                   disablePast
                   renderInput={(params) => (
-                    <TextField {...params} fullWidth size="small" />
+                    <TextField
+                      {...params}
+                      fullWidth
+                      size="small"
+                      sx={{
+                        "& .MuiOutlinedInput-input": {
+                          fontSize: "small",
+                        },
+                      }}
+                    />
                   )}
                 />
               </LocalizationProvider>
