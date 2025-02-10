@@ -196,8 +196,9 @@ function LeavePolicyPage() {
               >
                 <div className="policy-header">
                   <h4>{p.leaveType}</h4>
-                  <p>Total Leaves: {p.maxAllowedLeaves}</p>
+                  
                   <div className="policy-actions">
+                  <p>Total Leaves: {p.maxAllowedLeaves}</p>
                     <button
                       onClick={() => {
                         setShowForm(true);

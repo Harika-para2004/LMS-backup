@@ -305,10 +305,12 @@ function LeaveRequests() {
   // const handleLogout = () => {
   //   window.location.href = "/login";
   // };
-  const handleLogout = () => {
+  const handleLogout = (e) => {
+    e.preventDefault();
     localStorage.clear();
-    navigate("/"); // Redirects user after logout
+    navigate("/");  // Redirects user after logout
   };
+
   const getTodayDate = () => {
     const today = new Date();
     return today.toISOString().split("T")[0];
@@ -617,6 +619,7 @@ function LeaveRequests() {
             email={email}
             project={project}
             leaveData={leaveData}
+            userData={userData}
           />
         );
 

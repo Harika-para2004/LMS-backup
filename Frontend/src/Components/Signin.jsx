@@ -129,17 +129,12 @@ const LoginForm = () => {
   <div className="shape2"></div>
   <div className="shape1"></div>
 
-  {/* Website Heading */}
-  <h1 className="website-heading">LEAVE MANAGEMENT SYSTEM</h1>
-  {/* <header className="header">
-    <img src={logo} alt="QuadFace Logo" className="logo1" />
-    <h1 className="title">Leave Management System</h1>
-</header> */}
-
 
   <div className="form">
     <div className="circle"></div>
     <img src={logo} alt="Quadface Logo" className="logo1" />
+    <h2 style={{ textAlign:"center",marginRight:"-70%" ,color:'var(--deep-blue)',fontSize:"36px"}}>Leave Management System</h2><br/><br/>
+
     <img src={authImage} alt="Authentication" className="form__img" />
 
     <form onSubmit={handleSubmit} className="form__content">

@@ -163,7 +163,7 @@ textarea.input-field {
 }
 
 .policy-header p {
-  margin: 0;
+  margin-right: 5px;
   font-size: 14px;
   color: #666;
 }

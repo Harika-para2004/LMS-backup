@@ -3,8 +3,8 @@ import { DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import dayjs from "dayjs";
-import { formatDate } from "../utils/dateUtlis";
-
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
 import {
   Grid,
   TextField,
@@ -15,7 +15,21 @@ import {
   Card,
   CardContent,
   Typography,
+  Modal,
+  Tooltip,
+  IconButton,
 } from "@mui/material";
+
+const style = {
+  position: "absolute",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
+  bgcolor: "background.paper",
+  borderRadius: "8px",
+  boxShadow: 24,
+  p: 4,
+};
 
 const ApplyLeave = ({
   formData,
@@ -31,16 +45,29 @@ const ApplyLeave = ({
 }) => {
   const [showHolidays, setShowHolidays] = useState(false);
   const [showLeavePolicies, setShowLeavePolicies] = useState(false);
-  const year = new Date().getFullYear();
+  const [openDescription, setOpenDescription] = useState(false);
+  const [currentDescription, setCurrentDescription] = useState("");
   const [fileName, setFileName] = useState("");
 
-const handleFileChangeWithState = (event) => {
-  const file = event.target.files[0];
-  if (file) {
-    setFileName(file.name);
-  }
-  handleFileChange(event);
-};
+  const handleToggleDescription = (policy) => {
+    // Check if the description exists and then set the current description
+    if (policy.description && policy.description.trim() !== "") {
+      setCurrentDescription(policy.description); // Set the description to show in the modal
+      setOpenDescription(policy._id); // Set the policy._id to indicate which policy's description is open
+    } else {
+      // If no description, set a fallback text
+      setCurrentDescription("No description available for this leave policy.");
+      setOpenDescription(policy._id);
+    }
+  };
+
+  const handleFileChangeWithState = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setFileName(file.name);
+    }
+    handleFileChange(event);
+  };
 
   return (
     <div className="leave-management-container">
@@ -204,10 +231,19 @@ const handleFileChangeWithState = (event) => {
 
           <Box display="flex" alignItems="center" gap={2} mt={2}>
             {/* Attach Button */}
-            <Button variant="outlined" component="label" className="attach-button">
-  {fileName ? fileName : "Attach"}
-  <input type="file" name="attachment" onChange={handleFileChangeWithState} hidden />
-</Button>
+            <Button
+              variant="outlined"
+              component="label"
+              className="attach-button"
+            >
+              {fileName ? fileName : "Attach"}
+              <input
+                type="file"
+                name="attachment"
+                onChange={handleFileChangeWithState}
+                hidden
+              />
+            </Button>
 
             {/* Submit Button */}
             <Button
@@ -227,7 +263,7 @@ const handleFileChangeWithState = (event) => {
         onMouseEnter={() => setShowHolidays(true)}
         onMouseLeave={() => setShowHolidays(false)}
       >
-        <h2 className="section-title">Holiday Calendar {year}</h2>
+        <h2 className="section-title">Holiday Calendar</h2>
         {/* <hr className="holiday-divider" /> */}
 
         {showHolidays && (
@@ -285,13 +321,33 @@ const handleFileChangeWithState = (event) => {
                     >
                       <CardContent>
                         <Typography variant="h6" gutterBottom>
-                          {policy.leaveType.toLowerCase()
-          .replace(/\b\w/g, (char) => char.toUpperCase())}
+                          {policy.leaveType}
+                          <Tooltip title="View Description" arrow>
+                            <IconButton
+                              onClick={() => handleToggleDescription(policy)}
+                              sx={{ marginLeft: "8px" }}
+                            >
+                              <FontAwesomeIcon icon={faInfoCircle} />
+                            </IconButton>
+                          </Tooltip>
                         </Typography>
                         <Typography variant="body2" color="textSecondary">
                           Max Allowed Leaves:{" "}
                           <strong>{policy.maxAllowedLeaves}</strong>
                         </Typography>
+                        {/* Show description if this policy's description is open */}
+                        {openDescription === policy._id && (
+                          <Typography variant="body2" mt={1}>
+                            {policy.description || "No description available"}
+                            <Button
+                              size="small"
+                              sx={{ marginLeft: "8px" }}
+                              onClick={() => setOpenDescription(null)} // Close description
+                            >
+                              Close
+                            </Button>
+                          </Typography>
+                        )}
                       </CardContent>
                     </Card>
                   </Grid>
@@ -305,6 +361,40 @@ const handleFileChangeWithState = (event) => {
           </div>
         )}
       </div>
+      {/* Modal for Leave Policy Description */}
+      {/* Modal for Leave Policy Description */}
+      <Modal
+        open={openDescription}
+        onClose={() => setOpenDescription(false)}
+        aria-labelledby="leave-policy-description"
+        aria-describedby="leave-policy-description-modal"
+      >
+        <Box sx={{ ...style, width: 400 }}>
+          <Typography variant="h6" gutterBottom>
+            Leave Policy Description
+          </Typography>
+          <Typography variant="body1" style={{ whiteSpace: "pre-line" }}>
+            {
+              currentDescription
+                .replace(/^[•●▪■★▶►▸*\-]+\s*/g, "") // Remove existing bullets at the start
+                .replace(/\n[•●▪■★▶►▸*\-]+\s*/g, "\n") // Remove bullets from new lines
+                .replace(/\s{2,}/g, " ") // Remove extra spaces
+                .trim() // Trim leading/trailing spaces
+                .toLowerCase() // Convert everything to lowercase
+                .replace(
+                  /(^|\.\s+|\n)([a-z])/g,
+                  (match, separator, char) => separator + char.toUpperCase()
+                ) // Capitalize first letter after '.', '\n'
+                .replace(/\n(?![-•])/g, "\n- ") // Add '-' at the start of every new line (if not already present)
+            }
+          </Typography>
+
+          {/* Display the description */}
+          <Button onClick={() => setOpenDescription(false)} sx={{ mt: 2 }}>
+            Close
+          </Button>
+        </Box>
+      </Modal>
     </div>
   );
 };
