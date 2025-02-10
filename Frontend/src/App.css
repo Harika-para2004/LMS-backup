@@ -430,6 +430,7 @@ body, html {
  .holiday-cal-container{
   max-width: 800px;
   margin: auto;
+  overflow-y: auto;
  }
  .hc-head{
   display: flex;
@@ -633,7 +634,10 @@ body, html {
 .apply-leave-container .holiday-table tr:hover {
  background-color: #f1f1f1;
 }
-
+/*---------EMP LIST--------- */
+.emp-list-container{
+  overflow-y: auto;
+}
 
 
 /* ------------- PROFILE PAGE CSS  -----------------*/
@@ -1216,6 +1220,53 @@ body {
 .history-container {
   position: relative;
   padding: 20px;
+}
+
+.pagination{
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.pagination-btn{
+  padding: 4px 8px;
+  margin:5px;
+}
+
+.edit-icon,.del-icon,.save-btn {
+  font-size: 14px;
+  margin: 5px;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out, color 0.3s;
+}
+
+.save-btn {
+  font-size: 14px;
+  padding: 5px 10px;
+  background: green;
+  color: white;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+}
+
+.edit-icon:hover {
+  transform: scale(1.2);
+  color: #0044cc; /* Darker shade of blue on hover */
+}
+
+.edit-icon:active {
+  transform: scale(1);
+  color: #002288; /* Even darker shade when clicked */
+}
+
+.del-icon:hover {
+  transform: scale(1.2);
+  color: #d4601c; /* Darker shade of blue on hover */
+}
+
+.del-icon:active {
+  transform: scale(1);
+  color: #c54b25; /* Even darker shade when clicked */
 }
 
 .pagination-numbered {

@@ -42,6 +42,7 @@ import {
 import LeavePolicyPage from "./LeavePolicyPage";
 import Sidebar from "./Sidebar";
 import Reports from "./Reports";
+import LeaveRequestsTable from "./LeaveRequestsTable";
 
 function AdminDashboard() {
   const [selectedCategory, setSelectedCategory] = useState("holiday-calendar");
@@ -746,6 +747,7 @@ function AdminDashboard() {
                     display: "flex",
                     flexDirection: "column",
                     gap: 2,
+                    overflowY: "auto",
                   }}
                 >
                   <Typography
@@ -893,7 +895,7 @@ function AdminDashboard() {
                             />
                           </td>
                           <td>
-                            <button onClick={() => handleSave(index)}>
+                            <button className="save-btn" onClick={() => handleSave(index)}>
                               Save
                             </button>
                           </td>
@@ -909,7 +911,7 @@ function AdminDashboard() {
                           <td>{holiday.type}</td>
                           <td>
                             <button onClick={() => handleEdit(index)}>
-                              <FaEdit size={20} color="blue" />
+                              <FaEdit className="edit-icon" size={20} color="blue" />
                             </button>
                             <button
                               onClick={() => handleDeleteHoliday(holiday._id)}
@@ -919,7 +921,7 @@ function AdminDashboard() {
                                 cursor: "pointer",
                               }}
                             >
-                              <FaTrash size={20} color="red" />
+                              <FaTrash className="del-icon" size={20} color="red" />
                             </button>
                           </td>
                         </>
@@ -946,190 +948,284 @@ function AdminDashboard() {
 
       case "leaverequests":
         return (
-          <div className="history-container">
-            <h2>Leave Requests</h2>
+          // <div className="history-container">
+          //   <h2>Leave Requests</h2>
 
-            <div className="filter-container">
-              <FormGroup row sx={{ justifyContent: "flex-end" }}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      value="All"
-                      checked={selectedFilter === "All"}
-                      onChange={handleFilterChange}
-                    />
-                  }
-                  label="All"
-                />
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      value="Pending"
-                      checked={selectedFilter === "Pending"}
-                      onChange={handleFilterChange}
-                    />
-                  }
-                  label="Pending"
-                />
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      value="Approved"
-                      checked={selectedFilter === "Approved"}
-                      onChange={handleFilterChange}
-                      sx={{
-                        "&.Mui-checked": {
-                          color:
-                            selectedFilter === "Approved" ? "green" : "default", // Changes checkbox color to green when checked
-                        },
-                      }}
-                    />
-                  }
-                  label="Approved"
-                />
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      value="Rejected"
-                      checked={selectedFilter === "Rejected"}
-                      onChange={handleFilterChange}
-                      sx={{
-                        "&.Mui-checked": {
-                          color:
-                            selectedFilter === "Rejected" ? "red" : "default", // Changes checkbox color to green when checked
-                        },
-                      }}
-                    />
-                  }
-                  label="Rejected"
-                />
-              </FormGroup>
-            </div>
+          //   <div className="filter-container">
+          //     <FormGroup row sx={{ justifyContent: "flex-end" }}>
+          //       <FormControlLabel
+          //         control={
+          //           <Checkbox
+          //             value="All"
+          //             checked={selectedFilter === "All"}
+          //             onChange={handleFilterChange}
+          //           />
+          //         }
+          //         label="All"
+          //       />
+          //       <FormControlLabel
+          //         control={
+          //           <Checkbox
+          //             value="Pending"
+          //             checked={selectedFilter === "Pending"}
+          //             onChange={handleFilterChange}
+          //           />
+          //         }
+          //         label="Pending"
+          //       />
+          //       <FormControlLabel
+          //         control={
+          //           <Checkbox
+          //             value="Approved"
+          //             checked={selectedFilter === "Approved"}
+          //             onChange={handleFilterChange}
+          //             sx={{
+          //               "&.Mui-checked": {
+          //                 color:
+          //                   selectedFilter === "Approved" ? "green" : "default", // Changes checkbox color to green when checked
+          //               },
+          //             }}
+          //           />
+          //         }
+          //         label="Approved"
+          //       />
+          //       <FormControlLabel
+          //         control={
+          //           <Checkbox
+          //             value="Rejected"
+          //             checked={selectedFilter === "Rejected"}
+          //             onChange={handleFilterChange}
+          //             sx={{
+          //               "&.Mui-checked": {
+          //                 color:
+          //                   selectedFilter === "Rejected" ? "red" : "default", // Changes checkbox color to green when checked
+          //               },
+          //             }}
+          //           />
+          //         }
+          //         label="Rejected"
+          //       />
+          //     </FormGroup>
+          //   </div>
 
-            <table id="tb">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Leave Type</th>
-                  <th>Duration</th>
-                  <th>From</th>
-                  <th>To</th>
-                  <th>Available</th>
-                  <th>Document</th>
-                  <th>Reason</th>
+          //   <table id="tb">
+          //     <thead>
+          //       <tr>
+          //         <th>ID</th>
+          //         <th>Name</th>
+          //         <th>Leave Type</th>
+          //         <th>Duration</th>
+          //         <th>From</th>
+          //         <th>To</th>
+          //         <th>Available</th>
+          //         <th>Document</th>
+          //         <th>Reason</th>
 
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredLeaveHistory.map((leave) =>
-                  leave.startDate.map((startDate, index) => {
-                    // Only render rows where the specific status matches the selected filter
-                    if (
-                      selectedFilter === "All" ||
-                      leave.status[index].toLowerCase() ===
-                        selectedFilter.toLowerCase()
-                    ) {
-                      return (
-                        <tr key={`${leave._id}-${index}`}>
-                          <td>{leave.empid || "N/A"}</td> {/* Access empid */}
-                          <td>{leave.empname || "N/A"}</td>{" "}
-                          {/* Access empname */}
-                          <td>{leave.leaveType}</td>
-                          <td>
-                            {leave.duration ? leave.duration[index] : "N/A"}
-                          </td>
-                          <td>{new Date(startDate).toLocaleDateString()}</td>
-                          <td>
-                            {new Date(
-                              leave.endDate[index]
-                            ).toLocaleDateString()}
-                          </td>
-                          <td>{leave.availableLeaves}</td>
-                          <td>
-                            {leave.attachments?.[index] ? (
-                              <a
-                                href={getDownloadLink(leave.attachments[index])}
-                                download
-                              >
-                                <AiFillFilePdf size={30} color="red" />
-                              </a>
-                            ) : (
-                              <AiOutlineExclamationCircle
-                                size={30}
-                                color="orange"
-                                style={{ cursor: "default" }}
-                              />
-                            )}
-                          </td>
-                          <td>{leave.reason[index]}</td>
-                          <td>
-                            {leave.status[index].toLowerCase() ===
-                              "approved" && (
-                              <button
-                                onClick={() => handleRowClick(leave, index)}
-                                style={{
-                                  color: "green",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  background: "none",
-                                  border: "none",
-                                  cursor: "pointer",
-                                }}
-                              >
-                                <MdCheckCircle
-                                  size={24}
-                                  style={{ marginRight: "5px" }}
-                                />
-                              </button>
-                            )}
-                            {leave.status[index].toLowerCase() ===
-                              "rejected" && (
-                              <button
-                                onClick={() => handleRowClick(leave, index)}
-                                style={{
-                                  color: "red",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  background: "none",
-                                  border: "none",
-                                  cursor: "pointer",
-                                }}
-                              >
-                                <MdCancel
-                                  size={24}
-                                  style={{ marginRight: "5px" }}
-                                />
-                              </button>
-                            )}
-                            {leave.status[index].toLowerCase() !== "approved" &&
-                              leave.status[index].toLowerCase() !==
-                                "rejected" && (
-                                <button
-                                  onClick={() => handleRowClick(leave, index)}
-                                  style={{
-                                    display: "flex",
-                                    color: "blue",
-                                    alignItems: "center",
-                                    background: "none",
-                                    border: "none",
-                                    cursor: "pointer",
-                                  }}
-                                >
-                                  <MdWatchLater size={24} />
-                                </button>
-                              )}
-                          </td>
-                        </tr>
-                      );
-                    }
-                    return null; // Skip rows that don't match the filter
-                  })
-                )}
-              </tbody>
-            </table>
-            <Modal open={modalOpen} onClose={handleCloseModal}>
+          //         <th>Status</th>
+          //       </tr>
+          //     </thead>
+          //     <tbody>
+          //       {filteredLeaveHistory.map((leave) =>
+          //         leave.startDate.map((startDate, index) => {
+          //           // Only render rows where the specific status matches the selected filter
+          //           if (
+          //             selectedFilter === "All" ||
+          //             leave.status[index].toLowerCase() ===
+          //               selectedFilter.toLowerCase()
+          //           ) {
+          //             return (
+          //               <tr key={`${leave._id}-${index}`}>
+          //                 <td>{leave.empid || "N/A"}</td> {/* Access empid */}
+          //                 <td>{leave.empname || "N/A"}</td>{" "}
+          //                 {/* Access empname */}
+          //                 <td>{leave.leaveType}</td>
+          //                 <td>
+          //                   {leave.duration ? leave.duration[index] : "N/A"}
+          //                 </td>
+          //                 <td>{new Date(startDate).toLocaleDateString()}</td>
+          //                 <td>
+          //                   {new Date(
+          //                     leave.endDate[index]
+          //                   ).toLocaleDateString()}
+          //                 </td>
+          //                 <td>{leave.availableLeaves}</td>
+          //                 <td>
+          //                   {leave.attachments?.[index] ? (
+          //                     <a
+          //                       href={getDownloadLink(leave.attachments[index])}
+          //                       download
+          //                     >
+          //                       <AiFillFilePdf size={30} color="red" />
+          //                     </a>
+          //                   ) : (
+          //                     <AiOutlineExclamationCircle
+          //                       size={30}
+          //                       color="orange"
+          //                       style={{ cursor: "default" }}
+          //                     />
+          //                   )}
+          //                 </td>
+          //                 <td>{leave.reason[index]}</td>
+          //                 <td>
+          //                   {leave.status[index].toLowerCase() ===
+          //                     "approved" && (
+          //                     <button
+          //                       onClick={() => handleRowClick(leave, index)}
+          //                       style={{
+          //                         color: "green",
+          //                         display: "flex",
+          //                         alignItems: "center",
+          //                         background: "none",
+          //                         border: "none",
+          //                         cursor: "pointer",
+          //                       }}
+          //                     >
+          //                       <MdCheckCircle
+          //                         size={24}
+          //                         style={{ marginRight: "5px" }}
+          //                       />
+          //                     </button>
+          //                   )}
+          //                   {leave.status[index].toLowerCase() ===
+          //                     "rejected" && (
+          //                     <button
+          //                       onClick={() => handleRowClick(leave, index)}
+          //                       style={{
+          //                         color: "red",
+          //                         display: "flex",
+          //                         alignItems: "center",
+          //                         background: "none",
+          //                         border: "none",
+          //                         cursor: "pointer",
+          //                       }}
+          //                     >
+          //                       <MdCancel
+          //                         size={24}
+          //                         style={{ marginRight: "5px" }}
+          //                       />
+          //                     </button>
+          //                   )}
+          //                   {leave.status[index].toLowerCase() !== "approved" &&
+          //                     leave.status[index].toLowerCase() !==
+          //                       "rejected" && (
+          //                       <button
+          //                         onClick={() => handleRowClick(leave, index)}
+          //                         style={{
+          //                           display: "flex",
+          //                           color: "blue",
+          //                           alignItems: "center",
+          //                           background: "none",
+          //                           border: "none",
+          //                           cursor: "pointer",
+          //                         }}
+          //                       >
+          //                         <MdWatchLater size={24} />
+          //                       </button>
+          //                     )}
+          //                 </td>
+          //               </tr>
+          //             );
+          //           }
+          //           return null; // Skip rows that don't match the filter
+          //         })
+          //       )}
+          //     </tbody>
+          //   </table>
+          //   <Modal open={modalOpen} onClose={handleCloseModal}>
+          //     <Box
+          //       sx={{
+          //         position: "absolute",
+          //         top: "50%",
+          //         left: "50%",
+          //         transform: "translate(-50%, -50%)",
+          //         width: 400,
+          //         bgcolor: "background.paper",
+          //         boxShadow: 24,
+          //         p: 4,
+          //         borderRadius: "10px",
+          //         textAlign: "center",
+          //       }}
+          //     >
+          //       {/* Close Icon */}
+          //       <IconButton
+          //         onClick={handleCloseModal}
+          //         sx={{
+          //           position: "absolute",
+          //           top: 10,
+          //           right: 10,
+          //           color: "gray",
+          //           "&:hover": { color: "black" },
+          //         }}
+          //       >
+          //         <AiOutlineClose size={24} />
+          //       </IconButton>
+          //       <h3 style={{ marginBottom: "20px" }}>
+          //         Approve or Reject Request?
+          //       </h3>
+
+          //       {/* Added code: Determine current status and toggle button enable/disable */}
+          //       {selectedLeave &&
+          //         (() => {
+          //           // Retrieve current status using the selected index
+          //           const currentStatus =
+          //             (selectedLeave.status &&
+          //               selectedLeave.status[selectedLeave.selectedIndex]) ||
+          //             "pending";
+
+          //           return (
+          //             <div className="action-buttons">
+          //               <button
+          //                 onClick={handleApprove}
+          //                 className="approve-btn"
+          //                 disabled={currentStatus.toLowerCase() === "approved"}
+          //                 style={{
+          //                   opacity:
+          //                     currentStatus.toLowerCase() === "approved"
+          //                       ? 0.5
+          //                       : 1,
+          //                   cursor:
+          //                     currentStatus.toLowerCase() === "approved"
+          //                       ? "not-allowed"
+          //                       : "pointer",
+          //                 }}
+          //               >
+          //                 ✅ Approve
+          //               </button>
+          //               <button
+          //                 onClick={handleReject}
+          //                 className="reject-btn"
+          //                 disabled={currentStatus.toLowerCase() === "rejected"}
+          //                 style={{
+          //                   opacity:
+          //                     currentStatus.toLowerCase() === "rejected"
+          //                       ? 0.5
+          //                       : 1,
+          //                   cursor:
+          //                     currentStatus.toLowerCase() === "rejected"
+          //                       ? "not-allowed"
+          //                       : "pointer",
+          //                 }}
+          //               >
+          //                 ❌ Reject
+          //               </button>
+          //             </div>
+          //           );
+          //         })()}
+          //     </Box>
+          //   </Modal>
+          // </div>
+
+          <div>
+          <LeaveRequestsTable
+            filteredLeaveHistory={filteredLeaveHistory}
+            selectedFilter={selectedFilter}
+            handleFilterChange={handleFilterChange}
+            handleRowClick={handleRowClick}
+            getDownloadLink={getDownloadLink}
+          />
+    
+          {/* Modal for Approve/Reject */}
+        <Modal open={modalOpen} onClose={handleCloseModal}>
               <Box
                 sx={{
                   position: "absolute",
@@ -1211,7 +1307,7 @@ function AdminDashboard() {
                   })()}
               </Box>
             </Modal>
-          </div>
+        </div>
         );
 
       case "employee-list":
@@ -1231,9 +1327,8 @@ function AdminDashboard() {
                     ),
                   }}
                 />
-              <Button
+              {/* <Button
                 variant="contained"
-                onClick={() => handleAddEmployeeClick()}
                 sx={{
                   // position: "absolute",
                   backgroundColor: "#006600",
@@ -1250,6 +1345,22 @@ function AdminDashboard() {
                 }}
               >
                 <AddIcon /> Add Employee
+              </Button> */}
+              <Button
+                variant="contained"
+                onClick={() => handleAddEmployeeClick()}
+                // onClick={() => setShowModal(true)}
+                sx={{
+                  textTransform: "capitalize",
+                  backgroundColor: "#006400", // Align the button absolutely
+                  // marginTop: "-40px", // Push it to the right edge
+                  // marginRight: "35px", // Optional: Add some spacing from the right edge
+                  "&:focus": {
+                    outline: "none",
+                  },
+                }}
+              >
+                Add Employee
               </Button>
             </div>
 
@@ -1315,7 +1426,7 @@ function AdminDashboard() {
                           </td>
 
                           <td>
-                            <button onClick={() => handleSave1(index)}>
+                            <button className="save-btn" onClick={() => handleSave1(index)}>
                               Save
                             </button>
                           </td>
@@ -1338,7 +1449,7 @@ function AdminDashboard() {
                                 cursor: "pointer",
                               }}
                             >
-                              <FaEdit size={20} color="blue" />
+                              <FaEdit className="edit-icon" size={20} color="blue" />
                             </button>
                             <button
                               onClick={() => handleDeleteEmployee(emp._id)}
@@ -1348,7 +1459,7 @@ function AdminDashboard() {
                                 cursor: "pointer",
                               }}
                             >
-                              <FaTrash size={20} color="red" />
+                              <FaTrash className="del-icon" size={20} color="red" />
                             </button>
                           </td>
                         </>
@@ -1406,9 +1517,12 @@ function AdminDashboard() {
             display: "flex",
             flexDirection: "column",
             gap: 2,
+            overflowY: "auto",
+            height: "100vh",
+            margin: "10px 0",
           }}
         >
-          <Typography variant="h5" id="add-employee-modal" textAlign="center">
+          <Typography variant="h5" id="add-employee-modal" textTransform="capitalize" textAlign="center">
             Add Employee
           </Typography>
           <TextField

@@ -145,24 +145,48 @@ app.get("/leavesummary", async (req, res) => {
     res.status(500).send("Server Error");
   }
 });
+
+// app.get("/leaverequests", async (req, res) => {
+//   try {
+//     const excludeEmail = req.query.excludeEmail; // Get manager's email from query parameters
+
+
+//     if (!excludeEmail) {
+//       return res.status(400).json({ message: "Manager email is required" });
+//     }
+
+//     const query = { managerEmail: excludeEmail }; // Fetch requests where managerEmail matches excludeEmail
+//     console.log("Query:", query); // Debugging
+
+//     const leaveRequests = await Leave.find(query); // Query the database correctly
+//     res.json(leaveRequests);
+//   } catch (error) {
+//     console.error("Error fetching leave requests:", error);
+//     res.status(500).send("Server error");
+//   }
+// });
+
 app.get("/leaverequests", async (req, res) => {
   try {
-    const excludeEmail = req.query.excludeEmail; // Get manager's email from query parameters
+    const { userRole, userEmail } = req.query; // Get role & email from query params
 
-    if (!excludeEmail) {
-      return res.status(400).json({ message: "Manager email is required" });
+    let query = {}; // Default query for admin (fetch all)
+
+    if (userRole === "Manager") {
+      query.managerEmail = userEmail; // Filter requests for employees under this manager
     }
 
-    const query = { managerEmail: excludeEmail }; // Fetch requests where managerEmail matches excludeEmail
-    console.log("Query:", query); // Debugging
+    console.log("Query:", query); // Debugging output
 
-    const leaveRequests = await Leave.find(query); // Query the database correctly
+    const leaveRequests = await Leave.find(query);
     res.json(leaveRequests);
   } catch (error) {
     console.error("Error fetching leave requests:", error);
     res.status(500).send("Server error");
   }
 });
+
+
 app.put("/leaverequests/:id", async (req, res) => {
   try {
     const leaveId = req.params.id;
