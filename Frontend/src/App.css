@@ -1230,7 +1230,7 @@ body {
 }
 
 .pagination-numbered button {
-  padding: 5px 10px;
+  padding: 5px 7px;
   background-color: var(--deep-blue);
   color: white;
   border: none;
@@ -1239,7 +1239,7 @@ body {
 }
 
 .pagination-numbered .arrow {
-  padding: 5px 10px;
+  padding: 5px 7px;
   background-color: var(--primary-blue);
   color: white;
   border: none;
@@ -1386,7 +1386,7 @@ body {
 }
 
 .pagination-numbered button {
-  padding: 5px 10px;
+  padding: 5px 7px;
   background-color: var(--deep-blue);
   color: white;
   border: none;
@@ -1395,7 +1395,7 @@ body {
 }
 
 .pagination-numbered .arrow {
-  padding: 5px 10px;
+  padding: 5px 7px;
   background-color: var(--primary-blue);
   color: white;
   border: none;

@@ -26,11 +26,11 @@ const LeaveHistory = ({ leaveHistory }) => {
   const getStatusIcon = (status) => {
     switch (status) {
       case "pending":
-        return <MdWatchLater size={30} color="blue" />;
+        return <MdWatchLater size={23} color="blue" />;
       case "Approved":
-        return <MdCheckCircle size={30} color="green" />;
+        return <MdCheckCircle size={23} color="green" />;
       case "Rejected":
-        return <MdCancel size={30} color="red" />;
+        return <MdCancel size={23} color="red" />;
       default:
         return null;
     }
@@ -105,10 +105,10 @@ const LeaveHistory = ({ leaveHistory }) => {
                 <td>
                   {leave.attachments ? (
                     <a href={getDownloadLink(leave.attachments)} download>
-                      <AiFillFilePdf size={30} color="red" />
+                      <AiFillFilePdf size={23} color="red" />
                     </a>
                   ) : (
-                    <AiOutlineExclamationCircle size={30} color="gray" />
+                    <AiOutlineExclamationCircle size={23} color="gray" />
                   )}
                 </td>
                 <td>{getStatusIcon(leave.status)}</td>
@@ -134,14 +134,14 @@ const LeaveHistory = ({ leaveHistory }) => {
           onClick={() => changePage(1)}
           disabled={currentPage === 1}
         >
-          <FiSkipBack size={20} />
+          <FiSkipBack size={14} />
         </button>
         <button
           className="arrow"
           onClick={() => changePage(currentPage - 1)}
           disabled={currentPage === 1}
         >
-          <FiChevronLeft size={20} />
+          <FiChevronLeft size={14} />
         </button>
 
         <div className="page-numbers">
@@ -162,14 +162,14 @@ const LeaveHistory = ({ leaveHistory }) => {
           onClick={() => changePage(currentPage + 1)}
           disabled={currentPage === totalPages}
         >
-          <FiChevronRight size={20} />
+          <FiChevronRight size={14} />
         </button>
         <button
           className="arrow"
           onClick={() => changePage(totalPages)}
           disabled={currentPage === totalPages}
         >
-          <FiSkipForward size={20} />
+          <FiSkipForward size={14} />
         </button>
       </div>
     </div>
