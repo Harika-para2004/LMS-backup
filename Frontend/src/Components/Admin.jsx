@@ -67,7 +67,9 @@ function AdminDashboard() {
   const [modalOpen, setModalOpen] = useState(false);
   const year = new Date().getFullYear();
   const [searchTerm, setSearchTerm] = useState("");
-  const filteredEmployees = employeeList.filter((emp)=> emp.empname.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredEmployees = employeeList.filter((emp) =>
+    emp.empname.toLowerCase().includes(searchTerm.toLowerCase())
+  );
   // const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
 
   const [empData, setEmpData] = useState({
@@ -78,7 +80,7 @@ function AdminDashboard() {
     gender: "",
     project: "",
     role: "",
-    managerEmail:""
+    managerEmail: "",
   });
   const sortHolidaysByMonthAndCustomDay = (holidayList) => {
     const monthNames = [
@@ -824,7 +826,7 @@ function AdminDashboard() {
 
             <div className="header">
               <h2 className="content-heading">Holiday Calendar {year}</h2>
-     
+
               <Button
                 variant="contained"
                 onClick={() => setShowModal(true)}
@@ -895,7 +897,10 @@ function AdminDashboard() {
                             />
                           </td>
                           <td>
-                            <button className="save-btn" onClick={() => handleSave(index)}>
+                            <button
+                              className="save-btn"
+                              onClick={() => handleSave(index)}
+                            >
                               Save
                             </button>
                           </td>
@@ -911,7 +916,11 @@ function AdminDashboard() {
                           <td>{holiday.type}</td>
                           <td>
                             <button onClick={() => handleEdit(index)}>
-                              <FaEdit className="edit-icon" size={20} color="blue" />
+                              <FaEdit
+                                className="edit-icon"
+                                size={20}
+                                color="blue"
+                              />
                             </button>
                             <button
                               onClick={() => handleDeleteHoliday(holiday._id)}
@@ -921,7 +930,11 @@ function AdminDashboard() {
                                 cursor: "pointer",
                               }}
                             >
-                              <FaTrash className="del-icon" size={20} color="red" />
+                              <FaTrash
+                                className="del-icon"
+                                size={20}
+                                color="red"
+                              />
                             </button>
                           </td>
                         </>
@@ -1216,16 +1229,16 @@ function AdminDashboard() {
           // </div>
 
           <div>
-          <LeaveRequestsTable
-            filteredLeaveHistory={filteredLeaveHistory}
-            selectedFilter={selectedFilter}
-            handleFilterChange={handleFilterChange}
-            handleRowClick={handleRowClick}
-            getDownloadLink={getDownloadLink}
-          />
-    
-          {/* Modal for Approve/Reject */}
-        <Modal open={modalOpen} onClose={handleCloseModal}>
+            <LeaveRequestsTable
+              filteredLeaveHistory={filteredLeaveHistory}
+              selectedFilter={selectedFilter}
+              handleFilterChange={handleFilterChange}
+              handleRowClick={handleRowClick}
+              getDownloadLink={getDownloadLink}
+            />
+
+            {/* Modal for Approve/Reject */}
+            <Modal open={modalOpen} onClose={handleCloseModal}>
               <Box
                 sx={{
                   position: "absolute",
@@ -1307,7 +1320,7 @@ function AdminDashboard() {
                   })()}
               </Box>
             </Modal>
-        </div>
+          </div>
         );
 
       case "employee-list":
@@ -1316,17 +1329,20 @@ function AdminDashboard() {
             <div className="header">
               <h2 className="content-heading">Employee Details</h2>
               <TextField
-                  variant="outlined"
-                  size="small"
-                  placeholder="Search Employee"
-                  value={searchTerm}
-                  onChange={(e)=>setSearchTerm(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <FontAwesomeIcon icon={faSearch} style={{ marginRight: "10px"}}/>
-                    ),
-                  }}
-                />
+                variant="outlined"
+                size="small"
+                placeholder="Search Employee"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <FontAwesomeIcon
+                      icon={faSearch}
+                      style={{ marginRight: "10px" }}
+                    />
+                  ),
+                }}
+              />
               {/* <Button
                 variant="contained"
                 sx={{
@@ -1426,7 +1442,10 @@ function AdminDashboard() {
                           </td>
 
                           <td>
-                            <button className="save-btn" onClick={() => handleSave1(index)}>
+                            <button
+                              className="save-btn"
+                              onClick={() => handleSave1(index)}
+                            >
                               Save
                             </button>
                           </td>
@@ -1434,12 +1453,18 @@ function AdminDashboard() {
                       ) : (
                         <>
                           <td>{emp.empid}</td>
-                          <td>{emp.empname.toLowerCase()
-          .replace(/\b\w/g, (char) => char.toUpperCase())}</td>
+                          <td>
+                            {emp.empname
+                              .toLowerCase()
+                              .replace(/\b\w/g, (char) => char.toUpperCase())}
+                          </td>
                           <td>{emp.email}</td>
                           <td>{emp.role}</td>
-                          <td>{emp.project.toLowerCase()
-          .replace(/\b\w/g, (char) => char.toUpperCase())}</td>
+                          <td>
+                            {emp.project
+                              .toLowerCase()
+                              .replace(/\b\w/g, (char) => char.toUpperCase())}
+                          </td>
                           <td>
                             <button
                               onClick={() => handleEditEmployee(index)}
@@ -1449,7 +1474,11 @@ function AdminDashboard() {
                                 cursor: "pointer",
                               }}
                             >
-                              <FaEdit className="edit-icon" size={20} color="blue" />
+                              <FaEdit
+                                className="edit-icon"
+                                size={20}
+                                color="blue"
+                              />
                             </button>
                             <button
                               onClick={() => handleDeleteEmployee(emp._id)}
@@ -1459,7 +1488,11 @@ function AdminDashboard() {
                                 cursor: "pointer",
                               }}
                             >
-                              <FaTrash className="del-icon" size={20} color="red" />
+                              <FaTrash
+                                className="del-icon"
+                                size={20}
+                                color="red"
+                              />
                             </button>
                           </td>
                         </>
@@ -1472,7 +1505,6 @@ function AdminDashboard() {
                   </tr>
                 )}
               </tbody>
-        
             </table>
           </div>
         );
@@ -1522,7 +1554,12 @@ function AdminDashboard() {
             margin: "10px 0",
           }}
         >
-          <Typography variant="h5" id="add-employee-modal" textTransform="capitalize" textAlign="center">
+          <Typography
+            variant="h5"
+            id="add-employee-modal"
+            textTransform="capitalize"
+            textAlign="center"
+          >
             Add Employee
           </Typography>
           <TextField
@@ -1569,31 +1606,31 @@ function AdminDashboard() {
             </Select>
           </FormControl>
           <FormControl fullWidth>
-  <InputLabel id="role-label">Role</InputLabel>
-  <Select
-    labelId="role-label"
-    id="role"
-    name="role"
-    value={empData.role}
-    onChange={handleChange}
-    label="Role"
-  >
-    <MenuItem value="Manager">Manager</MenuItem>
-    <MenuItem value="Employee">Employee</MenuItem>
-  </Select>
-</FormControl>
+            <InputLabel id="role-label">Role</InputLabel>
+            <Select
+              labelId="role-label"
+              id="role"
+              name="role"
+              value={empData.role}
+              onChange={handleChange}
+              label="Role"
+            >
+              <MenuItem value="Manager">Manager</MenuItem>
+              <MenuItem value="Employee">Employee</MenuItem>
+            </Select>
+          </FormControl>
 
-{/* Show Manager Email input only if role is Employee */}
-{empData.role === "Employee" && (
-  <TextField
-    fullWidth
-    margin="normal"
-    label="Manager Email"
-    name="managerEmail"
-    value={empData.managerEmail || ""}
-    onChange={handleChange}
-  />
-)}
+          {/* Show Manager Email input only if role is Employee */}
+          {empData.role === "Employee" && (
+            <TextField
+              fullWidth
+              margin="normal"
+              label="Manager Email"
+              name="managerEmail"
+              value={empData.managerEmail || ""}
+              onChange={handleChange}
+            />
+          )}
 
           <TextField
             label="Project"

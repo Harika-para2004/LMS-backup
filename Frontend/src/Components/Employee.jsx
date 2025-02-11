@@ -29,6 +29,7 @@ import LeaveHistory from "./LeaveHistory";
 import ApplyLeave from "./ApplyLeave";
 import Sidebar from "./Sidebar";
 import { formatDate } from "../utils/dateUtlis";
+import dayjs from "dayjs";
 
 
 const App = () => {
@@ -155,6 +156,76 @@ const App = () => {
     navigate("/");  // Redirects user after logout
   };
 
+  // const handleSubmit = async (event) => {
+  //   event.preventDefault();
+  
+  //   const { leaveType, startDate, endDate, reason } = formData;
+  
+  //   // Validate required fields
+  //   if (!leaveType || !startDate || !endDate) {
+  //     setErrors({
+  //       leaveType: leaveType ? "" : "Required field",
+  //       from: startDate ? "" : "Required field",
+  //       to: endDate ? "" : "Required field",
+  //     });
+  //     return;
+  //   }
+  
+  //   // Validate date logic
+  //   if (new Date(endDate) < new Date(startDate)) {
+  //     setErrors((prevErrors) => ({
+  //       ...prevErrors,
+  //       to: "End Date cannot be before Start Date",
+  //     }));
+  //     return;
+  //   }
+  //   // Prepare form data to send
+  //   const applyDate = getTodayDate();
+  //   const formDataToSend = new FormData();
+  //   formDataToSend.append("email", email);
+  //   formDataToSend.append("empname", username);
+  //   formDataToSend.append("empid", empid);
+  //   formDataToSend.append("managerEmail",managerEmail);
+  //   formDataToSend.append("leaveType", leaveType);
+  //   formDataToSend.append("applyDate", applyDate);
+  //   formDataToSend.append("startDate", startDate);
+  //   formDataToSend.append("endDate", endDate);
+    
+  //   // Append file and reason if they exist
+   
+  //   if (file) {
+  //     formDataToSend.append("attachment", file);
+  //   } else {
+  //     // If no file, append an empty string (or null if you prefer)
+  //     formDataToSend.append("attachment", "");
+  //   }
+    
+  //   if (reason) {
+  //     formDataToSend.append("reason", reason);
+  //   }else{
+  //     formDataToSend.append("reason", null);
+
+  //   }
+  //   try {
+  //     const response = await fetch(`http://localhost:5001/apply-leave?email=${email}`, {
+  //       method: "POST",
+  //       body: formDataToSend,
+  //     });
+  
+  //     if (!response.ok) {
+  //       const errorData = await response.json();
+  //       throw new Error(errorData.message || "Failed to submit form. Please try again later.");
+  //     }
+  
+  //     const result = await response.json();
+  //     alert(result.message);
+  //     // Optionally reset form data or perform any other necessary actions after submission
+  //   } catch (error) {
+  //     console.error("Error submitting form:", error);
+  //     alert(error.message); // Display the error message to the user
+  //   }
+  // };
+  
   const handleSubmit = async (event) => {
     event.preventDefault();
   
@@ -178,35 +249,29 @@ const App = () => {
       }));
       return;
     }
+  
     // Prepare form data to send
-    const applyDate = getTodayDate();
+    const applyDate = dayjs().format("YYYY-MM-DD"); // Ensure date is in backend-friendly format
     const formDataToSend = new FormData();
     formDataToSend.append("email", email);
     formDataToSend.append("empname", username);
     formDataToSend.append("empid", empid);
-    formDataToSend.append("managerEmail",managerEmail);
+    formDataToSend.append("managerEmail", managerEmail);
     formDataToSend.append("leaveType", leaveType);
     formDataToSend.append("applyDate", applyDate);
-    formDataToSend.append("startDate", startDate);
-    formDataToSend.append("endDate", endDate);
-    
-    // Append file and reason if they exist
-   
+    formDataToSend.append("startDate", dayjs(startDate, "DD/MM/YYYY").format("YYYY-MM-DD")); 
+    formDataToSend.append("endDate", dayjs(endDate, "DD/MM/YYYY").format("YYYY-MM-DD"));
+  
+    // Append file only if it exists
     if (file) {
       formDataToSend.append("attachment", file);
-    } else {
-      // If no file, append an empty string (or null if you prefer)
-      formDataToSend.append("attachment", "");
     }
-    
-    if (reason) {
-      formDataToSend.append("reason", reason);
-    }else{
-      formDataToSend.append("reason", null);
-
-    }
+  
+    // Append reason properly
+    formDataToSend.append("reason", reason ? reason : "N/A"); // Avoid sending null
+  
     try {
-      const response = await fetch(`http://localhost:5001/apply-leave?email=${email}`, {
+      const response = await fetch(`http://localhost:5001/apply-leave?email=${encodeURIComponent(email)}`, {
         method: "POST",
         body: formDataToSend,
       });
@@ -218,10 +283,9 @@ const App = () => {
   
       const result = await response.json();
       alert(result.message);
-      // Optionally reset form data or perform any other necessary actions after submission
     } catch (error) {
       console.error("Error submitting form:", error);
-      alert(error.message); // Display the error message to the user
+      alert(error.message);
     }
   };
   

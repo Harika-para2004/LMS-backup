@@ -186,7 +186,7 @@ const LoginForm = () => {
         </div>
       </div>
 
-      <a href="#" className="form__forgot">Forgot Password?</a>
+      {/* <a href="#" className="form__forgot">Forgot Password?</a> */}
       <input type="submit" className="form__button" value="Sign In" />
     </form>
   </div>

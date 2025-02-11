@@ -170,14 +170,14 @@ const ApplyLeave = ({
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DatePicker
                   value={
-                    formData.startDate
-                      ? dayjs(formData.startDate, "DD/MM/YYYY")
+                    formData.endDate
+                      ? dayjs(formData.endDate, "DD/MM/YYYY")
                       : null
                   }
                   onChange={(newValue) =>
                     handleInputChange({
                       target: {
-                        name: "startDate",
+                        name: "endDate",
                         value: newValue
                           ? dayjs(newValue).format("DD/MM/YYYY")
                           : "",
