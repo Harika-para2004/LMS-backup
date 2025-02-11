@@ -20,6 +20,7 @@ import {
 import Reports from "./Reports";
 import { formatDate } from "../utils/dateUtlis";
 import LeaveRequestsTable from "./LeaveRequestsTable";
+import dayjs from "dayjs";
 
 
 function LeaveRequests() {
@@ -30,6 +31,7 @@ function LeaveRequests() {
   const [leaveData, setLeaveData] = useState([]);
   const [managerEmail, setmanagerEmail] = useState("");
   const [email, setEmail] = useState("");
+  const [gender, setGender] = useState("");
   const [empid, setEmpid] = useState("");
   const [username, setUsername] = useState("");
   const [project, setProject] = useState("");
@@ -44,7 +46,7 @@ function LeaveRequests() {
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const [leavepolicyRef, setLeavePolicyRef] = useState([]);
+  const [leavePolicyRef, setLeavePolicyRef] = useState([]);
   const year = new Date().getFullYear();
 
   const [errors, setErrors] = useState({
@@ -219,7 +221,9 @@ function LeaveRequests() {
       // console.log("user-role: ",userData.role);
       if (response.ok) {
         const data = await response.json();
-        setLeaveHistory(data); // Directly set the filtered data from backend
+        const sortedData = data.sort((a, b) => new Date(b.applyDate) - new Date(a.applyDate));
+
+        setLeaveHistory(sortedData); // Directly set the filtered data from backend
       } else {
         console.error("Failed to fetch leave history");
       }
@@ -244,6 +248,7 @@ function LeaveRequests() {
           setEmpid(parsedUserData.empid || "");
           setmanagerEmail(parsedUserData.managerEmail || "")
           setEmail(parsedUserData.email || "");
+          setGender(parsedUserData.gender || "");
           setProject(parsedUserData.project || "");
         }
       } catch (error) {
@@ -316,57 +321,166 @@ function LeaveRequests() {
     return today.toISOString().split("T")[0];
   };
 
+  const formatCase = (text) => {
+    return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
+  
   const handleSubmit = async (event) => {
     event.preventDefault();
 
+    // console.log('leaveHistory',leaveHistory);
+    // console.log('leaveData',leaveData);
+
     const { leaveType, startDate, endDate, reason } = formData;
+    const today = dayjs().format("YYYY-MM-DD");
+    const formattedStartDate = dayjs(startDate, "DD/MM/YYYY").format(
+      "YYYY-MM-DD"
+    );
+    const formattedEndDate = dayjs(endDate, "DD/MM/YYYY").format("YYYY-MM-DD");
 
-    // Validate required fields
+    // **✅ 1. Required Fields Check**
     if (!leaveType || !startDate || !endDate) {
-      setErrors({
-        leaveType: leaveType ? "" : "Required field",
-        from: startDate ? "" : "Required field",
-        to: endDate ? "" : "Required field",
-      });
+      alert("All fields (Leave Type, Start Date, End Date) are required.");
       return;
     }
 
-    // Validate date logic
-    if (new Date(endDate) < new Date(startDate)) {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        to: "End Date cannot be before Start Date",
-      }));
+    // **✅ 2. Valid Date Range Check**
+    if (new Date(formattedEndDate) < new Date(formattedStartDate)) {
+      alert("End Date cannot be before Start Date.");
       return;
     }
-    // Prepare form data to send
-    const applyDate = getTodayDate();
+
+    // **✅ 3 & 4. No Holidays or Weekends**
+    const isHoliday = holidays.some(
+      (holiday) =>
+        holiday.type === "Mandatory" &&
+        dayjs(holiday.date).isSame(formattedStartDate, "day")
+    );
+
+    if (isHoliday) {
+      alert("You cannot apply leave on company holidays.");
+      return;
+    }
+
+    const isWeekend =
+      dayjs(formattedStartDate).day() === 0 ||
+      dayjs(formattedStartDate).day() === 6;
+    if (isWeekend) {
+      alert("You cannot apply leave on weekends.");
+      return;
+    }
+
+    // **✅ 5. Cannot Apply for Same Leave Twice**
+    const alreadyApplied = leaveHistory.some(
+      (leave) =>
+        leave.leaveType === leaveType &&
+        dayjs(leave.startDate).isSame(formattedStartDate, "day") &&
+        dayjs(leave.endDate).isSame(formattedEndDate, "day")
+    );
+    if (alreadyApplied) {
+      alert(`You have already applied for ${leaveType} on these dates.`);
+      return;
+    }
+
+    // **✅ 6. Leave Balance Check**
+    const appliedLeave = leaveData.find(
+      (leave) => formatCase(leave.leaveType) === formatCase(leaveType)
+    );
+
+    const leaveBalance =
+      appliedLeave?.availableLeaves ??
+      leavePolicyRef.find(
+        (policy) => formatCase(policy.leaveType) === formatCase(leaveType)
+      )?.maxAllowedLeaves ??
+      0;
+
+    const requestedDays =
+      dayjs(formattedEndDate).diff(dayjs(formattedStartDate), "day") + 1;
+
+    if (requestedDays > leaveBalance && leaveType !== "LOP") {
+      alert(
+        `You do not have enough ${leaveType} balance,you have only ${leaveBalance} leaves.`
+      );
+      return;
+    }
+
+    console.log("leaveType", leaveType);
+    console.log("userData gender", email);
+
+    // **✅ 7 & 8. Gender-Based Leave Restrictions**
+    if (leaveType.includes("Maternity") && gender !== "Female") {
+      alert("Maternity Leave is only applicable to female employees.");
+      return;
+    }
+    console.log(gender);
+
+    if (leaveType.includes("Paternity") && gender !== "Male") {
+      alert("Paternity Leave is only applicable to male employees.");
+      return;
+    }
+
+    // **✅ 9. Sick Leave can only be applied for past and current dates**
+    if (
+      leaveType === "Sick Leave" &&
+      dayjs(formattedStartDate).isAfter(today)
+    ) {
+      alert("Sick Leave can only be applied for past or current dates.");
+      return;
+    }
+
+    // **✅ 10 & 11. No Overlapping Leaves**
+    const hasOverlap = leaveHistory.some(
+      (leave) =>
+        dayjs(leave.startDate, "DD/MM/YYYY").isBefore(
+          dayjs(formattedEndDate, "YYYY-MM-DD")
+        ) &&
+        dayjs(leave.endDate, "DD/MM/YYYY").isAfter(
+          dayjs(formattedStartDate, "YYYY-MM-DD")
+        )
+    );
+
+    if (hasOverlap) {
+      alert(
+        "You have an existing leave that overlaps with the selected dates."
+      );
+      return;
+    }
+
+    // **✅ 12. LOP (Unpaid Leave) when no casual leaves are left**
+    if (
+      leaveType === "LOP" &&
+      leaveData.find((leave) => leave.leaveType === "Casual Leave")
+        ?.availableLeaves > 0
+    ) {
+      alert("LOP can only be taken if Casual Leaves are exhausted.");
+      return;
+    }
+
+    // **✅ Optional: Prevent multiple pending leave requests**
+    // if (leaveHistory.some((leave) => leave.status.includes("Pending"))) {
+    //   alert(
+    //     "You already have a pending leave request. Wait for approval before applying again."
+    //   );
+    //   return;
+    // }
+
+    // **Proceed with submission**
     const formDataToSend = new FormData();
     formDataToSend.append("email", email);
     formDataToSend.append("empname", username);
     formDataToSend.append("empid", empid);
+    formDataToSend.append("managerEmail", managerEmail);
     formDataToSend.append("leaveType", leaveType);
-    formDataToSend.append("applyDate", applyDate);
-    formDataToSend.append("startDate", startDate);
-    formDataToSend.append("endDate", endDate);
+    formDataToSend.append("applyDate", today);
+    formDataToSend.append("startDate", formattedStartDate);
+    formDataToSend.append("endDate", formattedEndDate);
+    if (file) formDataToSend.append("attachment", file);
+    formDataToSend.append("reason", reason || "N/A");
 
-    // Append file and reason if they exist
-
-    if (file) {
-      formDataToSend.append("attachment", file);
-    } else {
-      // If no file, append an empty string (or null if you prefer)
-      formDataToSend.append("attachment", "");
-    }
-
-    if (reason) {
-      formDataToSend.append("reason", reason);
-    } else {
-      formDataToSend.append("reason", null);
-    }
     try {
       const response = await fetch(
-        `http://localhost:5001/apply-leave?email=${email}`,
+        `http://localhost:5001/apply-leave?email=${encodeURIComponent(email)}`,
         {
           method: "POST",
           body: formDataToSend,
@@ -376,18 +490,20 @@ function LeaveRequests() {
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(
-          errorData.message || "Failed to submit form. Please try again later."
+          errorData.message || "Failed to submit form. Please try again."
         );
       }
 
-      const result = await response.json();
-      alert(result.message);
-      // Optionally reset form data or perform any other necessary actions after submission
+      alert("Leave application submitted successfully.");
+      setFormData({ leaveType: "", startDate: "", endDate: "", reason: "" });
+      setFile(null);
+      setErrors({});
     } catch (error) {
       console.error("Error submitting form:", error);
-      alert(error.message); // Display the error message to the user
+      alert(error.message);
     }
   };
+
   const handleReject = async () => {
     if (selectedLeave) {
       const { selectedIndex, ...leave } = selectedLeave;
@@ -397,7 +513,7 @@ function LeaveRequests() {
       const updatedLeave = {
         ...leave,
         status: leave.status.map((stat, index) =>
-          index === selectedIndex && (stat === "pending" || stat === "Approved")
+          index === selectedIndex && (stat === "Pending" || stat === "Approved")
             ? "Rejected"
             : stat
         ),
@@ -606,7 +722,10 @@ function LeaveRequests() {
             holidays={holidays}
             getTodayDate={getTodayDate}
             leavePolicies={leavePolicies} // Pass leave policies here
-            leavepolicyRef={leavepolicyRef}
+            leavePolicyRef={leavePolicyRef}
+            leaveHistory={leavehistory}
+            leaveData={leaveData}
+            gender={gender}
           />
         );
 

@@ -44,52 +44,102 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
     endDate,
     reason,
     managerEmail,
-  } = req.body; // Removed applyDate as it should be derived from the current date
+  } = req.body;
   const filePath = req.file ? req.file.path : null;
 
   try {
-    let leaveRecord = await Leave.findOne({ email, leaveType });
+    // Convert dates to Date objects
+    const formattedStartDate = new Date(startDate);
+    const formattedEndDate = new Date(endDate);
 
-    // Create a new leave record or update an existing one
-    if (leaveRecord) {
-      // Update existing leave record
-      leaveRecord.startDate.push(new Date(startDate));
-      leaveRecord.endDate.push(new Date(endDate));
-      leaveRecord.status.push("pending");
+    // **✅ 1. Required Fields Check**
+    if (!leaveType || !startDate || !endDate) {
+      return res
+        .status(400)
+        .json({
+          message:
+            "All fields (Leave Type, Start Date, End Date) are required.",
+        });
+    }
 
-      if (filePath) {
-        leaveRecord.attachments.push(filePath);
-      } else {
-        leaveRecord.attachments.push(""); // Push an empty string when no file is provided
-      }
+    // **✅ 2. Check if End Date is valid**
+    if (formattedEndDate < formattedStartDate) {
+      return res
+        .status(400)
+        .json({ message: "End Date cannot be before Start Date." });
+    }
 
-      if (reason) {
-        leaveRecord.reason.push(reason); // Ensure reason is pushed
-      }
-    } else {
-      // Create a new leave record
-      leaveRecord = new Leave({
-        email,
-        empname,
-        empid,
-        managerEmail,
-        applyDate: new Date(), // Setting current date as applyDate
-        leaveType,
-        startDate: [new Date(startDate)],
-        endDate: [new Date(endDate)],
-        reason: reason ? [reason] : [], // Add reason only if provided
-        status: ["pending"],
-        attachments: [filePath ? filePath : ""], // Always create an attachments array with an entry (empty string if no file)
+    // **✅ 3. Fetch overlapping leave requests**
+    const overlappingLeaves = await Leave.find({
+      email,
+      $or: [
+        {
+          startDate: { $lte: formattedEndDate },
+          endDate: { $gte: formattedStartDate },
+        },
+      ],
+    });
+
+    // **✅ 4. If an overlap exists, format the response properly**
+    if (overlappingLeaves.length > 0) {
+      const formattedLeaves = overlappingLeaves.map((leave) => {
+        const startDates = leave.startDate
+          .map((date) => new Date(date).toLocaleDateString("en-GB"))
+          .join(", ");
+        const endDates = leave.endDate
+          .map((date) => new Date(date).toLocaleDateString("en-GB"))
+          .join(", ");
+        return `From: ${startDates} to ${endDates}`;
+      });
+
+      // return res.status(400).json({
+      //   message: `You have already applied for leave on these dates:\n\n${formattedLeaves.join(
+      //     "\n"
+      //   )}`,
+      // });
+      return res.status(400).json({
+        message: 'You have already applied for leave on these dates'
       });
     }
 
-    await leaveRecord.save();
+    // **✅ 5. Ensure no pending leave requests exist**
+    const pendingLeave = await Leave.findOne({
+      email,
+      leaveType,
+      $expr: { $eq: [{ $arrayElemAt: ["$status", -1] }, "Pending"] }, // ✅ Only checks latest status
+    });
+    
+
+    console.log("Pending Leave:", pendingLeave);
+
+    if (pendingLeave) {
+      return res.status(400).json({
+        message: `You already have a pending leave request for ${leaveType}. Wait for approval before applying again.`,
+      });
+    }
+
+    // **✅ 6. Save Leave Record**
+    const newLeave = new Leave({
+      email,
+      empname,
+      empid,
+      managerEmail,
+      applyDate: new Date(),
+      leaveType,
+      startDate: [formattedStartDate],
+      endDate: [formattedEndDate],
+      reason: reason ? [reason] : [],
+      status: ["Pending"],
+      attachments: [filePath || ""],
+    });
+
+    await newLeave.save();
     res
       .status(200)
-      .json({ message: "Leave application submitted successfully" });
+      .json({ message: "Leave application submitted successfully." });
   } catch (error) {
-    console.error("Error updating leave record:", error); // Log the error for debugging
-    res.status(500).json({ error: "Error updating leave record" });
+    console.error("Error applying for leave:", error);
+    res.status(500).json({ message: "Server error while applying leave." });
   }
 });
 
@@ -150,7 +200,6 @@ app.get("/leavesummary", async (req, res) => {
 //   try {
 //     const excludeEmail = req.query.excludeEmail; // Get manager's email from query parameters
 
-
 //     if (!excludeEmail) {
 //       return res.status(400).json({ message: "Manager email is required" });
 //     }
@@ -185,7 +234,6 @@ app.get("/leaverequests", async (req, res) => {
     res.status(500).send("Server error");
   }
 });
-
 
 app.put("/leaverequests/:id", async (req, res) => {
   try {
@@ -408,11 +456,7 @@ app.get("/reports", async (req, res) => {
           leaves: leaves.flatMap((leave) =>
             leave.startDate.map((start, index) => ({
               leaveType: leave.leaveType,
-              startDate: new Date(start).toLocaleDateString("en-GB", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-              }),
+              startDate: new Date(start).toLocaleDateString(),
               endDate: leave.endDate[index]
                 ? new Date(leave.endDate[index]).toLocaleDateString()
                 : "N/A",
@@ -451,10 +495,10 @@ app.get("/reports/export-excel", async (req, res) => {
 
     // const employees = await User.find(query);
     const employees = Array.isArray(reports)
-    ? reports
-        .filter((report) => report.email !== "admin@gmail.com") 
-        .map((report) => report.email) 
-    : [];
+      ? reports
+          .filter((report) => report.email !== "admin@gmail.com")
+          .map((report) => report.email)
+      : [];
 
     const workbook = new excelJS.Workbook();
     const worksheet = workbook.addWorksheet("Reports");
@@ -699,7 +743,9 @@ app.get("/reports/export-pdf", async (req, res) => {
           .text(emp.email || "N/A", 200, doc.y, { continued: true })
           .text(emp.project, 300, doc.y, { continued: true })
           .text(leave.leaveType || "N/A", 380, doc.y, { continued: true })
-          .text(formatLeaveDate(leave.startDate), 460, doc.y, {continued: true})
+          .text(formatLeaveDate(leave.startDate), 460, doc.y, {
+            continued: true,
+          })
           .text(formatLeaveDate(leave.endDate), 540, doc.y, { continued: true })
           .text(leave.status || "Pending", 620, doc.y);
         doc.moveDown();

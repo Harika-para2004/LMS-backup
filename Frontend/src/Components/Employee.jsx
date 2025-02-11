@@ -31,14 +31,14 @@ import Sidebar from "./Sidebar";
 import { formatDate } from "../utils/dateUtlis";
 import dayjs from "dayjs";
 
-
 const App = () => {
   const [selectedCategory, setSelectedCategory] = useState("apply-leave");
   const [userData, setUserData] = useState(null);
   const [username, setUsername] = useState("");
   const [empid, setEmpid] = useState("");
   const [email, setEmail] = useState("");
-  const [managerEmail,setmanagerEmail]=useState("");
+  const [gender, setGender] = useState("");
+  const [managerEmail, setmanagerEmail] = useState("");
   const [designation, setDesignation] = useState("");
   const [project, setProject] = useState("");
   const [holidays, setHolidays] = useState([]);
@@ -52,7 +52,6 @@ const App = () => {
   const year = new Date().getFullYear();
   const navigate = useNavigate(); // Correct usage of useNavigate
 
-
   const [errors, setErrors] = useState({
     leaveType: "",
     from: "",
@@ -60,7 +59,6 @@ const App = () => {
     reason: "",
     mismatch: "",
   });
-
 
   const [formData, setFormData] = useState({
     leaveType: "",
@@ -70,14 +68,18 @@ const App = () => {
     reason: "",
   });
   const [leavePolicies, setLeavePolicies] = useState([]);
-  const [leavepolicyRef,setLeavePolicyRef]=useState([]);
+  const [leavePolicyRef, setLeavePolicyRef] = useState([]);
+
   useEffect(() => {
     const fetchLeavePolicies = async () => {
       try {
-        const response = await axios.get("http://localhost:5001/api/leave-policies");
+        const response = await axios.get(
+          "http://localhost:5001/api/leave-policies"
+        );
         console.log("API Response:", response.data);
-        
-        setLeavePolicyRef(response.data.data)
+
+        setLeavePolicyRef(response.data.data);
+
         // Check if response.data is an array
         if (Array.isArray(response.data)) {
           const leaveTypes = response.data.map((policy) => policy.leaveType);
@@ -85,7 +87,9 @@ const App = () => {
         }
         // Check if data is nested
         else if (response.data.data && Array.isArray(response.data.data)) {
-          const leaveTypes = response.data.data.map((policy) => policy.leaveType);
+          const leaveTypes = response.data.data.map(
+            (policy) => policy.leaveType
+          );
           setLeavePolicies(leaveTypes);
         }
         // Handle single object response
@@ -100,12 +104,10 @@ const App = () => {
         setLeavePolicies([]);
       }
     };
-  
+
     fetchLeavePolicies();
   }, []);
-  
-  
-  
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -131,7 +133,6 @@ const App = () => {
     return today.toISOString().split("T")[0];
   };
 
-
   // const handleFileChange = (event) => {
   //   const file = event.target.files[0];
   //   if (file) {
@@ -153,14 +154,14 @@ const App = () => {
   const handleLogout = (e) => {
     e.preventDefault();
     localStorage.clear();
-    navigate("/");  // Redirects user after logout
+    navigate("/"); // Redirects user after logout
   };
 
   // const handleSubmit = async (event) => {
   //   event.preventDefault();
-  
+
   //   const { leaveType, startDate, endDate, reason } = formData;
-  
+
   //   // Validate required fields
   //   if (!leaveType || !startDate || !endDate) {
   //     setErrors({
@@ -170,7 +171,7 @@ const App = () => {
   //     });
   //     return;
   //   }
-  
+
   //   // Validate date logic
   //   if (new Date(endDate) < new Date(startDate)) {
   //     setErrors((prevErrors) => ({
@@ -190,16 +191,16 @@ const App = () => {
   //   formDataToSend.append("applyDate", applyDate);
   //   formDataToSend.append("startDate", startDate);
   //   formDataToSend.append("endDate", endDate);
-    
+
   //   // Append file and reason if they exist
-   
+
   //   if (file) {
   //     formDataToSend.append("attachment", file);
   //   } else {
   //     // If no file, append an empty string (or null if you prefer)
   //     formDataToSend.append("attachment", "");
   //   }
-    
+
   //   if (reason) {
   //     formDataToSend.append("reason", reason);
   //   }else{
@@ -211,12 +212,12 @@ const App = () => {
   //       method: "POST",
   //       body: formDataToSend,
   //     });
-  
+
   //     if (!response.ok) {
   //       const errorData = await response.json();
   //       throw new Error(errorData.message || "Failed to submit form. Please try again later.");
   //     }
-  
+
   //     const result = await response.json();
   //     alert(result.message);
   //     // Optionally reset form data or perform any other necessary actions after submission
@@ -225,74 +226,191 @@ const App = () => {
   //     alert(error.message); // Display the error message to the user
   //   }
   // };
-  
+
+  const formatCase = (text) => {
+    return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
-  
+
+    // console.log('leaveHistory',leaveHistory);
+    // console.log('leaveData',leaveData);
+
     const { leaveType, startDate, endDate, reason } = formData;
-  
-    // Validate required fields
+    const today = dayjs().format("YYYY-MM-DD");
+    const formattedStartDate = dayjs(startDate, "DD/MM/YYYY").format(
+      "YYYY-MM-DD"
+    );
+    const formattedEndDate = dayjs(endDate, "DD/MM/YYYY").format("YYYY-MM-DD");
+
+    // **✅ 1. Required Fields Check**
     if (!leaveType || !startDate || !endDate) {
-      setErrors({
-        leaveType: leaveType ? "" : "Required field",
-        from: startDate ? "" : "Required field",
-        to: endDate ? "" : "Required field",
-      });
+      alert("All fields (Leave Type, Start Date, End Date) are required.");
       return;
     }
-  
-    // Validate date logic
-    if (new Date(endDate) < new Date(startDate)) {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        to: "End Date cannot be before Start Date",
-      }));
+
+    // **✅ 2. Valid Date Range Check**
+    if (new Date(formattedEndDate) < new Date(formattedStartDate)) {
+      alert("End Date cannot be before Start Date.");
       return;
     }
-  
-    // Prepare form data to send
-    const applyDate = dayjs().format("YYYY-MM-DD"); // Ensure date is in backend-friendly format
+
+    // **✅ 3 & 4. No Holidays or Weekends**
+    const isHoliday = holidays.some(
+      (holiday) =>
+        holiday.type === "Mandatory" &&
+        dayjs(holiday.date).isSame(formattedStartDate, "day")
+    );
+
+    if (isHoliday) {
+      alert("You cannot apply leave on company holidays.");
+      return;
+    }
+
+    const isWeekend =
+      dayjs(formattedStartDate).day() === 0 ||
+      dayjs(formattedStartDate).day() === 6;
+    if (isWeekend) {
+      alert("You cannot apply leave on weekends.");
+      return;
+    }
+
+    // **✅ 5. Cannot Apply for Same Leave Twice**
+    const alreadyApplied = leaveHistory.some(
+      (leave) =>
+        leave.leaveType === leaveType &&
+        dayjs(leave.startDate).isSame(formattedStartDate, "day") &&
+        dayjs(leave.endDate).isSame(formattedEndDate, "day")
+    );
+    if (alreadyApplied) {
+      alert(`You have already applied for ${leaveType} on these dates.`);
+      return;
+    }
+
+    // **✅ 6. Leave Balance Check**
+    const appliedLeave = leaveData.find(
+      (leave) => formatCase(leave.leaveType) === formatCase(leaveType)
+    );
+
+    const leaveBalance =
+      appliedLeave?.availableLeaves ??
+      leavePolicyRef.find(
+        (policy) => formatCase(policy.leaveType) === formatCase(leaveType)
+      )?.maxAllowedLeaves ??
+      0;
+
+    const requestedDays = dayjs(formattedEndDate).diff(dayjs(formattedStartDate), "day") + 1;
+
+    if (requestedDays > leaveBalance && leaveType !== "LOP") {
+      alert(
+        `You do not have enough ${leaveType} balance,you have only ${leaveBalance} leaves.`
+      );
+      return;
+    }
+
+    console.log("leaveType", leaveType);
+    console.log("userData gender", email);
+
+    // **✅ 7 & 8. Gender-Based Leave Restrictions**
+    if (leaveType.includes("Maternity") && gender !== "Female") {
+      alert("Maternity Leave is only applicable to female employees.");
+      return;
+    }
+    console.log(gender)
+
+    if (leaveType.includes("Paternity") && gender !== "Male") {
+      alert("Paternity Leave is only applicable to male employees.");
+      return;
+    }
+
+    // **✅ 9. Sick Leave can only be applied for past and current dates**
+    if (
+      leaveType === "Sick Leave" &&
+      dayjs(formattedStartDate).isAfter(today)
+    ) {
+      alert("Sick Leave can only be applied for past or current dates.");
+      return;
+    }
+
+    // **✅ 10 & 11. No Overlapping Leaves**
+    const hasOverlap = leaveHistory.some(
+      (leave) =>
+        dayjs(leave.startDate, "DD/MM/YYYY").isBefore(
+          dayjs(formattedEndDate, "YYYY-MM-DD")
+        ) &&
+        dayjs(leave.endDate, "DD/MM/YYYY").isAfter(
+          dayjs(formattedStartDate, "YYYY-MM-DD")
+        )
+    );
+
+    if (hasOverlap) {
+      alert(
+        "You have an existing leave that overlaps with the selected dates."
+      );
+      return;
+    }
+
+    // **✅ 12. LOP (Unpaid Leave) when no casual leaves are left**
+    if (
+      leaveType === "LOP" &&
+      leaveData.find((leave) => leave.leaveType === "Casual Leave")
+        ?.availableLeaves > 0
+    ) {
+      alert("LOP can only be taken if Casual Leaves are exhausted.");
+      return;
+    }
+
+    // **✅ Optional: Prevent multiple pending leave requests**
+    // if (leaveHistory.some((leave) => leave.status.includes("Pending"))) {
+    //   alert(
+    //     "You already have a pending leave request. Wait for approval before applying again."
+    //   );
+    //   return;
+    // }
+
+    // **Proceed with submission**
     const formDataToSend = new FormData();
     formDataToSend.append("email", email);
     formDataToSend.append("empname", username);
     formDataToSend.append("empid", empid);
     formDataToSend.append("managerEmail", managerEmail);
     formDataToSend.append("leaveType", leaveType);
-    formDataToSend.append("applyDate", applyDate);
-    formDataToSend.append("startDate", dayjs(startDate, "DD/MM/YYYY").format("YYYY-MM-DD")); 
-    formDataToSend.append("endDate", dayjs(endDate, "DD/MM/YYYY").format("YYYY-MM-DD"));
-  
-    // Append file only if it exists
-    if (file) {
-      formDataToSend.append("attachment", file);
-    }
-  
-    // Append reason properly
-    formDataToSend.append("reason", reason ? reason : "N/A"); // Avoid sending null
-  
+    formDataToSend.append("applyDate", today);
+    formDataToSend.append("startDate", formattedStartDate);
+    formDataToSend.append("endDate", formattedEndDate);
+    if (file) formDataToSend.append("attachment", file);
+    formDataToSend.append("reason", reason || "N/A");
+
     try {
-      const response = await fetch(`http://localhost:5001/apply-leave?email=${encodeURIComponent(email)}`, {
-        method: "POST",
-        body: formDataToSend,
-      });
-  
+      const response = await fetch(
+        `http://localhost:5001/apply-leave?email=${encodeURIComponent(email)}`,
+        {
+          method: "POST",
+          body: formDataToSend,
+        }
+      );
+
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to submit form. Please try again later.");
+        throw new Error(
+          errorData.message || "Failed to submit form. Please try again."
+        );
       }
-  
-      const result = await response.json();
-      alert(result.message);
+
+      alert("Leave application submitted successfully.");
+      setFormData({ leaveType: "", startDate: "", endDate: "", reason: "" });
+      setFile(null);
+      setErrors({});
     } catch (error) {
       console.error("Error submitting form:", error);
       alert(error.message);
     }
   };
-  
 
   useEffect(() => {
     const storedUserData = localStorage.getItem("userData");
-    console.log(storedUserData);
+    // console.log(storedUserData);
     if (storedUserData) {
       try {
         const parsedUserData = JSON.parse(storedUserData);
@@ -300,7 +418,8 @@ const App = () => {
           setUserData(parsedUserData);
           setUsername(parsedUserData.empname || "");
           setEmpid(parsedUserData.empid || "");
-          setmanagerEmail(parsedUserData.managerEmail || "")
+          setGender(parsedUserData.gender || "");
+          setmanagerEmail(parsedUserData.managerEmail || "");
           setEmail(parsedUserData.email || "");
           setProject(parsedUserData.project || "");
         }
@@ -309,27 +428,41 @@ const App = () => {
       }
     }
   }, []);
-  console.log(username)
+
+  // console.log(username)
   const sortHolidaysByMonthAndCustomDay = (holidayList) => {
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+
     return [...holidayList].sort((a, b) => {
       const [dayA, monthA] = a.date.split("-");
       const [dayB, monthB] = b.date.split("-");
-  
+
       const monthIndexA = monthNames.indexOf(monthA);
       const monthIndexB = monthNames.indexOf(monthB);
-  
+
       // First, compare months
       if (monthIndexA !== monthIndexB) {
         return monthIndexA - monthIndexB;
       }
-  
+
       // If months are the same, compare days (numerically)
       return parseInt(dayA, 10) - parseInt(dayB, 10);
     });
   };
-  
+
   useEffect(() => {
     const fetchLeaveData = async () => {
       try {
@@ -351,8 +484,6 @@ const App = () => {
     fetchLeaveData();
   }, [email]);
 
-  console.log(leaveData);
-
   useEffect(() => {
     const fetchHolidays = async () => {
       try {
@@ -361,10 +492,10 @@ const App = () => {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
         const data = await response.json();
-  
+
         // Sort the fetched holidays before setting the state
         const sortedHolidays = sortHolidaysByMonthAndCustomDay(data);
-  
+
         // Set the sorted holidays
         setHolidays(sortedHolidays);
       } catch (error) {
@@ -372,10 +503,10 @@ const App = () => {
         setError("Failed to fetch holidays.");
       }
     };
-  
+
     fetchHolidays();
   }, []);
-  
+
   const fetchLeaveHistory = async () => {
     try {
       const response = await fetch(
@@ -398,25 +529,29 @@ const App = () => {
     }
   }, [selectedCategory]);
 
- 
+  useEffect(() => {
+    fetchLeaveHistory();
+  }, []);
 
   const renderContent = () => {
     switch (selectedCategory) {
       case "apply-leave":
         return (
           <ApplyLeave
-          formData={formData}
-          errors={errors}
-          handleInputChange={handleInputChange}
-          handleBlur={handleBlur}
-          handleSubmit={handleSubmit}
-          handleFileChange={handleFileChange}
-          holidays={holidays}
-          getTodayDate={getTodayDate}
-          leavePolicies={leavePolicies} 
-          leavepolicyRef={leavepolicyRef}
-        />
-
+            formData={formData}
+            errors={errors}
+            handleInputChange={handleInputChange}
+            handleBlur={handleBlur}
+            handleSubmit={handleSubmit}
+            handleFileChange={handleFileChange}
+            holidays={holidays}
+            getTodayDate={getTodayDate}
+            leavePolicies={leavePolicies}
+            leavePolicyRef={leavePolicyRef}
+            leaveHistory={leaveHistory}
+            leaveData={leaveData}
+            gender={gender}
+          />
         );
 
       case "profile":
@@ -432,10 +567,7 @@ const App = () => {
         );
 
       case "history":
-        return (
-          <LeaveHistory leaveHistory={leaveHistory} />
-
-        );
+        return <LeaveHistory leaveHistory={leaveHistory} />;
       default:
         return null;
     }

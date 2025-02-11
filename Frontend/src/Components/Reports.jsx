@@ -116,7 +116,7 @@ const Reports = () => {
       <div className="filters">
         <input
           type="text"
-          placeholder="Search by name, email, or ID"
+          placeholder="Search by name, email, project or ID"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -124,9 +124,9 @@ const Reports = () => {
           <button onClick={exportExcel} className="btn-excel">
             Export Excel
           </button>
-          <button onClick={exportPDF} className="btn-pdf">
+          {/* <button onClick={exportPDF} className="btn-pdf">
             Export PDF
-          </button>
+          </button> */}
         </div>
         {/* <select value={project} onChange={(e) => setProject(e.target.value)}>
           <option value="">All Projects</option>

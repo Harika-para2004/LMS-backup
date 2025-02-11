@@ -22,10 +22,9 @@ const LeaveHistory = ({ leaveHistory }) => {
     currentPage * itemsPerPage
   );
 
-
   const getStatusIcon = (status) => {
     switch (status) {
-      case "pending":
+      case "Pending":
         return <MdWatchLater size={23} color="blue" />;
       case "Approved":
         return <MdCheckCircle size={23} color="green" />;
@@ -39,8 +38,8 @@ const LeaveHistory = ({ leaveHistory }) => {
   const truncateReason = (reason) => {
     if (!reason) return "";
     const words = reason.split(" ");
-    if (words.length > 1) {
-      return words.slice(0, 1).join(" ") + "...";
+    if (words.length > 2) {
+      return words.slice(0, 2).join(" ") + "...";
     }
     return reason;
   };
@@ -72,62 +71,28 @@ const LeaveHistory = ({ leaveHistory }) => {
 
   return (
     <div className="history-container">
+      <div style={{
+        display:"flex",
+        justifyContent:"space-between",
+        alignItems:"center"
+      }} >
       <h2 className="content-heading">Leave History</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Leave Type</th>
-            <th>Start Date</th>
-            <th>End Date</th>
-            <th>Duration</th>
-            <th>Reason</th>
-            <th>Document</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {currentLeaves.length > 0 ? (
-            currentLeaves.map((leave, index) => (
-              <tr key={index}>
-                <td>{leave.leaveType || "N/A"}</td>
-                <td>{formatDate(leave.startDate) || "N/A"}</td>
-                <td>{formatDate(leave.endDate) || "N/A"}</td>
-                <td>{leave.duration}</td>
-                <td>
-                  {leave.reason === "null" || !leave.reason ? (
-                    "N/A"
-                  ) : (
-                    <span className="reason-text" title={leave.reason}>
-                      {truncateReason(leave.reason)}
-                    </span>
-                  )}
-                </td>
-                <td>
-                  {leave.attachments ? (
-                    <a href={getDownloadLink(leave.attachments)} download>
-                      <AiFillFilePdf size={23} color="red" />
-                    </a>
-                  ) : (
-                    <AiOutlineExclamationCircle size={23} color="gray" />
-                  )}
-                </td>
-                <td>{getStatusIcon(leave.status)}</td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td
-                colSpan="7"
-                style={{ textAlign: "center", fontStyle: "italic" }}
-              >
-                No leave history available.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
 
-      {/* Pagination Controls (Positioned at Bottom Right) */}
+      <span className="status-icons">
+        <span className="status-item">
+          <MdWatchLater size={25} color="blue" title="Pending" />
+          <span>Pending</span>
+        </span>
+        <span className="status-item">
+          <MdCheckCircle size={25} color="green" title="Approved" />
+          <span>Approved</span>
+        </span>
+        <span className="status-item">
+          <MdCancel size={25} color="red" title="Rejected" />
+          <span>Rejected</span>
+        </span>
+      </span>
+
       <div className="pagination-numbered">
         <button
           className="arrow"
@@ -172,6 +137,76 @@ const LeaveHistory = ({ leaveHistory }) => {
           <FiSkipForward size={14} />
         </button>
       </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Leave Type</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Duration</th>
+            <th>Reason</th>
+            <th>Document</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {currentLeaves.length > 0 ? (
+            currentLeaves.map((leave, index) => (
+              <tr key={index}>
+                <td>{leave.leaveType || "N/A"}</td>
+                <td>{formatDate(leave.startDate) || "N/A"}</td>
+                <td>{formatDate(leave.endDate) || "N/A"}</td>
+                <td>{leave.duration}</td>
+                <td>
+                  {leave.reason === "null" || !leave.reason ? (
+                    "N/A"
+                  ) : (
+                    <span
+                      className="reason-text"
+                      title={
+                        leave.reason.charAt(0).toUpperCase() +
+                        leave.reason.slice(1).toLowerCase()
+                      }
+                    >
+                      {truncateReason(
+                        leave.reason
+                          ? leave.reason.charAt(0).toUpperCase() +
+                              leave.reason.slice(1).toLowerCase()
+                          : "N/A"
+                      )}
+                    </span>
+                  )}
+                </td>
+                <td>
+                  {leave.attachments ? (
+                    <a href={getDownloadLink(leave.attachments)} download>
+                      <AiFillFilePdf size={23} color="red" />
+                    </a>
+                  ) : (
+                    <AiOutlineExclamationCircle size={23} color="gray" />
+                  )}
+                </td>
+                <td>{getStatusIcon(leave.status)}</td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td
+                colSpan="7"
+                style={{ textAlign: "center", fontStyle: "italic" }}
+              >
+                No leave history available.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+      
+
+      {/* Pagination Controls (Positioned at Bottom Right) */}
+      
     </div>
   );
 };

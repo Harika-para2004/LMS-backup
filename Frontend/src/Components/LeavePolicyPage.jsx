@@ -33,6 +33,10 @@ function LeavePolicyPage() {
     setExpandedPolicy((prevId) => (prevId === policyId ? null : policyId));
   };
 
+  const formatCase = (text) => {
+    return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -132,8 +136,7 @@ function LeavePolicyPage() {
               type="text"
               name="leaveType"
               value={formData.leaveType
-                .toLowerCase()
-                .replace(/\b\w/g, (char) => char.toUpperCase())}
+                }
               onChange={handleChange}
               required
               placeholder="Leave Type"
@@ -148,7 +151,7 @@ function LeavePolicyPage() {
               value={formData.maxLeaves}
               onChange={handleChange}
               min="1"
-              required
+              // required
               placeholder="Max Leaves"
               className="input-field"
             />
@@ -195,16 +198,16 @@ function LeavePolicyPage() {
                 }`} // ✅ Add class for expansion
               >
                 <div className="policy-header">
-                  <h4>{p.leaveType}</h4>
+                  <h4>{formatCase(p.leaveType)}</h4>
                   
                   <div className="policy-actions">
-                  <p>Total Leaves: {p.maxAllowedLeaves}</p>
+                  <p>Total Leaves: {p.maxAllowedLeaves || "N/A"}</p>
                     <button
                       onClick={() => {
                         setShowForm(true);
                         setFormData({
                           leaveType: p.leaveType,
-                          maxLeaves: p.maxAllowedLeaves,
+                          maxLeaves: p.maxAllowedLeaves || "N/A",
                           description: p.description,
                           policyId: p._id,
                         });

@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { DatePicker } from "@mui/x-date-pickers";
+import { DatePicker, PickersDay } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import dayjs from "dayjs";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
+// import Tooltip from "@mui/material/Tooltip";
 import {
   Grid,
   TextField,
@@ -41,13 +42,21 @@ const ApplyLeave = ({
   holidays,
   getTodayDate,
   leavePolicies,
-  leavepolicyRef,
+  leavePolicyRef,
+  leaveHistory,
+  leaveData,
+  gender
 }) => {
   const [showHolidays, setShowHolidays] = useState(false);
   const [showLeavePolicies, setShowLeavePolicies] = useState(false);
   const [openDescription, setOpenDescription] = useState(false);
   const [currentDescription, setCurrentDescription] = useState("");
   const [fileName, setFileName] = useState("");
+
+  const formatCase = (text) => {
+    return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
 
   const handleToggleDescription = (policy) => {
     // Check if the description exists and then set the current description
@@ -99,10 +108,13 @@ const ApplyLeave = ({
                 </MenuItem>
                 {leavePolicies.length > 0 ? (
                   leavePolicies.map((leaveType, index) => (
-                    <MenuItem key={index} value={leaveType}>
-                      {leaveType
-                        .toLowerCase()
-                        .replace(/\b\w/g, (char) => char.toUpperCase())}
+                    <MenuItem key={index} value={leaveType}
+                    disabled={
+                      (gender === "Male" && leaveType.toLowerCase() === "maternity leave") || 
+                      (gender === "Female" && leaveType.toLowerCase() === "paternity leave")
+                    }  
+                    >
+                      {formatCase(leaveType)}
                     </MenuItem>
                   ))
                 ) : (
@@ -136,25 +148,68 @@ const ApplyLeave = ({
                     })
                   }
                   format="DD/MM/YYYY"
-                  shouldDisableDate={(date) =>
-                    holidays.some(
-                      (holiday) =>
-                        holiday.type === "Mandatory" &&
-                        dayjs(holiday.date).isSame(date, "day")
-                    )
-                  }
-                  disablePast
+                  // shouldDisableDate={(date) => {
+                  //   return (
+                  //     date.day() === 0 || // Disable Sundays
+                  //     date.day() === 6 || // Disable Saturdays
+                  //     holidays.some(
+                  //       (holiday) =>
+                  //         holiday.type === "Mandatory" &&
+                  //         dayjs(holiday.date).isSame(date, "day")
+                  //     )
+                  //   );
+                  // }}
+                  shouldDisableDate={(date) => {
+                    const today = dayjs().startOf("day"); // Get today's date
+                    return (
+                      (formData.leaveType.toLowerCase() === "sick leave" && dayjs(date).isAfter(today, "day")) || // Disable future dates for Sick Leave
+                      date.day() === 0 || // Disable Sundays
+                      date.day() === 6 || // Disable Saturdays
+                      holidays.some(
+                        (holiday) =>
+                          holiday.type === "Mandatory" &&
+                          dayjs(holiday.date).isSame(date, "day")
+                      )
+                    );
+                  }}
+                  slots={{
+                    day: (props) => {
+                      const { day, outsideCurrentMonth, selected } = props;
+                      const holiday = holidays.find(
+                        (holiday) =>
+                          holiday.type === "Mandatory" &&
+                          dayjs(holiday.date).isSame(day, "day")
+                      );
+
+                      return (
+                        <Tooltip title={holiday ? holiday.name : ""} arrow>
+                          <span>
+                            <PickersDay
+                              {...props}
+                              disabled={
+                                outsideCurrentMonth || selected || !!holiday
+                              }
+                              sx={{
+                                ...(holiday && {
+                                  backgroundColor: "#ffcccc", // Light red for holidays
+                                  color: "#d32f2f", // Dark red text
+                                  "&:hover": { backgroundColor: "#ffb3b3" },
+                                }),
+                                ...(day.day() === 0 || day.day() === 6
+                                  ? {
+                                      backgroundColor: "#f0f0f0", // Light gray for weekends
+                                      color: "#9e9e9e",
+                                    }
+                                  : {}),
+                              }}
+                            />
+                          </span>
+                        </Tooltip>
+                      );
+                    },
+                  }}
                   renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      fullWidth
-                      size="small"
-                      sx={{
-                        "& .MuiOutlinedInput-input": {
-                          fontSize: "small",
-                        },
-                      }}
-                    />
+                    <TextField {...params} fullWidth size="small" />
                   )}
                 />
               </LocalizationProvider>
@@ -185,25 +240,55 @@ const ApplyLeave = ({
                     })
                   }
                   format="DD/MM/YYYY"
-                  shouldDisableDate={(date) =>
-                    holidays.some(
-                      (holiday) =>
-                        holiday.type === "Mandatory" &&
-                        dayjs(holiday.date).isSame(date, "day")
-                    )
-                  }
-                  disablePast
+                  shouldDisableDate={(date) => {
+                    return (
+                      date.day() === 0 || // Disable Sundays
+                      date.day() === 6 || // Disable Saturdays
+                      holidays.some(
+                        (holiday) =>
+                          holiday.type === "Mandatory" &&
+                          dayjs(holiday.date).isSame(date, "day")
+                      )
+                    );
+                  }}
+                  slots={{
+                    day: (props) => {
+                      const { day, outsideCurrentMonth, selected } = props;
+                      const holiday = holidays.find(
+                        (holiday) =>
+                          holiday.type === "Mandatory" &&
+                          dayjs(holiday.date).isSame(day, "day")
+                      );
+
+                      return (
+                        <Tooltip title={holiday ? holiday.name : ""} arrow>
+                          <span>
+                            <PickersDay
+                              {...props}
+                              disabled={
+                                outsideCurrentMonth || selected || !!holiday
+                              }
+                              sx={{
+                                ...(holiday && {
+                                  backgroundColor: "#ffcccc", // Light red for holidays
+                                  color: "#d32f2f", // Dark red text
+                                  "&:hover": { backgroundColor: "#ffb3b3" },
+                                }),
+                                ...(day.day() === 0 || day.day() === 6
+                                  ? {
+                                      backgroundColor: "#f0f0f0", // Light gray for weekends
+                                      color: "#9e9e9e",
+                                    }
+                                  : {}),
+                              }}
+                            />
+                          </span>
+                        </Tooltip>
+                      );
+                    },
+                  }}
                   renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      fullWidth
-                      size="small"
-                      sx={{
-                        "& .MuiOutlinedInput-input": {
-                          fontSize: "small",
-                        },
-                      }}
-                    />
+                    <TextField {...params} fullWidth size="small" />
                   )}
                 />
               </LocalizationProvider>
@@ -242,6 +327,7 @@ const ApplyLeave = ({
                 name="attachment"
                 onChange={handleFileChangeWithState}
                 hidden
+                accept="image/*, .pdf"
               />
             </Button>
 
@@ -309,8 +395,8 @@ const ApplyLeave = ({
         {showLeavePolicies && (
           <div className="leave-policy-section apply-leave-container">
             <Grid container spacing={2}>
-              {leavepolicyRef?.length > 0 ? (
-                leavepolicyRef.map((policy, index) => (
+              {leavePolicyRef?.length > 0 ? (
+                leavePolicyRef.map((policy, index) => (
                   <Grid item xs={12} sm={6} md={4} key={policy._id || index}>
                     <Card
                       sx={{
@@ -320,20 +406,33 @@ const ApplyLeave = ({
                       }}
                     >
                       <CardContent>
-                        <Typography variant="h6" gutterBottom>
-                          {policy.leaveType}
+                        <Typography
+                          variant="body1"
+                          gutterBottom
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                          }} // Adjust font size
+                        >
+                          {formatCase(policy.leaveType)}
+
                           <Tooltip title="View Description" arrow>
                             <IconButton
                               onClick={() => handleToggleDescription(policy)}
-                              sx={{ marginLeft: "8px" }}
+                              sx={{
+                                marginLeft: "6px", // Reduce space between text & icon
+                                fontSize: "10px", // Reduce icon size
+                                padding: "4px", // Reduce clickable area
+                              }}
                             >
-                              <FontAwesomeIcon icon={faInfoCircle} />
+                              <FontAwesomeIcon size="xl" icon={faInfoCircle} />
                             </IconButton>
                           </Tooltip>
                         </Typography>
-                        <Typography variant="body2" color="textSecondary">
+
+                        <Typography variant="body1" color="textSecondary">
                           Max Allowed Leaves:{" "}
-                          <strong>{policy.maxAllowedLeaves}</strong>
+                          {policy.maxAllowedLeaves || "N/A"}
                         </Typography>
                         {/* Show description if this policy's description is open */}
                         {openDescription === policy._id && (

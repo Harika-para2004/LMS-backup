@@ -101,74 +101,91 @@ const LeaveRequestsTable = ({
           </tr>
         </thead>
         <tbody>
-          {currentItems.map((leave) => (
-            <tr key={leave.id}>
-              <td>{leave.empid}</td>
-              <td>{leave.empname}</td>
-              <td>{leave.leaveType}</td>
-              <td>{leave.duration}</td>
-              <td>{leave.startDate}</td>
-              <td>{leave.endDate}</td>
-              <td>{leave.availableLeaves}</td>
-              <td>
-                {leave.document ? (
-                  <a href={leave.document} download>
-                    <AiFillFilePdf size={23} color="red" />
-                  </a>
-                ) : (
-                  <AiOutlineExclamationCircle size={23} color="rgb(114,114,114)" />
-                )}
-              </td>
-              <td>{leave.reason}</td>
-              <td>
-                {leave.status === "approved" && (
-                  <button
-                    onClick={() =>
-                      handleRowClick(leave.leaveData, leave.leaveIndex)
-                    }
-                    style={{
-                      color: "green",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <MdCheckCircle size={24} />
-                  </button>
-                )}
-                {leave.status === "rejected" && (
-                  <button
-                    onClick={() =>
-                      handleRowClick(leave.leaveData, leave.leaveIndex)
-                    }
-                    style={{
-                      color: "red",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <MdCancel size={24} />
-                  </button>
-                )}
-                {leave.status !== "approved" && leave.status !== "rejected" && (
-                  <button
-                    onClick={() =>
-                      handleRowClick(leave.leaveData, leave.leaveIndex)
-                    }
-                    style={{
-                      color: "blue",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <MdWatchLater size={24} />
-                  </button>
-                )}
+          {currentItems.length > 0 ? (
+            currentItems
+              .sort((a, b) => new Date(b.applyDate) - new Date(a.applyDate))
+              .map((leave) => (
+                <tr key={leave.id}>
+                  <td>{leave.empid}</td>
+                  <td>{leave.empname}</td>
+                  <td>{leave.leaveType}</td>
+                  <td>{leave.duration}</td>
+                  <td>{leave.startDate}</td>
+                  <td>{leave.endDate}</td>
+                  <td>{leave.availableLeaves}</td>
+                  <td>
+                    {leave.document ? (
+                      <a href={leave.document} download>
+                        <AiFillFilePdf size={23} color="red" />
+                      </a>
+                    ) : (
+                      <AiOutlineExclamationCircle
+                        size={23}
+                        color="rgb(114,114,114)"
+                      />
+                    )}
+                  </td>
+                  <td>{leave.reason}</td>
+                  <td>
+                    {leave.status === "approved" && (
+                      <button
+                        onClick={() =>
+                          handleRowClick(leave.leaveData, leave.leaveIndex)
+                        }
+                        style={{
+                          color: "green",
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <MdCheckCircle size={24} />
+                      </button>
+                    )}
+                    {leave.status === "rejected" && (
+                      <button
+                        onClick={() =>
+                          handleRowClick(leave.leaveData, leave.leaveIndex)
+                        }
+                        style={{
+                          color: "red",
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <MdCancel size={24} />
+                      </button>
+                    )}
+                    {leave.status !== "approved" &&
+                      leave.status !== "rejected" && (
+                        <button
+                          onClick={() =>
+                            handleRowClick(leave.leaveData, leave.leaveIndex)
+                          }
+                          style={{
+                            color: "blue",
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <MdWatchLater size={24} />
+                        </button>
+                      )}
+                  </td>
+                </tr>
+              ))
+          ) : (
+            <tr>
+              <td
+                colSpan="10"
+                style={{ textAlign: "center", padding: "15px", color: "#555" }}
+              >
+                No leave requests found
               </td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
 

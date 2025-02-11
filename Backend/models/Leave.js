@@ -1,101 +1,76 @@
-const mongoose = require('mongoose');
-const LeavePolicy = require('./LeavePolicy'); // Import LeavePolicy schema
+const mongoose = require("mongoose");
+const LeavePolicy = require("./LeavePolicy");
+const Holiday = require("./Holiday"); // Import Holiday Schema
 
 const LeaveSchema = new mongoose.Schema({
-  email: {
-    type: String,
-    required: true,
-  },
-  empname: { type: String, required: true }, // Ensure this is required
+  email: { type: String, required: true },
+  empname: { type: String, required: true },
   empid: { type: String, required: true },
-  managerEmail:{type:String},   
-  leaveType: {
-    type: String,
-    required: true,
-  },
-  applyDate: {
-    type: [Date],
-    required: true,
-  },
-  startDate: {
-    type: [Date],
-    required: true,
-  },
-  endDate: {
-    type: [Date],
-    required: true,
-  },
-  reason: {
-    type: [String],
-    required: false,
-  },
-  status: {
-    type: [String],
-    default: [],
-  },
-  totalLeaves: {
-    type: Number,
-    default: 0,
-  },
-  usedLeaves: {
-    type: Number,
-    default: 0,
-  },
-  availableLeaves: {
-    type: Number,
-    default: 0,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  attachments: {
-    type: [String],
-    required: false,
-  },
-  duration: { // Add a field for the duration of the leave
-    type: [Number], // Array of durations (in days)
-    required: false,
-  }
+  managerEmail: { type: String },
+  leaveType: { type: String, required: true },
+  applyDate: { type: [Date], required: true },
+  startDate: { type: [Date], required: true },
+  endDate: { type: [Date], required: true },
+  reason: { type: [String] },
+  status: { type: [String], default: [] },
+  totalLeaves: { type: Number, default: 0 },
+  usedLeaves: { type: Number, default: 0 },
+  availableLeaves: { type: Number, default: 0 },
+  createdAt: { type: Date, default: Date.now },
+  attachments: { type: [String] },
+  duration: { type: [Number] }, // Updated
 });
 
-// Calculate the leave duration in days before saving the leave record
-LeaveSchema.pre('save', async function (next) {
-  if (!this.isModified('startDate') || !this.isModified('endDate')) return next();
+// ✅ Middleware to Calculate Leave Duration Excluding Holidays & Weekends
+LeaveSchema.pre("save", async function (next) {
+  if (!this.isModified("startDate") || !this.isModified("endDate")) return next();
 
   try {
-    // Calculate duration in days
     const duration = [];
+
+    // Fetch all mandatory holidays
+    const holidays = await Holiday.find({ type: "Mandatory" });
+    const holidayDates = holidays.map((holiday) => new Date(holiday.date).toDateString());
+
     this.startDate.forEach((start, index) => {
       const end = this.endDate[index];
-      const diffInTime = new Date(end).getTime() - new Date(start).getTime();
-      const diffInDays = diffInTime / (1000 * 3600 * 24); // Convert time difference to days
-      duration.push(diffInDays + 1); // Adding 1 to include the start day itself
+      let currentDate = new Date(start);
+      let totalDays = 0;
+
+      while (currentDate <= new Date(end)) {
+        const dayOfWeek = currentDate.getDay(); // 0 = Sunday, 6 = Saturday
+        const formattedDate = currentDate.toDateString();
+
+        if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidayDates.includes(formattedDate)) {
+          totalDays++;
+        }
+        currentDate.setDate(currentDate.getDate() + 1); // Move to the next day
+      }
+
+      duration.push(totalDays); // Store the valid leave duration
     });
 
     this.duration = duration;
 
-    // Fetch the leave policy for the given leaveType
+    // ✅ Fetch Leave Policy and Set Leave Limits
     const policy = await LeavePolicy.findOne({ leaveType: this.leaveType });
     if (policy) {
       this.totalLeaves = policy.maxAllowedLeaves || 0;
 
-      // Initialize status if not already set
-      if (this.status.length === 0) {
-        this.status = Array(this.totalLeaves).fill('pending');
+      if (this.availableLeaves === 0) {
+        this.availableLeaves = this.totalLeaves; // Set max leaves for first-time application
       }
 
-      // Calculate available leaves
-      this.availableLeaves = this.totalLeaves - this.usedLeaves;
+      this.availableLeaves = Math.max(0, this.totalLeaves - this.usedLeaves);
     } else {
-      throw new Error(`Leave policy not found for leave type: ${this.leaveType}`);
+      throw new Error(`Leave policy not found for: ${this.leaveType}`);
     }
 
     next();
   } catch (error) {
-    console.error('Error in LeaveSchema pre-save:', error);
+    console.error("Error in LeaveSchema pre-save:", error);
     next(error);
   }
 });
 
-module.exports = mongoose.model('Leaverequests', LeaveSchema);
+module.exports = mongoose.model("Leaverequests", LeaveSchema);

@@ -379,7 +379,7 @@ body, html {
 }
 
 .profile-details .emp-name {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: bold;
   color: white;
 }
@@ -688,12 +688,14 @@ body, html {
 }
 
 .profile-details {
- 
+  font-size: 18px;
+  font-weight: 600;
   text-align: left;
+  color:#333333;
 }
 
 .employee-name {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 700;
   margin-bottom: 5px;
   
@@ -786,7 +788,7 @@ body, html {
 .update-password-btn {
   background: var(--dark-blue);
   color: #ffffff;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   border: none;
   padding: 10px 20px;
@@ -843,7 +845,7 @@ body, html {
 }
 
 .leave-card .leave-type {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 600;
   margin-bottom: 15px;
 }
@@ -851,7 +853,7 @@ body, html {
 .leave-card .leave-count {
   display: flex;
   justify-content: space-between;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 500;
 }
 
@@ -918,6 +920,39 @@ body, html {
 
 
 /*  -------------------- History container css -------------- */
+.status-icons {
+  display: flex;
+  align-items: center;
+  gap: 20px; /* Space between status items */
+  justify-content: center; /* Center align */
+  margin-top: 10px;
+  position: absolute;
+  top: 10px; /* Positioned at the bottom */
+  right: 220px;  /* Positioned to the right */
+  margin-top: 20px;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 6px; /* Space between icon and text */
+  font-size: 14px;
+  font-weight: 500;
+  color: #333; /* Default text color */
+}
+
+.status-item svg {
+  transition: transform 0.2s ease-in-out;
+}
+
+.status-item:hover svg {
+  transform: scale(1.1); /* Slight zoom effect on hover */
+}
+
+.status-item span {
+  text-transform: capitalize;
+}
+
 .history-container {
   padding: 10px;
 }
@@ -1581,7 +1616,7 @@ body {
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 30px;
   margin-bottom: 20px;
 }
 

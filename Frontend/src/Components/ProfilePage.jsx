@@ -10,15 +10,18 @@ import {
   Modal,
 } from "@mui/material";
 
-const ProfilePage = ({ Profile, username, empid,email, project, leaveData,userData }) => {
+const ProfilePage = ({ Profile, username, empid,email, project, leaveData,userData,gender }) => {
   const [mergedLeaveData, setMergedLeaveData] = useState([]);
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     newPassword: "",
     confirmPassword: "",
   });
-
   const [errors, setErrors] = useState({});
+
+  const formatCase = (text) => {
+    return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+  };
 
   useEffect(() => {
     const fetchLeavePolicies = async () => {
@@ -109,13 +112,18 @@ const ProfilePage = ({ Profile, username, empid,email, project, leaveData,userDa
         </button>
       </div>
 
+
       <div className="leave-types-container">
         <h2 className="content-heading">Leave Balances</h2>
         <div className="leave-cards">
-          {mergedLeaveData.map((leave, index) => (
+          {mergedLeaveData
+          .filter(
+            (leave) => !((gender === "Male" && leave.leaveType.toLowerCase() === "maternity leave")|| (gender==="Female" && leave.leaveType.toLowerCase()==="paternity leave"))
+          )
+          .map((leave, index) => (
             <div key={index} className="leave-card">
               <div className="leave-card-header">
-                <h3 className="leave-type">{leave.leaveType}</h3>
+                <h3 className="leave-type">{formatCase(leave.leaveType)}</h3>
               </div>
               <div className="leave-count">
                 <div className="count-item">
