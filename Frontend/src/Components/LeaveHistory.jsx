@@ -13,14 +13,19 @@ import { formatDate } from "../utils/dateUtlis";
 
 const LeaveHistory = ({ leaveHistory }) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8; // Number of items per page
+  const itemsPerPage = 8; // Show 5 leave requests per page
 
-  const totalPages = Math.ceil(leaveHistory.length / itemsPerPage);
+    // 🔹 Pagination logic
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentLeaves = leaveHistory.slice(indexOfFirstItem, indexOfLastItem);
+  
+    const totalPages = Math.ceil(leaveHistory.length / itemsPerPage);
 
-  const currentLeaves = leaveHistory.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // const currentLeaves = leaveHistory.slice(
+  //   (currentPage - 1) * itemsPerPage,
+  //   currentPage * itemsPerPage
+  // );
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -93,7 +98,7 @@ const LeaveHistory = ({ leaveHistory }) => {
         </span>
       </span>
 
-      <div className="pagination-numbered">
+      {/* <div className="pagination-numbered">
         <button
           className="arrow"
           onClick={() => changePage(1)}
@@ -136,7 +141,8 @@ const LeaveHistory = ({ leaveHistory }) => {
         >
           <FiSkipForward size={14} />
         </button>
-      </div>
+      </div> */}
+
       </div>
 
       <table>
@@ -203,6 +209,32 @@ const LeaveHistory = ({ leaveHistory }) => {
           )}
         </tbody>
       </table>
+
+      {totalPages > 1 && (
+        <div className="pagination">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="pagination-btn"
+          >
+            ◀
+          </button>
+
+          <span className="pagination-info">
+            {currentPage} / {totalPages}
+          </span>
+
+          <button
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
+            disabled={currentPage === totalPages}
+            className="pagination-btn"
+          >
+            ▶
+          </button>
+        </div>
+      )}
       
 
       {/* Pagination Controls (Positioned at Bottom Right) */}

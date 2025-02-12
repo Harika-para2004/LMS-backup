@@ -127,11 +127,11 @@ const ProfilePage = ({ Profile, username, empid,email, project, leaveData,userDa
               </div>
               <div className="leave-count">
                 <div className="count-item">
-                  <span className="count-number">{leave.availableLeaves}</span>
+                  <span className="count-number">{leave.availableLeaves || "-"}</span>
                   <span className="count-label">Available</span>
                 </div>
                 <div className="count-item">
-                  <span className="count-number">{leave.totalLeaves}</span>
+                  <span className="count-number">{leave.totalLeaves || "-"}</span>
                   <span className="count-label">Total</span>
                 </div>
               </div>

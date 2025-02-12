@@ -45,18 +45,18 @@ const ApplyLeave = ({
   leavePolicyRef,
   leaveHistory,
   leaveData,
-  gender
+  gender,
 }) => {
   const [showHolidays, setShowHolidays] = useState(false);
   const [showLeavePolicies, setShowLeavePolicies] = useState(false);
   const [openDescription, setOpenDescription] = useState(false);
   const [currentDescription, setCurrentDescription] = useState("");
   const [fileName, setFileName] = useState("");
+  const year = new Date().getFullYear();
 
   const formatCase = (text) => {
     return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
   };
-
 
   const handleToggleDescription = (policy) => {
     // Check if the description exists and then set the current description
@@ -80,6 +80,7 @@ const ApplyLeave = ({
 
   return (
     <div className="leave-management-container">
+      <div className="left-section" >
       <div className="apply-leave-section apply-leave-container">
         <h2 className="section-title">Apply Leave</h2>
         {/* Apply Leave form code goes here */}
@@ -108,11 +109,15 @@ const ApplyLeave = ({
                 </MenuItem>
                 {leavePolicies.length > 0 ? (
                   leavePolicies.map((leaveType, index) => (
-                    <MenuItem key={index} value={leaveType}
-                    disabled={
-                      (gender === "Male" && leaveType.toLowerCase() === "maternity leave") || 
-                      (gender === "Female" && leaveType.toLowerCase() === "paternity leave")
-                    }  
+                    <MenuItem
+                      key={index}
+                      value={leaveType}
+                      disabled={
+                        (gender === "Male" &&
+                          leaveType.toLowerCase() === "maternity leave") ||
+                        (gender === "Female" &&
+                          leaveType.toLowerCase() === "paternity leave")
+                      }
                     >
                       {formatCase(leaveType)}
                     </MenuItem>
@@ -124,7 +129,7 @@ const ApplyLeave = ({
             </Box>
 
             {/* From Date */}
-            <Box flex={1} sx={{ ml: 6 }}>
+            <Box flex={1} >
               <label className="field-label">
                 From: <span className="req">*</span>
                 <br />
@@ -162,7 +167,8 @@ const ApplyLeave = ({
                   shouldDisableDate={(date) => {
                     const today = dayjs().startOf("day"); // Get today's date
                     return (
-                      (formData.leaveType.toLowerCase() === "sick leave" && dayjs(date).isAfter(today, "day")) || // Disable future dates for Sick Leave
+                      (formData.leaveType.toLowerCase() === "sick leave" &&
+                        dayjs(date).isAfter(today, "day")) || // Disable future dates for Sick Leave
                       date.day() === 0 || // Disable Sundays
                       date.day() === 6 || // Disable Saturdays
                       holidays.some(
@@ -216,7 +222,7 @@ const ApplyLeave = ({
             </Box>
 
             {/* To Date */}
-            <Box flex={1} sx={{ ml: 4 }}>
+            <Box flex={1} >
               <label className="field-label">
                 To: <span className="req">*</span>
                 <br />
@@ -349,10 +355,12 @@ const ApplyLeave = ({
         onMouseEnter={() => setShowHolidays(true)}
         onMouseLeave={() => setShowHolidays(false)}
       >
-        <h2 className="section-title">Holiday Calendar</h2>
+        <h2 className="section-title">Holiday Calendar {year}</h2>
         {/* <hr className="holiday-divider" /> */}
 
-        {showHolidays && (
+        {
+        // showHolidays && 
+        (
           <div className="holiday-table-section apply-leave-container">
             <table className="holiday-table">
               <thead>
@@ -383,8 +391,10 @@ const ApplyLeave = ({
           </div>
         )}
       </div>
+      </div>
 
       {/* Leave Policies (Hover to Show) */}
+      <div className="right-section" >
       <div
         className="leave-policy-container"
         onMouseEnter={() => setShowLeavePolicies(true)}
@@ -392,9 +402,11 @@ const ApplyLeave = ({
       >
         <h2 className="section-title">Leave Policies</h2>
         {/* <hr className="leave-policy-divider" /> */}
-        {showLeavePolicies && (
+        {
+        // showLeavePolicies &&
+         (
           <div className="leave-policy-section apply-leave-container">
-            <Grid container spacing={2}>
+            <Grid container spacing={2} direction="column">
               {leavePolicyRef?.length > 0 ? (
                 leavePolicyRef.map((policy, index) => (
                   <Grid item xs={12} sm={6} md={4} key={policy._id || index}>
@@ -430,23 +442,9 @@ const ApplyLeave = ({
                           </Tooltip>
                         </Typography>
 
-                        <Typography variant="body1" color="textSecondary">
-                          Max Allowed Leaves:{" "}
-                          {policy.maxAllowedLeaves || "N/A"}
+                        <Typography variant="body1" color="textSecondary" sx={{ fontSize: "10px" }}>
+                          Max Allowed Leaves: {policy.maxAllowedLeaves || "N/A"}
                         </Typography>
-                        {/* Show description if this policy's description is open */}
-                        {openDescription === policy._id && (
-                          <Typography variant="body2" mt={1}>
-                            {policy.description || "No description available"}
-                            <Button
-                              size="small"
-                              sx={{ marginLeft: "8px" }}
-                              onClick={() => setOpenDescription(null)} // Close description
-                            >
-                              Close
-                            </Button>
-                          </Typography>
-                        )}
                       </CardContent>
                     </Card>
                   </Grid>
@@ -459,41 +457,43 @@ const ApplyLeave = ({
             </Grid>
           </div>
         )}
+
+        <Modal
+          open={openDescription}
+          onClose={() => setOpenDescription(false)}
+          aria-labelledby="leave-policy-description"
+          aria-describedby="leave-policy-description-modal"
+        >
+          <Box sx={{ ...style, width: 400 }}>
+            <Typography variant="h6" gutterBottom>
+              Leave Policy Description
+            </Typography>
+            <Typography variant="body1" style={{ whiteSpace: "pre-line" }}>
+              {
+                currentDescription
+                  .replace(/^[•●▪■★▶►▸*\-]+\s*/g, "") // Remove existing bullets at the start
+                  .replace(/\n[•●▪■★▶►▸*\-]+\s*/g, "\n") // Remove bullets from new lines
+                  .replace(/\s{2,}/g, " ") // Remove extra spaces
+                  .trim() // Trim leading/trailing spaces
+                  .toLowerCase() // Convert everything to lowercase
+                  .replace(
+                    /(^|\.\s+|\n)([a-z])/g,
+                    (match, separator, char) => separator + char.toUpperCase()
+                  ) // Capitalize first letter after '.', '\n'
+                  .replace(/\n(?![-•])/g, "\n- ") // Add '-' at the start of every new line (if not already present)
+              }
+            </Typography>
+
+            {/* Display the description */}
+            <Button onClick={() => setOpenDescription(false)} sx={{ mt: 2 }}>
+              Close
+            </Button>
+          </Box>
+        </Modal>
+      </div>
       </div>
       {/* Modal for Leave Policy Description */}
       {/* Modal for Leave Policy Description */}
-      <Modal
-        open={openDescription}
-        onClose={() => setOpenDescription(false)}
-        aria-labelledby="leave-policy-description"
-        aria-describedby="leave-policy-description-modal"
-      >
-        <Box sx={{ ...style, width: 400 }}>
-          <Typography variant="h6" gutterBottom>
-            Leave Policy Description
-          </Typography>
-          <Typography variant="body1" style={{ whiteSpace: "pre-line" }}>
-            {
-              currentDescription
-                .replace(/^[•●▪■★▶►▸*\-]+\s*/g, "") // Remove existing bullets at the start
-                .replace(/\n[•●▪■★▶►▸*\-]+\s*/g, "\n") // Remove bullets from new lines
-                .replace(/\s{2,}/g, " ") // Remove extra spaces
-                .trim() // Trim leading/trailing spaces
-                .toLowerCase() // Convert everything to lowercase
-                .replace(
-                  /(^|\.\s+|\n)([a-z])/g,
-                  (match, separator, char) => separator + char.toUpperCase()
-                ) // Capitalize first letter after '.', '\n'
-                .replace(/\n(?![-•])/g, "\n- ") // Add '-' at the start of every new line (if not already present)
-            }
-          </Typography>
-
-          {/* Display the description */}
-          <Button onClick={() => setOpenDescription(false)} sx={{ mt: 2 }}>
-            Close
-          </Button>
-        </Box>
-      </Modal>
     </div>
   );
 };

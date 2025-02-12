@@ -5,18 +5,21 @@ import Admin from "./Components/Admin";
 import Employee from "./Components/Employee";
 import Manager from "./Components/Manager";
 import SignInPage from "./Components/Signin";
+import { SnackbarProvider } from "notistack";
 
 function App() {
   return (
     <div className="App">
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<SignInPage />} />
-          <Route path="/employee" element={<Employee />} />
-          <Route path="/manager" element={<Manager />} />
-          <Route path="/admin" element={<Admin />} />
-          {/* <Route path="/login" element={<SignInPage />} /> */}
-        </Routes>
+        <SnackbarProvider maxSnack={5} autoHideDuration={3000}>
+          <Routes>
+            <Route path="/" element={<SignInPage />} />
+            <Route path="/employee" element={<Employee />} />
+            <Route path="/manager" element={<Manager />} />
+            <Route path="/admin" element={<Admin />} />
+            {/* <Route path="/login" element={<SignInPage />} /> */}
+          </Routes>
+        </SnackbarProvider>
       </BrowserRouter>
     </div>
   );

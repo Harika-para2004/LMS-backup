@@ -14,6 +14,13 @@ const LeaveRequestsTable = ({
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7; // Show 5 leave requests per page
 
+    // 🔹 Pagination logic
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = displayedData.slice(indexOfFirstItem, indexOfLastItem);
+  
+    const totalPages = Math.ceil(displayedData.length / itemsPerPage);
+
   // 🔹 Filtered data based on selected filter
   const filteredData = filteredLeaveHistory.flatMap((leave) =>
     leave.startDate.map((startDate, index) => ({
@@ -44,12 +51,7 @@ const LeaveRequestsTable = ({
           (leave) => leave.status === selectedFilter.toLowerCase()
         );
 
-  // 🔹 Pagination logic
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = displayedData.slice(indexOfFirstItem, indexOfLastItem);
 
-  const totalPages = Math.ceil(displayedData.length / itemsPerPage);
 
   return (
     <div className="history-container">

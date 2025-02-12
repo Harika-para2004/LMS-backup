@@ -35,6 +35,15 @@ const Sidebar = ({
     if (isEmployee) {
       return (
         <>
+        <li>
+            <Link
+              to="#"
+              className={selectedCategory === "dashboard" ? "active-tab" : ""}
+              onClick={() => setSelectedCategory("dashboard")}
+            >
+              <FontAwesomeIcon icon={faPaperPlane} /> Dashboard
+            </Link>
+          </li>
           <li>
             <Link
               to="#"

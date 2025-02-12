@@ -94,7 +94,7 @@ body, html {
 
 .dashboard-container .main-content {
   flex: 1;
-  padding: 40px 30px;
+  padding: 40px 20px;
   /* overflow: hidden; */
   background-color: #F7F8FA;
   overflow-y: auto;
@@ -522,7 +522,7 @@ body, html {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 30px;
+  padding: 10px;
   background-color: #f9f9f9;
   border-radius: 8px;
 }
@@ -562,7 +562,7 @@ body, html {
 } */
 
 .apply-leave-container{
-  padding: 25px 60px;
+  padding: 25px 20px;
 }
 
 .apply-leave-container form textarea label{
@@ -613,7 +613,7 @@ body, html {
 
 .apply-leave-container .holiday-table th,
 .apply-leave-container .holiday-table td {
- padding: 11px;
+ padding: 7px;
  text-align: left;
  font-size: 14px;
  border-bottom: 1px solid #ddd;
@@ -624,7 +624,7 @@ body, html {
  /* background-color: #384959; */
  color: #fff;
  font-size: 16px;
- padding: 8px 11px;
+ padding: 7px;
 }
 
 .apply-leave-container .holiday-table tr:nth-child(even) {
@@ -926,10 +926,7 @@ body, html {
   gap: 20px; /* Space between status items */
   justify-content: center; /* Center align */
   margin-top: 10px;
-  position: absolute;
-  top: 10px; /* Positioned at the bottom */
-  right: 220px;  /* Positioned to the right */
-  margin-top: 20px;
+
 }
 
 .status-item {
@@ -979,7 +976,7 @@ body, html {
   background-color:var(--dark-blue);
   font-weight: bold;
   color:white;
-  padding: 12px;
+  padding: 7px;
 
 }
 
@@ -1003,7 +1000,7 @@ body, html {
 /* Mobile responsiveness */
 @media (max-width: 768px) {
   table th, table td {
-    padding: 10px;
+    padding: 7px;
   }
 
   .history-container h2 {
@@ -1573,6 +1570,27 @@ body {
   transform: scale(1.05);
 }
 
+.leave-management-container {
+  display: grid;
+  grid-template-columns: 2fr 1fr; /* Left: Holidays & Apply Leave | Right: Leave Policies */
+  gap: 20px;
+  padding: 30px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+
+.left-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* Space between Holiday Calendar & Apply Leave */
+}
+
+.right-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
 
 
 /* General container */
@@ -1696,12 +1714,12 @@ body {
 .reports-container th {
   background: var(--dark-blue);
   color: white;
-  padding: 10px;
+  padding: 7px;
   font-size: 16px;
 }
 
 .reports-container td {
-  padding: 10px;
+  padding: 7px;
   border-bottom: 1px solid #ddd;
   font-size: 14px;
 
@@ -1784,14 +1802,14 @@ body {
 .table-container th {
   /* background: #007bff; */
   color: white;
-  padding: 10px;
+  padding: 7px;
   white-space: nowrap; /* Prevents text from wrapping */
   min-width: 120px; /* Ensures columns don't shrink too much */
 }
 
 /* Table data */
  td {
-  padding: 10px;
+  padding: 7px;
   border-bottom: 1px solid #ddd;
   white-space: nowrap; /* Ensures text stays in one line */
   overflow: hidden;

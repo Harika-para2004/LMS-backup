@@ -19,6 +19,7 @@ const LeavePolicySchema = new mongoose.Schema({
     trim: true,
     maxlength: 1000, // Allow long descriptions up to 1000 characters
   },
+  validYear: { type: Number, default: new Date().getFullYear() },
   createdAt: {
     type: Date,
     default: Date.now,

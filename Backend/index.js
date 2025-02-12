@@ -34,114 +34,186 @@ app.use("/api/auth", authRoutes);
 app.use("/api/leave-policies", leavepolicyRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
+// app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
+//   const { email } = req.query;
+//   const {
+//     empname,
+//     empid,
+//     leaveType,
+//     startDate,
+//     endDate,
+//     reason,
+//     managerEmail,
+//   } = req.body;
+//   const filePath = req.file ? req.file.path : null;
+
+//   try {
+//     // Convert dates to Date objects
+//     const formattedStartDate = new Date(startDate);
+//     const formattedEndDate = new Date(endDate);
+
+//     // **✅ 1. Required Fields Check**
+//     if (!leaveType || !startDate || !endDate) {
+//       return res
+//         .status(400)
+//         .json({
+//           message:
+//             "All fields (Leave Type, Start Date, End Date) are required.",
+//         });
+//     }
+
+//     // **✅ 2. Check if End Date is valid**
+//     if (formattedEndDate < formattedStartDate) {
+//       return res
+//         .status(400)
+//         .json({ message: "End Date cannot be before Start Date." });
+//     }
+
+//     // **✅ 3. Fetch overlapping leave requests**
+//     const overlappingLeaves = await Leave.find({
+//       email,
+//       $or: [
+//         {
+//           startDate: { $lte: formattedEndDate },
+//           endDate: { $gte: formattedStartDate },
+//         },
+//       ],
+//     });
+
+//     // **✅ 4. If an overlap exists, format the response properly**
+//     if (overlappingLeaves.length > 0) {
+//       const formattedLeaves = overlappingLeaves.map((leave) => {
+//         const startDates = leave.startDate
+//           .map((date) => new Date(date).toLocaleDateString("en-GB"))
+//           .join(", ");
+//         const endDates = leave.endDate
+//           .map((date) => new Date(date).toLocaleDateString("en-GB"))
+//           .join(", ");
+//         return `From: ${startDates} to ${endDates}`;
+//       });
+
+//       // return res.status(400).json({
+//       //   message: `You have already applied for leave on these dates:\n\n${formattedLeaves.join(
+//       //     "\n"
+//       //   )}`,
+//       // });
+//       return res.status(400).json({
+//         message: 'You have already applied for leave on these dates'
+//       });
+//     }
+
+//     // **✅ 5. Ensure no pending leave requests exist**
+//     const pendingLeave = await Leave.findOne({
+//       email,
+//       leaveType,
+//       $expr: { $eq: [{ $arrayElemAt: ["$status", -1] }, "Pending"] }, // ✅ Only checks latest status
+//     });
+    
+
+//     console.log("Pending Leave:", pendingLeave);
+
+//     if (pendingLeave) {
+//       return res.status(400).json({
+//         message: `You already have a pending leave request for ${leaveType}. Wait for approval before applying again.`,
+//       });
+//     }
+
+//     // **✅ 6. Save Leave Record**
+//     const newLeave = new Leave({
+//       email,
+//       empname,
+//       empid,
+//       managerEmail,
+//       applyDate: new Date(),
+//       leaveType,
+//       startDate: [formattedStartDate],
+//       endDate: [formattedEndDate],
+//       reason: reason ? [reason] : [],
+//       status: ["Pending"],
+//       attachments: [filePath || ""],
+//     });
+
+//     await newLeave.save();
+//     res
+//       .status(200)
+//       .json({ message: "Leave application submitted successfully." });
+//   } catch (error) {
+//     console.error("Error applying for leave:", error);
+//     res.status(500).json({ message: "Server error while applying leave." });
+//   }
+// });
+
 app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
   const { email } = req.query;
-  const {
-    empname,
-    empid,
-    leaveType,
-    startDate,
-    endDate,
-    reason,
-    managerEmail,
-  } = req.body;
+  const { empname, empid, leaveType, startDate, endDate, reason, managerEmail } = req.body;
   const filePath = req.file ? req.file.path : null;
 
   try {
-    // Convert dates to Date objects
     const formattedStartDate = new Date(startDate);
     const formattedEndDate = new Date(endDate);
 
-    // **✅ 1. Required Fields Check**
     if (!leaveType || !startDate || !endDate) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "All fields (Leave Type, Start Date, End Date) are required.",
-        });
+      return res.status(400).json({ message: "All fields (Leave Type, Start Date, End Date) are required." });
     }
 
-    // **✅ 2. Check if End Date is valid**
     if (formattedEndDate < formattedStartDate) {
-      return res
-        .status(400)
-        .json({ message: "End Date cannot be before Start Date." });
+      return res.status(400).json({ message: "End Date cannot be before Start Date." });
     }
 
-    // **✅ 3. Fetch overlapping leave requests**
-    const overlappingLeaves = await Leave.find({
-      email,
-      $or: [
-        {
-          startDate: { $lte: formattedEndDate },
-          endDate: { $gte: formattedStartDate },
-        },
-      ],
-    });
+    // const pendingLeave = await Leave.findOne({ email, leaveType, status: "Pending" });
 
-    // **✅ 4. If an overlap exists, format the response properly**
-    if (overlappingLeaves.length > 0) {
-      const formattedLeaves = overlappingLeaves.map((leave) => {
-        const startDates = leave.startDate
-          .map((date) => new Date(date).toLocaleDateString("en-GB"))
-          .join(", ");
-        const endDates = leave.endDate
-          .map((date) => new Date(date).toLocaleDateString("en-GB"))
-          .join(", ");
-        return `From: ${startDates} to ${endDates}`;
+    // if (pendingLeave) {
+    //   return res.status(400).json({ message: `You already have a pending leave request for ${leaveType}. Wait for approval before applying again.` });
+    // }
+
+    const leaveRecord = await Leave.findOne({ email, leaveType });
+
+    if (leaveRecord) {
+      for (let i = 0; i < leaveRecord.startDate.length; i++) {
+        const existingStartDate = new Date(leaveRecord.startDate[i]);
+        const existingEndDate = new Date(leaveRecord.endDate[i]);
+
+        if (
+          (formattedStartDate >= existingStartDate && formattedStartDate <= existingEndDate) ||
+          (formattedEndDate >= existingStartDate && formattedEndDate <= existingEndDate) ||
+          (formattedStartDate <= existingStartDate && formattedEndDate >= existingEndDate)
+        ) {
+          return res.status(400).json({ message: `You have already applied for leave from ${existingStartDate.toLocaleDateString("en-GB")} to ${existingEndDate.toLocaleDateString("en-GB")}.` });
+        }
+      }
+
+      leaveRecord.startDate.push(formattedStartDate);
+      leaveRecord.endDate.push(formattedEndDate);
+      leaveRecord.status.push("Pending");
+      leaveRecord.attachments.push(filePath ? filePath : "");
+      leaveRecord.reason.push(reason || "");
+
+      await leaveRecord.save();
+      return res.status(200).json({ message: "Leave application submitted successfully" });
+    } else {
+      const newLeave = new Leave({
+        email,
+        empname,
+        empid,
+        managerEmail,
+        applyDate: new Date(),
+        leaveType,
+        startDate: [formattedStartDate],
+        endDate: [formattedEndDate],
+        reason: reason ? [reason] : [],
+        status: ["Pending"],
+        attachments: [filePath ? filePath : ""],
       });
 
-      // return res.status(400).json({
-      //   message: `You have already applied for leave on these dates:\n\n${formattedLeaves.join(
-      //     "\n"
-      //   )}`,
-      // });
-      return res.status(400).json({
-        message: 'You have already applied for leave on these dates'
-      });
+      await newLeave.save();
+      return res.status(200).json({ message: "Leave application submitted successfully" });
     }
-
-    // **✅ 5. Ensure no pending leave requests exist**
-    const pendingLeave = await Leave.findOne({
-      email,
-      leaveType,
-      $expr: { $eq: [{ $arrayElemAt: ["$status", -1] }, "Pending"] }, // ✅ Only checks latest status
-    });
-    
-
-    console.log("Pending Leave:", pendingLeave);
-
-    if (pendingLeave) {
-      return res.status(400).json({
-        message: `You already have a pending leave request for ${leaveType}. Wait for approval before applying again.`,
-      });
-    }
-
-    // **✅ 6. Save Leave Record**
-    const newLeave = new Leave({
-      email,
-      empname,
-      empid,
-      managerEmail,
-      applyDate: new Date(),
-      leaveType,
-      startDate: [formattedStartDate],
-      endDate: [formattedEndDate],
-      reason: reason ? [reason] : [],
-      status: ["Pending"],
-      attachments: [filePath || ""],
-    });
-
-    await newLeave.save();
-    res
-      .status(200)
-      .json({ message: "Leave application submitted successfully." });
   } catch (error) {
     console.error("Error applying for leave:", error);
     res.status(500).json({ message: "Server error while applying leave." });
   }
 });
+
 
 app.get("/leave-history", async (req, res) => {
   const { email } = req.query;
@@ -758,3 +830,147 @@ app.get("/reports/export-pdf", async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 });
+
+
+// --------------------Dahboard------------
+
+//Employee
+
+// Get Monthly Leave Trends
+app.get('/leave-trends/:email', async (req, res) => {
+  const { email } = req.params;
+  try {
+    const trends = await Leave.aggregate([
+      { $match: { email } },
+
+      // 🔹 Unwind `startDate` & `duration` TOGETHER (Ensuring they match)
+      { $unwind: { path: "$startDate", preserveNullAndEmptyArrays: true } },
+      { $unwind: { path: "$duration", preserveNullAndEmptyArrays: true } },
+
+      // 🔹 Extract Year & Month from `startDate`
+      {
+        $addFields: {
+          year: { $year: "$startDate" },
+          month: { $month: "$startDate" }
+        }
+      },
+
+      // 🔹 Group by Year & Month, Sum up `duration`
+      {
+        $group: {
+          _id: { year: "$year", month: "$month" },
+          totalLeaves: { $sum: { $ifNull: ["$duration", 0] } }  // Ensure `duration` is not null
+        }
+      },
+
+      // 🔹 Sort by Year & Month
+      { $sort: { "_id.year": 1, "_id.month": 1 } }
+    ]);
+
+    console.log("📌 Leave Trends Result:", trends);
+    res.json(trends);
+  } catch (err) {
+    console.error("❌ Error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
+
+// Get Leave Type Distribution
+app.get('/leave-types/:email', async (req, res) => {
+  const { email } = req.params;
+  try {
+    const types = await Leave.aggregate([
+      { $match: { email } },
+      { $group: { _id: "$leaveType", count: { $sum: { $size: "$startDate" } } } } // Count total leave applications
+    ]);
+    res.json(types);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+//Manager
+
+// Get Pending/Approved/Rejected Requests
+app.get('/leave-status/:managerEmail', async (req, res) => {
+  const { managerEmail } = req.params;
+  try {
+    const statusData = await Leave.aggregate([
+      { $match: { managerEmail } },
+      { $unwind: "$status" }, // Handle array of statuses
+      { $group: { _id: "$status", count: { $sum: 1 } } }
+    ]);
+    res.json(statusData);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// Get Project-Wise Leave Trends
+app.get('/leave-projects', async (req, res) => {
+  try {
+    const projectLeaves = await Leave.aggregate([
+      { $group: { _id: "$project", totalLeaves: { $sum: "$usedLeaves" } } }
+    ]);
+    res.json(projectLeaves);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+//Admin
+
+// Get Company-Wide Leave Trends
+app.get('/leave-company', async (req, res) => {
+  try {
+    const companyTrends = await Leave.aggregate([
+      { $unwind: "$month" },
+      { $unwind: "$year" },
+      { 
+        $group: {
+          _id: { year: "$year", month: "$month" },
+          totalLeaves: { $sum: { $sum: "$duration" } } // Sum all durations
+        }
+      },
+      { $sort: { "_id.year": 1, "_id.month": 1 } }
+    ]);
+    res.json(companyTrends);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// Get Holidays Impact on Leave Requests
+app.get('/leave-holidays-impact', async (req, res) => {
+  try {
+    const impact = await Leave.aggregate([
+      {
+        $lookup: {
+          from: "holidays",
+          localField: "applyDate",
+          foreignField: "date",
+          as: "holidayInfo"
+        }
+      },
+      {
+        $group: {
+          _id: { holiday: "$holidayInfo.name", date: "$applyDate" },
+          totalLeaves: { $sum: "$usedLeaves" }
+        }
+      }
+    ]);
+    res.json(impact);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
+

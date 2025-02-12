@@ -7,7 +7,12 @@ const userSchema = new mongoose.Schema({
   project: { type: String },
   gender: { type: String },
   role: { type: String, required: true },
-  managerEmail: { type: String, required: function () { return this.role === 'Employee'; } }
+  managerEmail: { type: String, required: function () { return this.role === 'Employee'; } },
+  yearlyLeavesTaken: {
+    type: Map,
+    of: Number, 
+    default: {},
+  },
 });
 
 const User = mongoose.model('signups_cols', userSchema);
