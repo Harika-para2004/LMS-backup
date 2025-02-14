@@ -142,7 +142,6 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 //     res.status(500).json({ message: "Server error while applying leave." });
 //   }
 // });
-
 app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
   const { email } = req.query;
   const { empname, empid, leaveType, startDate, endDate, reason, managerEmail } = req.body;
@@ -160,13 +159,12 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
       return res.status(400).json({ message: "End Date cannot be before Start Date." });
     }
 
-    // const pendingLeave = await Leave.findOne({ email, leaveType, status: "Pending" });
-
-    // if (pendingLeave) {
-    //   return res.status(400).json({ message: `You already have a pending leave request for ${leaveType}. Wait for approval before applying again.` });
-    // }
-
     const leaveRecord = await Leave.findOne({ email, leaveType });
+
+    const startMonth = formattedStartDate.getMonth() + 1; // JS months are 0-indexed
+    const startYear = formattedStartDate.getFullYear();
+    const endMonth = formattedEndDate.getMonth() + 1;
+    const endYear = formattedEndDate.getFullYear();
 
     if (leaveRecord) {
       for (let i = 0; i < leaveRecord.startDate.length; i++) {
@@ -178,18 +176,27 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
           (formattedEndDate >= existingStartDate && formattedEndDate <= existingEndDate) ||
           (formattedStartDate <= existingStartDate && formattedEndDate >= existingEndDate)
         ) {
-          return res.status(400).json({ message: `You have already applied for leave from ${existingStartDate.toLocaleDateString("en-GB")} to ${existingEndDate.toLocaleDateString("en-GB")}.` });
+          return res.status(400).json({ 
+            message: `You have already applied for leave from ${existingStartDate.toLocaleDateString("en-GB")} to ${existingEndDate.toLocaleDateString("en-GB")}.`
+          });
         }
       }
 
       leaveRecord.startDate.push(formattedStartDate);
       leaveRecord.endDate.push(formattedEndDate);
       leaveRecord.status.push("Pending");
-      leaveRecord.attachments.push(filePath ? filePath : "");
+      leaveRecord.attachments.push(filePath || "");
       leaveRecord.reason.push(reason || "");
+
+      if (!leaveRecord.month) leaveRecord.month = [];
+      if (!leaveRecord.year) leaveRecord.year = [];
+
+      leaveRecord.month.push(startMonth);
+      leaveRecord.year.push(startYear);
 
       await leaveRecord.save();
       return res.status(200).json({ message: "Leave application submitted successfully" });
+
     } else {
       const newLeave = new Leave({
         email,
@@ -202,7 +209,9 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
         endDate: [formattedEndDate],
         reason: reason ? [reason] : [],
         status: ["Pending"],
-        attachments: [filePath ? filePath : ""],
+        attachments: [filePath || ""],
+        month: [startMonth],
+        year: [startYear],
       });
 
       await newLeave.save();
@@ -213,6 +222,7 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
     res.status(500).json({ message: "Server error while applying leave." });
   }
 });
+
 
 
 app.get("/leave-history", async (req, res) => {
@@ -835,17 +845,29 @@ app.get("/reports/export-pdf", async (req, res) => {
 // --------------------Dahboard------------
 
 //Employee
-
-// Get Monthly Leave Trends
 app.get('/leave-trends/:email', async (req, res) => {
   const { email } = req.params;
   try {
     const trends = await Leave.aggregate([
       { $match: { email } },
 
-      // 🔹 Unwind `startDate` & `duration` TOGETHER (Ensuring they match)
-      { $unwind: { path: "$startDate", preserveNullAndEmptyArrays: true } },
-      { $unwind: { path: "$duration", preserveNullAndEmptyArrays: true } },
+      // 🔹 Combine `startDate` and `duration` to maintain pairing
+      {
+        $addFields: {
+          pairedLeaves: { $zip: { inputs: ["$startDate", "$duration"] } }
+        }
+      },
+
+      // 🔹 Unwind the paired array
+      { $unwind: "$pairedLeaves" },
+
+      // 🔹 Extract fields correctly
+      {
+        $addFields: {
+          startDate: { $arrayElemAt: ["$pairedLeaves", 0] },
+          duration: { $arrayElemAt: ["$pairedLeaves", 1] }
+        }
+      },
 
       // 🔹 Extract Year & Month from `startDate`
       {
@@ -855,11 +877,11 @@ app.get('/leave-trends/:email', async (req, res) => {
         }
       },
 
-      // 🔹 Group by Year & Month, Sum up `duration`
+      // 🔹 Group by Year & Month, Summing `duration`
       {
         $group: {
           _id: { year: "$year", month: "$month" },
-          totalLeaves: { $sum: { $ifNull: ["$duration", 0] } }  // Ensure `duration` is not null
+          totalLeaves: { $sum: "$duration" }
         }
       },
 
@@ -878,19 +900,340 @@ app.get('/leave-trends/:email', async (req, res) => {
 
 
 
+
+
 // Get Leave Type Distribution
-app.get('/leave-types/:email', async (req, res) => {
+// app.get('/leave-types/:email', async (req, res) => {
+//   const { email } = req.params;
+//   try {
+//     const types = await Leave.aggregate([
+//       { $match: { email } },
+//       { $group: { _id: "$leaveType", count: { $sum: { $size: "$startDate" } } } } // Count total leave applications
+//     ]);
+//     res.json(types);
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// });
+
+app.get('/leavetype-status/:email', async (req, res) => {
   const { email } = req.params;
   try {
     const types = await Leave.aggregate([
       { $match: { email } },
-      { $group: { _id: "$leaveType", count: { $sum: { $size: "$startDate" } } } } // Count total leave applications
+
+      // 🔹 Unwind the arrays to process each date separately
+      { $unwind: "$startDate" },
+      { $unwind: "$endDate" },
+      { $unwind: "$status" },
+
+      // 🔹 Group by leaveType & status
+      {
+        $group: {
+          _id: { leaveType: "$leaveType", status: "$status" },
+          count: { $sum: 1 } // ✅ Correct count of each leave type & status
+        }
+      },
+
+      // 🔹 Sort for better readability
+      { $sort: { "_id.leaveType": 1, "_id.status": 1 } }
     ]);
+
     res.json(types);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
+// app.get('/leave-types/:email/:year?', async (req, res) => {
+//   const { email, year } = req.params;
+//   const matchStage = { email };
+
+//   // If a specific year is provided, filter by that year
+//   if (year) {
+//     matchStage["year"] = parseInt(year);
+//   }
+
+//   try {
+//     const types = await Leave.aggregate([
+//       { $match: matchStage },
+
+//       // 🔹 Unwind `status`, `startDate`, and `year`
+//       { $unwind: "$status" },
+//       { $unwind: "$startDate" },
+//       { $unwind: "$year" },
+
+//       // 🔹 Extract the year from `startDate`
+//       {
+//         $addFields: {
+//           extractedYear: { $year: "$startDate" }
+//         }
+//       },
+
+//       // 🔹 Group by Year & Status
+//       {
+//         $group: {
+//           _id: { year: "$extractedYear", status: "$status" },
+//           count: { $sum: 1 }
+//         }
+//       },
+
+//       // 🔹 Sort by Year & Status
+//       { $sort: { "_id.year": 1, "_id.status": 1 } }
+//     ]);
+
+//     res.json(types);
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// });
+
+// app.get('/leave-types/:email/:year?', async (req, res) => {
+//   const { email, year } = req.params;
+
+//   try {
+//     const matchStage = { email }; // Match email
+
+//     // If a specific year is provided, filter by that year (inside the array)
+//     if (year) {
+//       matchStage["year"] = { $elemMatch: { $eq: parseInt(year) } };
+//     }
+
+//     const types = await Leave.aggregate([
+//       { $match: matchStage },
+
+//       // 🔹 Unwind arrays so that each leave entry is treated separately
+//       { $unwind: "$startDate" },
+//       { $unwind: "$status" },
+//       { $unwind: "$year" },
+
+//       // 🔹 Extract the year from `startDate`
+//       {
+//         $addFields: {
+//           extractedYear: { $year: "$startDate" }
+//         }
+//       },
+
+//       // 🔹 Filter again to match the requested year (if provided)
+//       ...(year ? [{ $match: { extractedYear: parseInt(year) } }] : []),
+
+//       // 🔹 Group by Year & Status
+//       {
+//         $group: {
+//           _id: { year: "$extractedYear", status: "$status" },
+//           count: { $sum: 1 }
+//         }
+//       },
+
+//       // 🔹 Sort by Year & Status
+//       { $sort: { "_id.year": 1, "_id.status": 1 } }
+//     ]);
+//     console.log("year by trends:",types);
+
+//     res.json(types);
+
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// });
+
+// app.get('/leave-types/:email/:year?', async (req, res) => {
+//   const { email, year } = req.params;
+  
+//   console.log("Received request:", { email, year });
+
+//   try {
+//     // 🔹 Build Query Dynamically (Filter by Email & Year if provided)
+//     let matchStage = { email };
+//     if (year) {
+//       matchStage.startDate = {
+//         $gte: new Date(`${year}-01-01`),
+//         $lt: new Date(`${year}-12-31`),
+//       };
+//     }
+
+//     const leaveTypes = await Leave.aggregate([
+//       { $match: matchStage },
+
+//       // 🔹 Group by leaveType & status
+//       {
+//         $group: {
+//           _id: { leaveType: "$leaveType", status: "$status" },
+//           count: { $sum: 1 }
+//         }
+//       },
+
+//       // 🔹 Sort for consistency
+//       { $sort: { "_id.leaveType": 1 } }
+//     ]);
+
+//     console.log("📌 Leave Types Result:", leaveTypes);
+//     res.json(leaveTypes);
+//   } catch (err) {
+//     console.error("❌ Error in API:", err);
+//     res.status(500).json({ error: err.message });
+//   }
+// });
+
+//charts.js
+app.get('/leave-type-status/:email/:year', async (req, res) => {
+  const { email, year } = req.params;
+
+  try {
+    const matchStage = { email };
+    if (year) {
+      matchStage.year = parseInt(year);
+    }
+
+    const leaveStats = await Leave.aggregate([
+      { $match: matchStage },
+
+      // Unwind status array to treat each status separately
+      { $unwind: "$status" },
+
+      // Group by leaveType and status, count occurrences
+      {
+        $group: {
+          _id: { leaveType: "$leaveType", status: "$status" },
+          count: { $sum: 1 }
+        }
+      },
+
+      // Format response
+      {
+        $group: {
+          _id: "$_id.leaveType",
+          statuses: {
+            $push: {
+              status: "$_id.status",
+              count: "$count"
+            }
+          }
+        }
+      },
+
+      // Sort by leave type
+      { $sort: { "_id": 1 } }
+    ]);
+
+    // Format response for frontend
+    const formattedResponse = leaveStats.map(item => ({
+      leaveType: item._id,
+      statuses: item.statuses.reduce((acc, curr) => {
+        acc[curr.status] = curr.count;
+        return acc;
+      }, { Pending: 0, Approved: 0, Rejected: 0 })
+    }));
+
+    res.json(formattedResponse);
+  } catch (err) {
+    console.error("❌ Error in API:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/leave-trends/:email/:year", async (req, res) => {
+  const { email, year } = req.params;
+  try {
+    const data = await Leave.aggregate([
+      { $match: { email, year: { $in: [parseInt(year)] } } },
+      { $unwind: "$month" },
+      { $unwind: "$status" },
+      {
+        $group: {
+          _id: { month: "$month", status: "$status" },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $group: {
+          _id: "$_id.month",
+          statuses: { $push: { status: "$_id.status", count: "$count" } }
+        }
+      }
+    ]);
+
+    const formattedData = new Array(12).fill({}).map((_, index) => ({
+      month: index + 1,
+      ...Object.fromEntries(data.find(d => d._id === index + 1)?.statuses.map(s => [s.status, s.count]) || [])
+    }));
+
+    res.json(formattedData);
+  } catch (err) {
+    res.status(500).json({ error: "Error fetching leave trends" });
+  }
+});
+
+// Get leave balance
+// app.get("/leave-balance/:email", async (req, res) => {
+//   const { email } = req.params;
+//   try {
+//     const user = await Leave.findOne({ email });
+//     if (!user) return res.status(404).json({ error: "User not found" });
+
+//     res.json({ usedLeaves: user.usedLeaves, availableLeaves: user.availableLeaves });
+//   } catch (err) {
+//     res.status(500).json({ error: "Error fetching leave balance" });
+//   }
+// });
+
+// app.get("/leave-balance/:email/:year", async (req, res) => {
+//   const { email, year } = req.params;
+//   try {
+//     const leaves = await Leave.find({ email, year: Number(year) });
+
+//     // if (!leaves.length) return res.status(404).json({ error: "No leave data found for this year" });
+
+//     const leaveBalance = leaves.reduce((acc, leave) => {
+//       if (!acc[leave.leaveType]) {
+//         acc[leave.leaveType] = { availableLeaves: leave.availableLeaves, usedLeaves: leave.usedLeaves };
+//       } else {
+//         acc[leave.leaveType].availableLeaves += leave.availableLeaves;
+//         acc[leave.leaveType].usedLeaves += leave.usedLeaves;
+//       }
+//       return acc;
+//     }, {});
+
+//     res.json(leaveBalance);
+//   } catch (err) {
+//     res.status(500).json({ error: "Error fetching leave balance" });
+//   }
+// });
+
+app.get("/leave-balance/:email/:year", async (req, res) => {
+  const { email, year } = req.params;
+  
+  try {
+    const leaves = await Leave.find({ email, year: Number(year) });
+
+    if (!leaves.length) {
+      return res.json({});
+    }
+
+    const leaveBalance = leaves.reduce((acc, leave) => {
+      if (!acc[leave.leaveType]) {
+        acc[leave.leaveType] = {
+          totalLeaves: leave.totalLeaves,
+          usedLeaves: leave.usedLeaves,
+          availableLeaves: leave.availableLeaves
+        };
+      } else {
+        acc[leave.leaveType].totalLeaves += leave.totalLeaves;
+        acc[leave.leaveType].usedLeaves += leave.usedLeaves;
+        acc[leave.leaveType].availableLeaves += leave.availableLeaves;
+      }
+      return acc;
+    }, {});
+
+    res.json(leaveBalance);
+  } catch (err) {
+    console.error("Error fetching leave balance:", err);
+    res.status(500).json({ error: "Error fetching leave balance" });
+  }
+});
+
+
+
 
 
 //Manager
@@ -970,7 +1313,6 @@ app.get('/leave-holidays-impact', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 
 
 

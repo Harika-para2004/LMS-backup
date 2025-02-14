@@ -19,8 +19,8 @@ const LeaveSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   attachments: { type: [String] },
   duration: { type: [Number] }, // Updated
-  year: { type: [Number], default: new Date().getFullYear() },
-  month: { type: [Number], default: new Date().getMonth() + 1 },
+  year: { type: [Number],  },
+  month: { type: [Number], },
 });
 
 // ✅ Middleware to Calculate Leave Duration Excluding Holidays & Weekends
@@ -29,8 +29,6 @@ LeaveSchema.pre("save", async function (next) {
 
   try {
     const duration = [];
-
-    // Fetch all mandatory holidays
     const holidays = await Holiday.find({ type: "Mandatory" });
     const holidayDates = holidays.map((holiday) => new Date(holiday.date).toDateString());
 
@@ -49,10 +47,14 @@ LeaveSchema.pre("save", async function (next) {
         currentDate.setDate(currentDate.getDate() + 1); // Move to the next day
       }
 
-      duration.push(totalDays); // Store the valid leave duration
+      duration.push(totalDays);
     });
 
     this.duration = duration;
+
+    // ✅ Extract and store month & year from startDate
+    this.month = this.startDate.map(date => new Date(date).getMonth() + 1); // Month is 0-based, so +1
+    this.year = this.startDate.map(date => new Date(date).getFullYear());
 
     // ✅ Fetch Leave Policy and Set Leave Limits
     const policy = await LeavePolicy.findOne({ leaveType: this.leaveType });
@@ -60,7 +62,7 @@ LeaveSchema.pre("save", async function (next) {
       this.totalLeaves = policy.maxAllowedLeaves || 0;
 
       if (this.availableLeaves === 0) {
-        this.availableLeaves = this.totalLeaves; // Set max leaves for first-time application
+        this.availableLeaves = this.totalLeaves;
       }
 
       this.availableLeaves = Math.max(0, this.totalLeaves - this.usedLeaves);
@@ -74,5 +76,6 @@ LeaveSchema.pre("save", async function (next) {
     next(error);
   }
 });
+
 
 module.exports = mongoose.model("Leaverequests", LeaveSchema);

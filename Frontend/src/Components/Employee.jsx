@@ -34,7 +34,7 @@ import dayjs from "dayjs";
 import EmployeeDashboard from "./EmployeeDashboard";
 
 const App = () => {
-  const [selectedCategory, setSelectedCategory] = useState("apply-leave");
+  const [selectedCategory, setSelectedCategory] = useState("dashboard");
   const [userData, setUserData] = useState(null);
   const [username, setUsername] = useState("");
   const [empid, setEmpid] = useState("");
@@ -685,7 +685,7 @@ const App = () => {
           empid={empid}
           handleLogout={handleLogout}
           logo={logo}
-          profileImage={profileImage}
+          Profile={Profile}
         />
 
         <div className="main-content">{renderContent()}</div>

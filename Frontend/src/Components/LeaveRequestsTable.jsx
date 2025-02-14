@@ -15,11 +15,7 @@ const LeaveRequestsTable = ({
   const itemsPerPage = 7; // Show 5 leave requests per page
 
     // 🔹 Pagination logic
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = displayedData.slice(indexOfFirstItem, indexOfLastItem);
-  
-    const totalPages = Math.ceil(displayedData.length / itemsPerPage);
+
 
   // 🔹 Filtered data based on selected filter
   const filteredData = filteredLeaveHistory.flatMap((leave) =>
@@ -44,12 +40,20 @@ const LeaveRequestsTable = ({
   );
 
   // 🔹 Apply filter
-  const displayedData =
-    selectedFilter === "All"
-      ? filteredData
-      : filteredData.filter(
-          (leave) => leave.status === selectedFilter.toLowerCase()
-        );
+// 🔹 Apply filter before using displayedData
+const displayedData =
+  selectedFilter === "All"
+    ? filteredData
+    : filteredData.filter(
+        (leave) => leave.status === selectedFilter.toLowerCase()
+      );
+
+// 🔹 Pagination logic (use displayedData after it's declared)
+const indexOfLastItem = currentPage * itemsPerPage;
+const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+const currentItems = displayedData.slice(indexOfFirstItem, indexOfLastItem);
+
+const totalPages = Math.ceil(displayedData.length / itemsPerPage);
 
 
 

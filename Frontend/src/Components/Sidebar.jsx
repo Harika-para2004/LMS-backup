@@ -24,7 +24,7 @@ const Sidebar = ({
   empid,
   handleLogout,
   logo,
-  profileImage,
+  Profile,
 }) => {
   const isEmployee = userType === "employee";
   const isAdmin = userType === "admin";
@@ -41,7 +41,7 @@ const Sidebar = ({
               className={selectedCategory === "dashboard" ? "active-tab" : ""}
               onClick={() => setSelectedCategory("dashboard")}
             >
-              <FontAwesomeIcon icon={faPaperPlane} /> Dashboard
+              <FontAwesomeIcon icon={faChartLine} /> Dashboard
             </Link>
           </li>
           <li>
@@ -192,7 +192,7 @@ const Sidebar = ({
           >
             <div className="profile-section">
               <div className="profile-pic" style={{ marginTop: "10%" }}>
-                <img src={profileImage} alt="Profile" />
+                <img src={Profile} alt="Profile" />
               </div>
               <div className="profile-details">
                 <div className="tooltip-container">

@@ -739,6 +739,7 @@ function LeaveRequests() {
             project={project}
             leaveData={leaveData}
             userData={userData}
+            gender={gender}
           />
         );
 
@@ -1138,7 +1139,7 @@ function LeaveRequests() {
           empid={empid}
           handleLogout={handleLogout}
           logo={logo}
-          profileImage={profileImage}
+          Profile={Profile}
         />
         <main className="main-content">{renderContent()}</main>
       </div>
