@@ -159,44 +159,42 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
       return res.status(400).json({ message: "End Date cannot be before Start Date." });
     }
 
-    const leaveRecord = await Leave.findOne({ email, leaveType });
+    // Fetch all leave records for the user
+    let existingLeaves = await Leave.find({ email });
 
-    const startMonth = formattedStartDate.getMonth() + 1; // JS months are 0-indexed
-    const startYear = formattedStartDate.getFullYear();
-    const endMonth = formattedEndDate.getMonth() + 1;
-    const endYear = formattedEndDate.getFullYear();
-
-    if (leaveRecord) {
-      for (let i = 0; i < leaveRecord.startDate.length; i++) {
-        const existingStartDate = new Date(leaveRecord.startDate[i]);
-        const existingEndDate = new Date(leaveRecord.endDate[i]);
+    for (let leave of existingLeaves) {
+      for (let i = 0; i < leave.startDate.length; i++) {
+        const existingStartDate = new Date(leave.startDate[i]);
+        const existingEndDate = new Date(leave.endDate[i]);
 
         if (
           (formattedStartDate >= existingStartDate && formattedStartDate <= existingEndDate) ||
           (formattedEndDate >= existingStartDate && formattedEndDate <= existingEndDate) ||
           (formattedStartDate <= existingStartDate && formattedEndDate >= existingEndDate)
         ) {
-          return res.status(400).json({ 
+          return res.status(400).json({
             message: `You have already applied for leave from ${existingStartDate.toLocaleDateString("en-GB")} to ${existingEndDate.toLocaleDateString("en-GB")}.`
           });
         }
       }
+    }
 
+    const startMonth = formattedStartDate.getMonth() + 1;
+    const startYear = formattedStartDate.getFullYear();
+
+    let leaveRecord = await Leave.findOne({ email, leaveType });
+
+    if (leaveRecord) {
       leaveRecord.startDate.push(formattedStartDate);
       leaveRecord.endDate.push(formattedEndDate);
       leaveRecord.status.push("Pending");
       leaveRecord.attachments.push(filePath || "");
       leaveRecord.reason.push(reason || "");
-
-      if (!leaveRecord.month) leaveRecord.month = [];
-      if (!leaveRecord.year) leaveRecord.year = [];
-
       leaveRecord.month.push(startMonth);
       leaveRecord.year.push(startYear);
 
       await leaveRecord.save();
       return res.status(200).json({ message: "Leave application submitted successfully" });
-
     } else {
       const newLeave = new Leave({
         email,
@@ -845,58 +843,43 @@ app.get("/reports/export-pdf", async (req, res) => {
 // --------------------Dahboard------------
 
 //Employee
-app.get('/leave-trends/:email', async (req, res) => {
-  const { email } = req.params;
+app.get("/leave-trends/:email/:year", async (req, res) => {
   try {
-    const trends = await Leave.aggregate([
-      { $match: { email } },
+      const { email, year } = req.params;
+      const numericYear = parseInt(year);
 
-      // 🔹 Combine `startDate` and `duration` to maintain pairing
-      {
-        $addFields: {
-          pairedLeaves: { $zip: { inputs: ["$startDate", "$duration"] } }
-        }
-      },
+      // Fetch leave records for the given email and year
+      const leaves = await Leave.find({ email, year: numericYear });
 
-      // 🔹 Unwind the paired array
-      { $unwind: "$pairedLeaves" },
+      // Initialize monthly leave data
+      const leaveData = Array(12).fill(null).map(() => ({}));
 
-      // 🔹 Extract fields correctly
-      {
-        $addFields: {
-          startDate: { $arrayElemAt: ["$pairedLeaves", 0] },
-          duration: { $arrayElemAt: ["$pairedLeaves", 1] }
-        }
-      },
+      leaves.forEach(leave => {
+          leave.month.forEach((month, index) => {
+              if (leave.status[index] === "Approved") {
+                  const leaveType = leave.leaveType;
+                  const duration = leave.duration[index] || 0;
 
-      // 🔹 Extract Year & Month from `startDate`
-      {
-        $addFields: {
-          year: { $year: "$startDate" },
-          month: { $month: "$startDate" }
-        }
-      },
+                  if (!leaveData[month - 1][leaveType]) {
+                      leaveData[month - 1][leaveType] = 0;
+                  }
+                  leaveData[month - 1][leaveType] += duration;
+              }
+          });
+      });
 
-      // 🔹 Group by Year & Month, Summing `duration`
-      {
-        $group: {
-          _id: { year: "$year", month: "$month" },
-          totalLeaves: { $sum: "$duration" }
-        }
-      },
+      // Format the response
+      const response = leaveData.map((data, index) => ({
+          month: index + 1,
+          ...data
+      }));
 
-      // 🔹 Sort by Year & Month
-      { $sort: { "_id.year": 1, "_id.month": 1 } }
-    ]);
-
-    console.log("📌 Leave Trends Result:", trends);
-    res.json(trends);
-  } catch (err) {
-    console.error("❌ Error:", err);
-    res.status(500).json({ error: err.message });
+      res.json(response);
+  } catch (error) {
+      console.error("Error fetching leave trends:", error);
+      res.status(500).json({ message: "Internal Server Error" });
   }
 });
-
 
 
 
@@ -1131,31 +1114,35 @@ app.get('/leave-type-status/:email/:year', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 app.get("/leave-trends/:email/:year", async (req, res) => {
   const { email, year } = req.params;
   try {
     const data = await Leave.aggregate([
-      { $match: { email, year: { $in: [parseInt(year)] } } },
-      { $unwind: "$month" },
-      { $unwind: "$status" },
+      { $match: { email, year: parseInt(year) } },
+      { $unwind: "$leaves" }, 
       {
         $group: {
-          _id: { month: "$month", status: "$status" },
-          count: { $sum: 1 }
+          _id: { month: "$leaves.month", leaveType: "$leaves.leaveType" },
+          totalDuration: { $sum: "$leaves.duration" }
         }
       },
       {
         $group: {
           _id: "$_id.month",
-          statuses: { $push: { status: "$_id.status", count: "$count" } }
+          leaveTypes: {
+            $push: {
+              type: "$_id.leaveType",
+              duration: "$totalDuration"
+            }
+          }
         }
       }
     ]);
 
-    const formattedData = new Array(12).fill({}).map((_, index) => ({
+    // Convert to a fixed array of 12 months with default values
+    const formattedData = new Array(12).fill(null).map((_, index) => ({
       month: index + 1,
-      ...Object.fromEntries(data.find(d => d._id === index + 1)?.statuses.map(s => [s.status, s.count]) || [])
+      ...Object.fromEntries(data.find(d => d._id === index + 1)?.leaveTypes.map(l => [l.type, l.duration]) || [])
     }));
 
     res.json(formattedData);
@@ -1163,6 +1150,7 @@ app.get("/leave-trends/:email/:year", async (req, res) => {
     res.status(500).json({ error: "Error fetching leave trends" });
   }
 });
+
 
 // Get leave balance
 // app.get("/leave-balance/:email", async (req, res) => {

@@ -661,6 +661,7 @@ const App = () => {
             email={email}
             project={project}
             leaveData={leaveData}
+            gender={gender}
           />
         );
 
