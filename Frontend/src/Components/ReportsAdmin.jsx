@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { formatDate } from "../utils/dateUtlis";
-import ManagerEmployeeDashboard from "./ManagerEmployeeDashboard";
 
 const Reports = ({email}) => {
   const [reports, setReports] = useState([]);
   const [project, setProject] = useState("");
   const [search, setSearch] = useState("");
-  const [showAnalytics, setShowAnalytics] = useState(false);
 
   useEffect(() => {
     fetchReports();
@@ -88,12 +86,9 @@ const Reports = ({email}) => {
             Export Excel
           </button>
         </div>
-        <button onClick={() => setShowAnalytics(!showAnalytics)} className="btn-analytics">
-          {showAnalytics ? "Hide Analytics" : "Show Analytics"}
-        </button>
+       
       </div>
 
-      {showAnalytics && <ManagerEmployeeDashboard email={email}/>}
 
       <div className="table-container">
         <table>

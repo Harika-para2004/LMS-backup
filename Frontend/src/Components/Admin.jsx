@@ -1704,7 +1704,7 @@ import {
 } from "@mui/material";
 import LeavePolicyPage from "./LeavePolicyPage";
 import Sidebar from "./Sidebar";
-import Reports from "./Reports";
+import Reports from "./ReportsAdmin";
 import LeaveRequestsTable from "./LeaveRequestsTable";
 
 function AdminDashboard() {
@@ -2083,52 +2083,57 @@ function AdminDashboard() {
     fetchHolidays();
   }, []);
 
+  
   const handleReject = async () => {
     if (selectedLeave) {
       const { selectedIndex, ...leave } = selectedLeave;
-
-      const wasApproved = leave.status[selectedIndex] === "Approved";
-
+  
+      // Ensure selectedIndex is valid
+      if (
+        selectedIndex === undefined ||
+        !Array.isArray(leave.duration) ||
+        leave.duration.length === 0 ||
+        selectedIndex >= leave.duration.length
+      ) {
+        console.error("Invalid leave duration or selected index:", selectedLeave);
+        return;
+      }
+  
+      const leaveDuration = leave.duration[selectedIndex]; // Fix: Ensure valid duration
+  
+      const wasApproved = leave.status[selectedIndex]?.toLowerCase() === "approved"; // Add optional chaining
+  
       const updatedLeave = {
         ...leave,
         status: leave.status.map((stat, index) =>
-          index === selectedIndex && (stat === "pending" || stat === "Approved")
+          index === selectedIndex && (stat.toLowerCase() === "pending" || stat.toLowerCase() === "approved")
             ? "Rejected"
             : stat
         ),
-        availableLeaves: wasApproved
-          ? leave.availableLeaves + 1
-          : leave.availableLeaves,
-        usedLeaves: wasApproved ? leave.usedLeaves - 1 : leave.usedLeaves,
+        availableLeaves: wasApproved ? leave.availableLeaves + leaveDuration : leave.availableLeaves,
+        usedLeaves: wasApproved ? leave.usedLeaves - leaveDuration : leave.usedLeaves,
       };
-
+  
       try {
         const response = await fetch(
           `http://localhost:5001/leaverequests/${leave._id}`,
           {
             method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(updatedLeave),
           }
         );
-
+  
         if (response.ok) {
           const updatedLeaveFromServer = await response.json();
           setLeaveHistory((prevHistory) =>
             prevHistory.map((item) =>
-              item._id === updatedLeaveFromServer._id
-                ? updatedLeaveFromServer
-                : item
+              item._id === updatedLeaveFromServer._id ? updatedLeaveFromServer : item
             )
           );
           setSelectedLeave(null);
           setModalOpen(false);
-          console.log(
-            "Rejected and updated in the database:",
-            updatedLeaveFromServer
-          );
+          console.log("Rejected and updated in the database:", updatedLeaveFromServer);
         } else {
           console.error("Failed to update leave status in the database");
         }
@@ -2137,61 +2142,67 @@ function AdminDashboard() {
       }
     }
   };
-
+  
   const handleApprove = async () => {
     if (selectedLeave) {
       const { selectedIndex, ...leave } = selectedLeave;
-
-      const currentStatus = leave.status[selectedIndex].toLowerCase();
-
-      if (currentStatus !== "pending" && currentStatus !== "rejected") {
+  
+      // Ensure selectedIndex is valid
+      if (
+        selectedIndex === undefined ||
+        !Array.isArray(leave.duration) ||
+        leave.duration.length === 0 ||
+        selectedIndex >= leave.duration.length
+      ) {
+        console.error("Invalid leave duration or selected index:", selectedLeave);
+        return;
+      }
+  
+      const leaveDuration = leave.duration[selectedIndex]; // Fix: Use 'duration' (not 'durations')
+  
+      const currentStatus = leave.status[selectedIndex]?.toLowerCase(); // Add optional chaining
+  
+      if (!currentStatus || (currentStatus !== "pending" && currentStatus !== "rejected")) {
         console.log("This leave is already approved.");
         return;
       }
-
+  
+      if (leave.availableLeaves < leaveDuration) {
+        console.log("Not enough available leaves.");
+        return;
+      }
+  
       const updatedLeave = {
         ...leave,
-        availableLeaves:
-          leave.availableLeaves > 0
-            ? leave.availableLeaves - 1
-            : leave.availableLeaves,
-        usedLeaves: leave.usedLeaves + 1,
+        availableLeaves: leave.availableLeaves - leaveDuration,
+        usedLeaves: leave.usedLeaves + leaveDuration,
         status: leave.status.map((stat, index) =>
-          index === selectedIndex &&
-          (stat.toLowerCase() === "pending" ||
-            stat.toLowerCase() === "rejected")
+          index === selectedIndex && (stat.toLowerCase() === "pending" || stat.toLowerCase() === "rejected")
             ? "Approved"
             : stat
         ),
       };
-
+  
       try {
         const response = await fetch(
           `http://localhost:5001/leaverequests/${leave._id}`,
           {
             method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(updatedLeave),
           }
         );
-
+  
         if (response.ok) {
           const updatedLeaveFromServer = await response.json();
           setLeaveHistory((prevHistory) =>
             prevHistory.map((item) =>
-              item._id === updatedLeaveFromServer._id
-                ? updatedLeaveFromServer
-                : item
+              item._id === updatedLeaveFromServer._id ? updatedLeaveFromServer : item
             )
           );
           setSelectedLeave(null);
           setModalOpen(false);
-          console.log(
-            "Approved and updated in the database:",
-            updatedLeaveFromServer
-          );
+          console.log("Approved and updated in the database:", updatedLeaveFromServer);
         } else {
           console.error("Failed to update leave in the database");
         }
@@ -2200,7 +2211,6 @@ function AdminDashboard() {
       }
     }
   };
-
   const handleEdit = (index) => {
     setEditingRow(index);
     setFormData(holidays[index]);

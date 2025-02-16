@@ -13,6 +13,7 @@ import ApplyLeave from "./ApplyLeave";
 import Sidebar from "./Sidebar";
 import ProfilePage from "./ProfilePage";
 import useToast from "./useToast";
+import EmployeeDashboard from "./EmployeeDashboard";
 
 import {
   AiFillFilePdf,
@@ -491,52 +492,57 @@ function LeaveRequests() {
     }
   };
 
+  
   const handleReject = async () => {
     if (selectedLeave) {
       const { selectedIndex, ...leave } = selectedLeave;
-
-      const wasApproved = leave.status[selectedIndex] === "Approved";
-
+  
+      // Ensure selectedIndex is valid
+      if (
+        selectedIndex === undefined ||
+        !Array.isArray(leave.duration) ||
+        leave.duration.length === 0 ||
+        selectedIndex >= leave.duration.length
+      ) {
+        console.error("Invalid leave duration or selected index:", selectedLeave);
+        return;
+      }
+  
+      const leaveDuration = leave.duration[selectedIndex]; // Fix: Ensure valid duration
+  
+      const wasApproved = leave.status[selectedIndex]?.toLowerCase() === "approved"; // Add optional chaining
+  
       const updatedLeave = {
         ...leave,
         status: leave.status.map((stat, index) =>
-          index === selectedIndex && (stat === "Pending" || stat === "Approved")
+          index === selectedIndex && (stat.toLowerCase() === "pending" || stat.toLowerCase() === "approved")
             ? "Rejected"
             : stat
         ),
-        availableLeaves: wasApproved
-          ? leave.availableLeaves + 1
-          : leave.availableLeaves,
-        usedLeaves: wasApproved ? leave.usedLeaves - 1 : leave.usedLeaves,
+        availableLeaves: wasApproved ? leave.availableLeaves + leaveDuration : leave.availableLeaves,
+        usedLeaves: wasApproved ? leave.usedLeaves - leaveDuration : leave.usedLeaves,
       };
-
+  
       try {
         const response = await fetch(
           `http://localhost:5001/leaverequests/${leave._id}`,
           {
             method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(updatedLeave),
           }
         );
-
+  
         if (response.ok) {
           const updatedLeaveFromServer = await response.json();
           setLeaveHistory((prevHistory) =>
             prevHistory.map((item) =>
-              item._id === updatedLeaveFromServer._id
-                ? updatedLeaveFromServer
-                : item
+              item._id === updatedLeaveFromServer._id ? updatedLeaveFromServer : item
             )
           );
           setSelectedLeave(null);
           setModalOpen(false);
-          console.log(
-            "Rejected and updated in the database:",
-            updatedLeaveFromServer
-          );
+          console.log("Rejected and updated in the database:", updatedLeaveFromServer);
         } else {
           console.error("Failed to update leave status in the database");
         }
@@ -545,61 +551,67 @@ function LeaveRequests() {
       }
     }
   };
-
+  
   const handleApprove = async () => {
     if (selectedLeave) {
       const { selectedIndex, ...leave } = selectedLeave;
-
-      const currentStatus = leave.status[selectedIndex].toLowerCase();
-
-      if (currentStatus !== "pending" && currentStatus !== "rejected") {
+  
+      // Ensure selectedIndex is valid
+      if (
+        selectedIndex === undefined ||
+        !Array.isArray(leave.duration) ||
+        leave.duration.length === 0 ||
+        selectedIndex >= leave.duration.length
+      ) {
+        console.error("Invalid leave duration or selected index:", selectedLeave);
+        return;
+      }
+  
+      const leaveDuration = leave.duration[selectedIndex]; // Fix: Use 'duration' (not 'durations')
+  
+      const currentStatus = leave.status[selectedIndex]?.toLowerCase(); // Add optional chaining
+  
+      if (!currentStatus || (currentStatus !== "pending" && currentStatus !== "rejected")) {
         console.log("This leave is already approved.");
         return;
       }
-
+  
+      if (leave.availableLeaves < leaveDuration) {
+        console.log("Not enough available leaves.");
+        return;
+      }
+  
       const updatedLeave = {
         ...leave,
-        availableLeaves:
-          leave.availableLeaves > 0
-            ? leave.availableLeaves - 1
-            : leave.availableLeaves,
-        usedLeaves: leave.usedLeaves + 1,
+        availableLeaves: leave.availableLeaves - leaveDuration,
+        usedLeaves: leave.usedLeaves + leaveDuration,
         status: leave.status.map((stat, index) =>
-          index === selectedIndex &&
-          (stat.toLowerCase() === "pending" ||
-            stat.toLowerCase() === "rejected")
+          index === selectedIndex && (stat.toLowerCase() === "pending" || stat.toLowerCase() === "rejected")
             ? "Approved"
             : stat
         ),
       };
-
+  
       try {
         const response = await fetch(
           `http://localhost:5001/leaverequests/${leave._id}`,
           {
             method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(updatedLeave),
           }
         );
-
+  
         if (response.ok) {
           const updatedLeaveFromServer = await response.json();
           setLeaveHistory((prevHistory) =>
             prevHistory.map((item) =>
-              item._id === updatedLeaveFromServer._id
-                ? updatedLeaveFromServer
-                : item
+              item._id === updatedLeaveFromServer._id ? updatedLeaveFromServer : item
             )
           );
           setSelectedLeave(null);
           setModalOpen(false);
-          console.log(
-            "Approved and updated in the database:",
-            updatedLeaveFromServer
-          );
+          console.log("Approved and updated in the database:", updatedLeaveFromServer);
         } else {
           console.error("Failed to update leave in the database");
         }
@@ -608,6 +620,7 @@ function LeaveRequests() {
       }
     }
   };
+  
 
   const handleRowClick = (leave, index) => {
     setSelectedLeave({ ...leave, selectedIndex: index });
@@ -636,40 +649,23 @@ function LeaveRequests() {
   const renderContent = () => {
     switch (selectedCategory) {
       case "dashboard":
+        return(
+        <EmployeeDashboard email={email} /> );
+      case "profile":
         return (
           <div>
-            <div className="leave-types-container">
-              <h2
-                style={{ textAlign: "center", marginTop: "-30px" }}
-                className="leavebalance"
-              >
-                Leave Balances
-              </h2>
-              <div className="leave-cards">
-                {mergedLeaveData.map((leave, index) => (
-                  <div key={index} className="leave-card">
-                    <div className="leave-card-header">
-                      <h3 className="leave-type">{leave.leaveType}</h3>
-                    </div>
-                    <div className="leave-count">
-                      <div className="count-item">
-                        <span className="count-number">
-                          {leave.availableLeaves}
-                        </span>
-                        <span className="count-label">Available</span>
-                      </div>
-                      <div className="count-item">
-                        <span className="count-number">
-                          {leave.totalLeaves}
-                        </span>
-                        <span className="count-label">Total</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            {/* <table className="holiday-table">
+              <ProfilePage
+            Profile={Profile}
+            username={username}
+            empid={empid}
+            email={email}
+            project={project}
+            leaveData={leaveData}
+            userData={userData}
+            gender={gender}
+          />
+           
+                       {/* <table className="holiday-table">
               <thead>
                 <tr>
                   <th>Date</th>
@@ -716,19 +712,7 @@ function LeaveRequests() {
           />
         );
 
-      case "profile":
-        return (
-          <ProfilePage
-            Profile={Profile}
-            username={username}
-            empid={empid}
-            email={email}
-            project={project}
-            leaveData={leaveData}
-            userData={userData}
-            gender={gender}
-          />
-        );
+     
 
       case "leaverequests":
         return (
@@ -831,8 +815,8 @@ function LeaveRequests() {
       case "reports":
         return (
           <div className="profile-content">
-            <Reports />
-          </div>
+            <Reports email={email} />
+            </div>
         );
       case "history":
         return <LeaveHistory leaveHistory={leavehistory} />;

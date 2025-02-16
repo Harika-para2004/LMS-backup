@@ -1304,5 +1304,108 @@ app.get('/leave-holidays-impact', async (req, res) => {
   }
 });
 
+app.get("/leave-approval-rate", async (req, res) => {
+  try {
+    const { userRole, userEmail } = req.query;
+
+    if (!userEmail) {
+      return res.status(400).json({ error: "Manager email is required" });
+    }
+
+    let query = {};
+      query.managerEmail = userEmail;
+    
+
+    const leaveRequests = await Leave.find(query);
+    console.log(`Fetched ${leaveRequests.length} leave requests for manager: ${userEmail}`);
+
+    let pending = 0, approved = 0, rejected = 0;
+
+    leaveRequests.forEach((leave) => {
+      // ✅ Count each status separately
+      leave.status.forEach((status) => {
+        const lowerStatus = status.toLowerCase();
+        if (lowerStatus === "pending") pending++;
+        else if (lowerStatus === "approved") approved++;
+        else if (lowerStatus === "rejected") rejected++;
+      });
+    });
+
+    console.log("Final Data Sent:", { pending, approved, rejected });
+    res.json({ pending, approved, rejected });
+
+  } catch (error) {
+    console.error("Error fetching leave approval rate:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+app.get("/leave-types", async (req, res) => {
+  try {
+    const { userRole, userEmail } = req.query;
+
+    if (!userEmail) {
+      return res.status(400).json({ error: "Manager email is required" });
+    }
+
+    let query = {};
+      query.managerEmail = userEmail;
+    
+
+    const leaveRequests = await Leave.find(query);
+    console.log(`Fetched ${leaveRequests.length} leave requests for manager: ${userEmail}`);
+
+    let leaveTypeSummary = {};
+
+    leaveRequests.forEach((leave) => {
+      const { leaveType, status } = leave;
+      
+      if (!leaveTypeSummary[leaveType]) {
+        leaveTypeSummary[leaveType] = { pending: 0, approved: 0, rejected: 0 };
+      }
+      
+      status.forEach((s) => {
+        const lowerStatus = s.toLowerCase();
+        if (lowerStatus === "pending") leaveTypeSummary[leaveType].pending++;
+        else if (lowerStatus === "approved") leaveTypeSummary[leaveType].approved++;
+        else if (lowerStatus === "rejected") leaveTypeSummary[leaveType].rejected++;
+      });
+    });
+
+    console.log("Final Data Sent:", leaveTypeSummary);
+    res.json(leaveTypeSummary);
+  } catch (error) {
+    console.error("Error fetching leave types summary:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+app.get("/employee-monthly-leaves", async (req, res) => {
+  try {
+    const { userEmail } = req.query; // Manager's email
+
+    // ✅ Fetch only APPROVED leaves under this manager
+    const approvedLeaves = await Leave.find({ managerEmail: userEmail, status: "Approved" });
+
+    const monthlyLeaveData = {};
+
+    approvedLeaves.forEach((leave) => {
+      const employee = leave.empname;
+      leave.month.forEach((month, index) => {
+        if (leave.status[index] !== "Approved") return; // ✅ Ignore non-approved leaves
+
+        if (!monthlyLeaveData[employee]) {
+          monthlyLeaveData[employee] = {};
+        }
+
+        monthlyLeaveData[employee][month] =
+          (monthlyLeaveData[employee][month] || 0) + leave.duration[index];
+      });
+    });
+
+    res.json(monthlyLeaveData);
+  } catch (error) {
+    console.error("Error fetching employee monthly leave data:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 

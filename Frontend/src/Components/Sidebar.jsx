@@ -117,6 +117,7 @@ const Sidebar = ({
               <FontAwesomeIcon icon={faEnvelopeOpenText} /> Leave Requests
             </Link>
           </li>
+         
         </div>
       );
     } else {
@@ -170,6 +171,15 @@ const Sidebar = ({
               onClick={() => setSelectedCategory("history")}
             >
               <FontAwesomeIcon icon={faHistory} /> History
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="#"
+              className={selectedCategory === "dashboard" ? "active-tab" : ""}
+              onClick={() => setSelectedCategory("dashboard")}
+            >
+              <FontAwesomeIcon icon={faChartLine} /> Dashboard
             </Link>
           </li>
         </>
