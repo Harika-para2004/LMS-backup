@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { Card, CardContent, Typography, Select, MenuItem, FormControl } from "@mui/material";
 import ReactECharts from "echarts-for-react";
@@ -8,6 +8,11 @@ const LeaveStatusChart = ({ email }) => {
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const yearsRange = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return Array.from({ length: 5 }, (_, i) => currentYear - i);
+  }, []);
 
   useEffect(() => {
     if (!email || !year) return; // Ensure both email and year are available
@@ -66,7 +71,7 @@ const LeaveStatusChart = ({ email }) => {
         {/* Year Selector */}
         <FormControl  sx={{ marginBottom: 2,marginTop:3 }} >
           <Select value={year} onChange={(e) => setYear(e.target.value)}>
-            {[2023, 2024, 2025].map((yr) => (
+            {yearsRange.map((yr) => (
               <MenuItem key={yr} value={yr}>{yr}</MenuItem>
             ))}
           </Select>

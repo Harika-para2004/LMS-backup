@@ -187,6 +187,7 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
     if (leaveRecord) {
       leaveRecord.startDate.push(formattedStartDate);
       leaveRecord.endDate.push(formattedEndDate);
+      leaveRecord.applyDate.push(new Date());
       leaveRecord.status.push("Pending");
       leaveRecord.attachments.push(filePath || "");
       leaveRecord.reason.push(reason || "");
@@ -201,7 +202,7 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
         empname,
         empid,
         managerEmail,
-        applyDate: new Date(),
+        applyDate: [new Date()],
         leaveType,
         startDate: [formattedStartDate],
         endDate: [formattedEndDate],
@@ -308,6 +309,7 @@ app.get("/leaverequests", async (req, res) => {
     console.log("Query:", query); // Debugging output
 
     const leaveRequests = await Leave.find(query);
+    console.log(leaveRequests);
     res.json(leaveRequests);
   } catch (error) {
     console.error("Error fetching leave requests:", error);

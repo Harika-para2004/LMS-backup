@@ -12,6 +12,8 @@ import LeaveHistory from "./LeaveHistory";
 import ApplyLeave from "./ApplyLeave";
 import Sidebar from "./Sidebar";
 import ProfilePage from "./ProfilePage";
+import useToast from "./useToast";
+
 import {
   AiFillFilePdf,
   AiOutlineClose,
@@ -48,6 +50,7 @@ function LeaveRequests() {
   const navigate = useNavigate();
   const [leavePolicyRef, setLeavePolicyRef] = useState([]);
   const year = new Date().getFullYear();
+  const showToast = useToast();
 
   const [errors, setErrors] = useState({
     leaveType: "",
@@ -329,9 +332,6 @@ function LeaveRequests() {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    // console.log('leaveHistory',leaveHistory);
-    // console.log('leaveData',leaveData);
-
     const { leaveType, startDate, endDate, reason } = formData;
     const today = dayjs().format("YYYY-MM-DD");
     const formattedStartDate = dayjs(startDate, "DD/MM/YYYY").format(
@@ -339,27 +339,26 @@ function LeaveRequests() {
     );
     const formattedEndDate = dayjs(endDate, "DD/MM/YYYY").format("YYYY-MM-DD");
 
-    // **✅ 1. Required Fields Check**
+    // **✅ Required Fields Check**
     if (!leaveType || !startDate || !endDate) {
-      alert("All fields (Leave Type, Start Date, End Date) are required.");
+      showToast("All fields are required.", "warning");
       return;
     }
 
-    // **✅ 2. Valid Date Range Check**
+    // **✅ Valid Date Range Check**
     if (new Date(formattedEndDate) < new Date(formattedStartDate)) {
-      alert("End Date cannot be before Start Date.");
+      showToast("End Date cannot be before Start Date.", "error");
       return;
     }
 
-    // **✅ 3 & 4. No Holidays or Weekends**
+    // **✅ No Holidays or Weekends**
     const isHoliday = holidays.some(
       (holiday) =>
         holiday.type === "Mandatory" &&
         dayjs(holiday.date).isSame(formattedStartDate, "day")
     );
-
     if (isHoliday) {
-      alert("You cannot apply leave on company holidays.");
+      showToast("You cannot apply leave on company holidays.", "warning");
       return;
     }
 
@@ -367,11 +366,11 @@ function LeaveRequests() {
       dayjs(formattedStartDate).day() === 0 ||
       dayjs(formattedStartDate).day() === 6;
     if (isWeekend) {
-      alert("You cannot apply leave on weekends.");
+      showToast("Weekends are not allowed for leave.", "warning");
       return;
     }
 
-    // **✅ 5. Cannot Apply for Same Leave Twice**
+    // **✅ Cannot Apply for Same Leave Twice**
     const alreadyApplied = leaveHistory.some(
       (leave) =>
         leave.leaveType === leaveType &&
@@ -379,15 +378,14 @@ function LeaveRequests() {
         dayjs(leave.endDate).isSame(formattedEndDate, "day")
     );
     if (alreadyApplied) {
-      alert(`You have already applied for ${leaveType} on these dates.`);
+      showToast(`You have already applied for ${leaveType}.`, "info");
       return;
     }
 
-    // **✅ 6. Leave Balance Check**
+    // **✅ Leave Balance Check**
     const appliedLeave = leaveData.find(
       (leave) => formatCase(leave.leaveType) === formatCase(leaveType)
     );
-
     const leaveBalance =
       appliedLeave?.availableLeaves ??
       leavePolicyRef.find(
@@ -399,37 +397,36 @@ function LeaveRequests() {
       dayjs(formattedEndDate).diff(dayjs(formattedStartDate), "day") + 1;
 
     if (requestedDays > leaveBalance && leaveType !== "LOP") {
-      alert(
-        `You do not have enough ${leaveType} balance,you have only ${leaveBalance} leaves.`
+      showToast(
+        `Only ${leaveBalance} ${leaveType} leaves are available.`,
+        "error"
       );
       return;
     }
 
-    console.log("leaveType", leaveType);
-    console.log("userData gender", email);
-
-    // **✅ 7 & 8. Gender-Based Leave Restrictions**
+    // **✅ Gender-Based Leave Restrictions**
     if (leaveType.includes("Maternity") && gender !== "Female") {
-      alert("Maternity Leave is only applicable to female employees.");
+      showToast("Maternity Leave is only for female employees.", "error");
       return;
     }
-    console.log(gender);
-
     if (leaveType.includes("Paternity") && gender !== "Male") {
-      alert("Paternity Leave is only applicable to male employees.");
+      showToast("Paternity Leave is only for male employees.", "error");
       return;
     }
 
-    // **✅ 9. Sick Leave can only be applied for past and current dates**
+    // **✅ Sick Leave Past or Current Dates Only**
     if (
       leaveType === "Sick Leave" &&
       dayjs(formattedStartDate).isAfter(today)
     ) {
-      alert("Sick Leave can only be applied for past or current dates.");
+      showToast(
+        "Sick Leave can only be applied for past or current dates.",
+        "warning"
+      );
       return;
     }
 
-    // **✅ 10 & 11. No Overlapping Leaves**
+    // **✅ No Overlapping Leaves**
     const hasOverlap = leaveHistory.some(
       (leave) =>
         dayjs(leave.startDate, "DD/MM/YYYY").isBefore(
@@ -439,31 +436,26 @@ function LeaveRequests() {
           dayjs(formattedStartDate, "YYYY-MM-DD")
         )
     );
-
     if (hasOverlap) {
-      alert(
-        "You have an existing leave that overlaps with the selected dates."
+      showToast(
+        "Your selected leave dates overlap with an existing leave.",
+        "error"
       );
       return;
     }
 
-    // **✅ 12. LOP (Unpaid Leave) when no casual leaves are left**
+    // **✅ LOP (Unpaid Leave) only when Casual Leaves are exhausted**
     if (
       leaveType === "LOP" &&
       leaveData.find((leave) => leave.leaveType === "Casual Leave")
         ?.availableLeaves > 0
     ) {
-      alert("LOP can only be taken if Casual Leaves are exhausted.");
+      showToast(
+        "LOP can only be applied when Casual Leaves are exhausted.",
+        "info"
+      );
       return;
     }
-
-    // **✅ Optional: Prevent multiple pending leave requests**
-    // if (leaveHistory.some((leave) => leave.status.includes("Pending"))) {
-    //   alert(
-    //     "You already have a pending leave request. Wait for approval before applying again."
-    //   );
-    //   return;
-    // }
 
     // **Proceed with submission**
     const formDataToSend = new FormData();
@@ -481,26 +473,21 @@ function LeaveRequests() {
     try {
       const response = await fetch(
         `http://localhost:5001/apply-leave?email=${encodeURIComponent(email)}`,
-        {
-          method: "POST",
-          body: formDataToSend,
-        }
+        { method: "POST", body: formDataToSend }
       );
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(
-          errorData.message || "Failed to submit form. Please try again."
-        );
+        throw new Error(errorData.message || "Failed to submit form.");
       }
 
-      alert("Leave application submitted successfully.");
+      showToast("Leave application submitted successfully!", "success");
       setFormData({ leaveType: "", startDate: "", endDate: "", reason: "" });
       setFile(null);
       setErrors({});
     } catch (error) {
       console.error("Error submitting form:", error);
-      alert(error.message);
+      showToast(error.message, "error");
     }
   };
 
@@ -745,275 +732,7 @@ function LeaveRequests() {
 
       case "leaverequests":
         return (
-          // <div className="history-container">
-          //   <h2 className="content-heading" >Leave Requests</h2>
 
-          //   <div className="filter-container">
-          //     <FormGroup row sx={{ justifyContent: "flex-end" }}>
-          //       <FormControlLabel
-          //         control={
-          //           <Checkbox
-          //             value="All"
-          //             checked={selectedFilter === "All"}
-          //             onChange={handleFilterChange}
-          //           />
-          //         }
-          //         label="All"
-          //       />
-          //       <FormControlLabel
-          //         control={
-          //           <Checkbox
-          //             value="Pending"
-          //             checked={selectedFilter === "Pending"}
-          //             onChange={handleFilterChange}
-          //           />
-          //         }
-          //         label="Pending"
-          //       />
-          //       <FormControlLabel
-          //         control={
-          //           <Checkbox
-          //             value="Approved"
-          //             checked={selectedFilter === "Approved"}
-          //             onChange={handleFilterChange}
-          //             sx={{
-          //               "&.Mui-checked": {
-          //                 color:
-          //                   selectedFilter === "Approved" ? "green" : "default", // Changes checkbox color to green when checked
-          //               },
-          //             }}
-          //           />
-          //         }
-          //         label="Approved"
-          //       />
-          //       <FormControlLabel
-          //         control={
-          //           <Checkbox
-          //             value="Rejected"
-          //             checked={selectedFilter === "Rejected"}
-          //             onChange={handleFilterChange}
-          //             sx={{
-          //               "&.Mui-checked": {
-          //                 color:
-          //                   selectedFilter === "Rejected" ? "red" : "default", // Changes checkbox color to green when checked
-          //               },
-          //             }}
-          //           />
-          //         }
-          //         label="Rejected"
-          //       />
-          //     </FormGroup>
-          //   </div>
-
-          //   <table id="tb">
-          //     <thead>
-          //       <tr>
-          //         <th>ID</th>
-          //         <th>Name</th>
-          //         <th>Leave Type</th>
-          //         <th>Duration</th>
-          //         <th>From</th>
-          //         <th>To</th>
-          //         <th>Available</th>
-          //         <th>Document</th>
-          //         <th>Reason</th>
-
-          //         <th>Status</th>
-          //       </tr>
-          //     </thead>
-          //     <tbody>
-          //       {filteredLeaveHistory.map((leave) =>
-          //         leave.startDate.map((startDate, index) => {
-          //           // Only render rows where the specific status matches the selected filter
-          //           if (
-          //             selectedFilter === "All" ||
-          //             leave.status[index].toLowerCase() ===
-          //               selectedFilter.toLowerCase()
-          //           ) {
-          //             return (
-          //               <tr key={`${leave._id}-${index}`}>
-          //                 <td>{leave.empid || "N/A"}</td> {/* Access empid */}
-          //                 <td>{leave.empname || "N/A"}</td>{" "}
-          //                 {/* Access empname */}
-          //                 <td>{leave.leaveType.toLowerCase()
-          // .replace(/\b\w/g, (char) => char.toUpperCase())}</td>
-          //                 <td>
-          //                   {leave.duration ? leave.duration[index] : "N/A"}
-          //                 </td>
-          //                 <td>{new Date(startDate).toLocaleDateString()}</td>
-          //                 {/* <td>{formatDate(startDate)}</td> */}
-          //                 <td>
-          //                   {new Date(
-          //                     leave.endDate[index]
-          //                   ).toLocaleDateString()}
-          //                 </td>
-          //                 <td>{leave.availableLeaves}</td>
-          //                 <td>
-          //                   {leave.attachments?.[index] ? (
-          //                     <a
-          //                       href={getDownloadLink(leave.attachments[index])}
-          //                       download
-          //                     >
-          //                       <AiFillFilePdf size={30} color="red" />
-          //                     </a>
-          //                   ) : (
-          //                     <AiOutlineExclamationCircle
-          //                       size={30}
-          //                       color="orange"
-          //                       style={{ cursor: "default" }}
-          //                     />
-          //                   )}
-          //                 </td>
-          //                 <td>{ leave.reason[index] === "null" ? "N/A" : leave.reason[index]}</td>
-          //                 <td>
-          //                   {leave.status[index].toLowerCase() ===
-          //                     "approved" && (
-          //                     <button
-          //                       onClick={() => handleRowClick(leave, index)}
-          //                       style={{
-          //                         color: "green",
-          //                         display: "flex",
-          //                         alignItems: "center",
-          //                         background: "none",
-          //                         border: "none",
-          //                         cursor: "pointer",
-          //                       }}
-          //                     >
-          //                       <MdCheckCircle
-          //                         size={24}
-          //                         style={{ marginRight: "5px" }}
-          //                       />
-          //                     </button>
-          //                   )}
-          //                   {leave.status[index].toLowerCase() ===
-          //                     "rejected" && (
-          //                     <button
-          //                       onClick={() => handleRowClick(leave, index)}
-          //                       style={{
-          //                         color: "red",
-          //                         display: "flex",
-          //                         alignItems: "center",
-          //                         background: "none",
-          //                         border: "none",
-          //                         cursor: "pointer",
-          //                       }}
-          //                     >
-          //                       <MdCancel
-          //                         size={24}
-          //                         style={{ marginRight: "5px" }}
-          //                       />
-          //                     </button>
-          //                   )}
-          //                   {leave.status[index].toLowerCase() !== "approved" &&
-          //                     leave.status[index].toLowerCase() !==
-          //                       "rejected" && (
-          //                       <button
-          //                         onClick={() => handleRowClick(leave, index)}
-          //                         style={{
-          //                           display: "flex",
-          //                           color: "blue",
-          //                           alignItems: "center",
-          //                           background: "none",
-          //                           border: "none",
-          //                           cursor: "pointer",
-          //                         }}
-          //                       >
-          //                         <MdWatchLater size={24} />
-          //                       </button>
-          //                     )}
-          //                 </td>
-          //               </tr>
-          //             );
-          //           }
-          //           return null; // Skip rows that don't match the filter
-          //         })
-          //       )}
-          //     </tbody>
-          //   </table>
-
-          //   <Modal open={modalOpen} onClose={handleCloseModal}>
-          //     <Box
-          //       sx={{
-          //         position: "absolute",
-          //         top: "50%",
-          //         left: "50%",
-          //         transform: "translate(-50%, -50%)",
-          //         width: 400,
-          //         bgcolor: "background.paper",
-          //         boxShadow: 24,
-          //         p: 4,
-          //         borderRadius: "10px",
-          //         textAlign: "center",
-          //       }}
-          //     >
-          //       {/* Close Icon */}
-          //       <IconButton
-          //         onClick={handleCloseModal}
-          //         sx={{
-          //           position: "absolute",
-          //           top: 10,
-          //           right: 10,
-          //           color: "gray",
-          //           "&:hover": { color: "black" },
-          //         }}
-          //       >
-          //         <AiOutlineClose size={24} />
-          //       </IconButton>
-          //       <h3 style={{ marginBottom: "20px" }}>
-          //         Approve or Reject Request?
-          //       </h3>
-
-          //       {/* Added code: Determine current status and toggle button enable/disable */}
-          //       {selectedLeave &&
-          //         (() => {
-          //           // Retrieve current status using the selected index
-          //           const currentStatus =
-          //             (selectedLeave.status &&
-          //               selectedLeave.status[selectedLeave.selectedIndex]) ||
-          //             "pending";
-
-          //           return (
-          //             <div className="action-buttons">
-          //               <button
-          //                 onClick={handleApprove}
-          //                 className="approve-btn"
-          //                 disabled={currentStatus.toLowerCase() === "approved"}
-          //                 style={{
-          //                   opacity:
-          //                     currentStatus.toLowerCase() === "approved"
-          //                       ? 0.5
-          //                       : 1,
-          //                   cursor:
-          //                     currentStatus.toLowerCase() === "approved"
-          //                       ? "not-allowed"
-          //                       : "pointer",
-          //                 }}
-          //               >
-          //                 ✅ Approve
-          //               </button>
-          //               <button
-          //                 onClick={handleReject}
-          //                 className="reject-btn"
-          //                 disabled={currentStatus.toLowerCase() === "rejected"}
-          //                 style={{
-          //                   opacity:
-          //                     currentStatus.toLowerCase() === "rejected"
-          //                       ? 0.5
-          //                       : 1,
-          //                   cursor:
-          //                     currentStatus.toLowerCase() === "rejected"
-          //                       ? "not-allowed"
-          //                       : "pointer",
-          //                 }}
-          //               >
-          //                 ❌ Reject
-          //               </button>
-          //             </div>
-          //           );
-          //         })()}
-          //     </Box>
-          //   </Modal>
-          // </div>
 
           <div>
           <LeaveRequestsTable

@@ -14,8 +14,7 @@ const LeaveRequestsTable = ({
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7; // Show 5 leave requests per page
 
-    // 🔹 Pagination logic
-
+  // 🔹 Pagination logic
 
   // 🔹 Filtered data based on selected filter
   const filteredData = filteredLeaveHistory.flatMap((leave) =>
@@ -26,6 +25,7 @@ const LeaveRequestsTable = ({
       leaveType:
         leave.leaveType.charAt(0).toUpperCase() + leave.leaveType.slice(1),
       duration: leave.duration ? leave.duration[index] : "N/A",
+      applyDate: new Date(leave.applyDate[index]).toLocaleDateString(),
       startDate: new Date(startDate).toLocaleDateString(),
       endDate: new Date(leave.endDate[index]).toLocaleDateString(),
       availableLeaves: leave.availableLeaves,
@@ -40,22 +40,33 @@ const LeaveRequestsTable = ({
   );
 
   // 🔹 Apply filter
-// 🔹 Apply filter before using displayedData
-const displayedData =
-  selectedFilter === "All"
-    ? filteredData
-    : filteredData.filter(
-        (leave) => leave.status === selectedFilter.toLowerCase()
-      );
+  // 🔹 Apply filter before using displayedData
+  const displayedData =
+    selectedFilter === "All"
+      ? filteredData
+      : filteredData.filter(
+          (leave) => leave.status === selectedFilter.toLowerCase()
+        );
 
-// 🔹 Pagination logic (use displayedData after it's declared)
-const indexOfLastItem = currentPage * itemsPerPage;
-const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-const currentItems = displayedData.slice(indexOfFirstItem, indexOfLastItem);
+  // 🔹 Pagination logic (use displayedData after it's declared)
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const sortedItems = [...displayedData]
+    .filter((item) => item.startDate) // Remove invalid dates
+    .sort(
+      (a, b) =>
+        new Date(b.startDate.split("/").reverse().join("-")) -
+        new Date(a.startDate.split("/").reverse().join("-"))
+    );
 
-const totalPages = Math.ceil(displayedData.length / itemsPerPage);
+  const currentItems = sortedItems.slice(indexOfFirstItem, indexOfLastItem);
 
+  console.log(
+    "Sorted Items:",
+    currentItems.map((i) => i.startDate)
+  );
 
+  const totalPages = Math.ceil(displayedData.length / itemsPerPage);
 
   return (
     <div className="history-container">
@@ -108,80 +119,78 @@ const totalPages = Math.ceil(displayedData.length / itemsPerPage);
         </thead>
         <tbody>
           {currentItems.length > 0 ? (
-            currentItems
-              .sort((a, b) => new Date(b.applyDate) - new Date(a.applyDate))
-              .map((leave) => (
-                <tr key={leave.id}>
-                  <td>{leave.empid}</td>
-                  <td>{leave.empname}</td>
-                  <td>{leave.leaveType}</td>
-                  <td>{leave.duration}</td>
-                  <td>{leave.startDate}</td>
-                  <td>{leave.endDate}</td>
-                  <td>{leave.availableLeaves}</td>
-                  <td>
-                    {leave.document ? (
-                      <a href={leave.document} download>
-                        <AiFillFilePdf size={23} color="red" />
-                      </a>
-                    ) : (
-                      <AiOutlineExclamationCircle
-                        size={23}
-                        color="rgb(114,114,114)"
-                      />
-                    )}
-                  </td>
-                  <td>{leave.reason}</td>
-                  <td>
-                    {leave.status === "approved" && (
+            currentItems.map((leave) => (
+              <tr key={leave.id}>
+                <td>{leave.empid}</td>
+                <td>{leave.empname}</td>
+                <td>{leave.leaveType}</td>
+                <td>{leave.duration}</td>
+                <td>{leave.startDate}</td>
+                <td>{leave.endDate}</td>
+                <td>{leave.availableLeaves}</td>
+                <td>
+                  {leave.document ? (
+                    <a href={leave.document} download>
+                      <AiFillFilePdf size={23} color="red" />
+                    </a>
+                  ) : (
+                    <AiOutlineExclamationCircle
+                      size={23}
+                      color="rgb(114,114,114)"
+                    />
+                  )}
+                </td>
+                <td>{leave.reason}</td>
+                <td>
+                  {leave.status === "approved" && (
+                    <button
+                      onClick={() =>
+                        handleRowClick(leave.leaveData, leave.leaveIndex)
+                      }
+                      style={{
+                        color: "green",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <MdCheckCircle size={24} />
+                    </button>
+                  )}
+                  {leave.status === "rejected" && (
+                    <button
+                      onClick={() =>
+                        handleRowClick(leave.leaveData, leave.leaveIndex)
+                      }
+                      style={{
+                        color: "red",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <MdCancel size={24} />
+                    </button>
+                  )}
+                  {leave.status !== "approved" &&
+                    leave.status !== "rejected" && (
                       <button
                         onClick={() =>
                           handleRowClick(leave.leaveData, leave.leaveIndex)
                         }
                         style={{
-                          color: "green",
+                          color: "blue",
                           background: "none",
                           border: "none",
                           cursor: "pointer",
                         }}
                       >
-                        <MdCheckCircle size={24} />
+                        <MdWatchLater size={24} />
                       </button>
                     )}
-                    {leave.status === "rejected" && (
-                      <button
-                        onClick={() =>
-                          handleRowClick(leave.leaveData, leave.leaveIndex)
-                        }
-                        style={{
-                          color: "red",
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                        }}
-                      >
-                        <MdCancel size={24} />
-                      </button>
-                    )}
-                    {leave.status !== "approved" &&
-                      leave.status !== "rejected" && (
-                        <button
-                          onClick={() =>
-                            handleRowClick(leave.leaveData, leave.leaveIndex)
-                          }
-                          style={{
-                            color: "blue",
-                            background: "none",
-                            border: "none",
-                            cursor: "pointer",
-                          }}
-                        >
-                          <MdWatchLater size={24} />
-                        </button>
-                      )}
-                  </td>
-                </tr>
-              ))
+                </td>
+              </tr>
+            ))
           ) : (
             <tr>
               <td

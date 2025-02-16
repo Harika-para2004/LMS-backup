@@ -15,12 +15,12 @@ const LeaveHistory = ({ leaveHistory }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8; // Show 5 leave requests per page
 
-    // 🔹 Pagination logic
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentLeaves = leaveHistory.slice(indexOfFirstItem, indexOfLastItem);
-  
-    const totalPages = Math.ceil(leaveHistory.length / itemsPerPage);
+  // 🔹 Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentLeaves = leaveHistory.slice(indexOfFirstItem, indexOfLastItem);
+
+  const totalPages = Math.ceil(leaveHistory.length / itemsPerPage);
 
   // const currentLeaves = leaveHistory.slice(
   //   (currentPage - 1) * itemsPerPage,
@@ -76,29 +76,31 @@ const LeaveHistory = ({ leaveHistory }) => {
 
   return (
     <div className="history-container">
-      <div style={{
-        display:"flex",
-        justifyContent:"space-between",
-        alignItems:"center"
-      }} >
-      <h2 className="content-heading">Leave History</h2>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <h2 className="content-heading">Leave History</h2>
 
-      <span className="status-icons">
-        <span className="status-item">
-          <MdWatchLater size={25} color="blue" title="Pending" />
-          <span>Pending</span>
+        <span className="status-icons">
+          <span className="status-item">
+            <MdWatchLater size={25} color="blue" title="Pending" />
+            <span>Pending</span>
+          </span>
+          <span className="status-item">
+            <MdCheckCircle size={25} color="green" title="Approved" />
+            <span>Approved</span>
+          </span>
+          <span className="status-item">
+            <MdCancel size={25} color="red" title="Rejected" />
+            <span>Rejected</span>
+          </span>
         </span>
-        <span className="status-item">
-          <MdCheckCircle size={25} color="green" title="Approved" />
-          <span>Approved</span>
-        </span>
-        <span className="status-item">
-          <MdCancel size={25} color="red" title="Rejected" />
-          <span>Rejected</span>
-        </span>
-      </span>
 
-      {/* <div className="pagination-numbered">
+        {/* <div className="pagination-numbered">
         <button
           className="arrow"
           onClick={() => changePage(1)}
@@ -142,7 +144,6 @@ const LeaveHistory = ({ leaveHistory }) => {
           <FiSkipForward size={14} />
         </button>
       </div> */}
-
       </div>
 
       <table>
@@ -159,44 +160,46 @@ const LeaveHistory = ({ leaveHistory }) => {
         </thead>
         <tbody>
           {currentLeaves.length > 0 ? (
-            currentLeaves.map((leave, index) => (
-              <tr key={index}>
-                <td>{leave.leaveType || "N/A"}</td>
-                <td>{formatDate(leave.startDate) || "N/A"}</td>
-                <td>{formatDate(leave.endDate) || "N/A"}</td>
-                <td>{leave.duration}</td>
-                <td>
-                  {leave.reason === "null" || !leave.reason ? (
-                    "N/A"
-                  ) : (
-                    <span
-                      className="reason-text"
-                      title={
-                        leave.reason.charAt(0).toUpperCase() +
-                        leave.reason.slice(1).toLowerCase()
-                      }
-                    >
-                      {truncateReason(
-                        leave.reason
-                          ? leave.reason.charAt(0).toUpperCase() +
-                              leave.reason.slice(1).toLowerCase()
-                          : "N/A"
-                      )}
-                    </span>
-                  )}
-                </td>
-                <td>
-                  {leave.attachments ? (
-                    <a href={getDownloadLink(leave.attachments)} download>
-                      <AiFillFilePdf size={23} color="red" />
-                    </a>
-                  ) : (
-                    <AiOutlineExclamationCircle size={23} color="gray" />
-                  )}
-                </td>
-                <td>{getStatusIcon(leave.status)}</td>
-              </tr>
-            ))
+            currentLeaves
+              .sort((a, b) => new Date(b.startDate) - new Date(a.startDate)) // Sorting in descending order
+              .map((leave, index) => (
+                <tr key={index}>
+                  <td>{leave.leaveType || "N/A"}</td>
+                  <td>{formatDate(leave.startDate) || "N/A"}</td>
+                  <td>{formatDate(leave.endDate) || "N/A"}</td>
+                  <td>{leave.duration}</td>
+                  <td>
+                    {leave.reason === "null" || !leave.reason ? (
+                      "N/A"
+                    ) : (
+                      <span
+                        className="reason-text"
+                        title={
+                          leave.reason.charAt(0).toUpperCase() +
+                          leave.reason.slice(1).toLowerCase()
+                        }
+                      >
+                        {truncateReason(
+                          leave.reason
+                            ? leave.reason.charAt(0).toUpperCase() +
+                                leave.reason.slice(1).toLowerCase()
+                            : "N/A"
+                        )}
+                      </span>
+                    )}
+                  </td>
+                  <td>
+                    {leave.attachments ? (
+                      <a href={getDownloadLink(leave.attachments)} download>
+                        <AiFillFilePdf size={23} color="red" />
+                      </a>
+                    ) : (
+                      <AiOutlineExclamationCircle size={23} color="gray" />
+                    )}
+                  </td>
+                  <td>{getStatusIcon(leave.status)}</td>
+                </tr>
+              ))
           ) : (
             <tr>
               <td
@@ -235,10 +238,8 @@ const LeaveHistory = ({ leaveHistory }) => {
           </button>
         </div>
       )}
-      
 
       {/* Pagination Controls (Positioned at Bottom Right) */}
-      
     </div>
   );
 };
