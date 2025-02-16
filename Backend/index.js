@@ -14,6 +14,7 @@ const excelJS = require("exceljs");
 const pdfkit = require("pdfkit");
 const fs = require("fs");
 const upload = multer({ dest: "uploads/" });
+const exceluploads = require("./routes/exceluploads")
 
 dotenv.config();
 
@@ -33,115 +34,9 @@ mongoose
 app.use("/api/auth", authRoutes);
 app.use("/api/leave-policies", leavepolicyRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/excel",exceluploads);
 
-// app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
-//   const { email } = req.query;
-//   const {
-//     empname,
-//     empid,
-//     leaveType,
-//     startDate,
-//     endDate,
-//     reason,
-//     managerEmail,
-//   } = req.body;
-//   const filePath = req.file ? req.file.path : null;
 
-//   try {
-//     // Convert dates to Date objects
-//     const formattedStartDate = new Date(startDate);
-//     const formattedEndDate = new Date(endDate);
-
-//     // **✅ 1. Required Fields Check**
-//     if (!leaveType || !startDate || !endDate) {
-//       return res
-//         .status(400)
-//         .json({
-//           message:
-//             "All fields (Leave Type, Start Date, End Date) are required.",
-//         });
-//     }
-
-//     // **✅ 2. Check if End Date is valid**
-//     if (formattedEndDate < formattedStartDate) {
-//       return res
-//         .status(400)
-//         .json({ message: "End Date cannot be before Start Date." });
-//     }
-
-//     // **✅ 3. Fetch overlapping leave requests**
-//     const overlappingLeaves = await Leave.find({
-//       email,
-//       $or: [
-//         {
-//           startDate: { $lte: formattedEndDate },
-//           endDate: { $gte: formattedStartDate },
-//         },
-//       ],
-//     });
-
-//     // **✅ 4. If an overlap exists, format the response properly**
-//     if (overlappingLeaves.length > 0) {
-//       const formattedLeaves = overlappingLeaves.map((leave) => {
-//         const startDates = leave.startDate
-//           .map((date) => new Date(date).toLocaleDateString("en-GB"))
-//           .join(", ");
-//         const endDates = leave.endDate
-//           .map((date) => new Date(date).toLocaleDateString("en-GB"))
-//           .join(", ");
-//         return `From: ${startDates} to ${endDates}`;
-//       });
-
-//       // return res.status(400).json({
-//       //   message: `You have already applied for leave on these dates:\n\n${formattedLeaves.join(
-//       //     "\n"
-//       //   )}`,
-//       // });
-//       return res.status(400).json({
-//         message: 'You have already applied for leave on these dates'
-//       });
-//     }
-
-//     // **✅ 5. Ensure no pending leave requests exist**
-//     const pendingLeave = await Leave.findOne({
-//       email,
-//       leaveType,
-//       $expr: { $eq: [{ $arrayElemAt: ["$status", -1] }, "Pending"] }, // ✅ Only checks latest status
-//     });
-    
-
-//     console.log("Pending Leave:", pendingLeave);
-
-//     if (pendingLeave) {
-//       return res.status(400).json({
-//         message: `You already have a pending leave request for ${leaveType}. Wait for approval before applying again.`,
-//       });
-//     }
-
-//     // **✅ 6. Save Leave Record**
-//     const newLeave = new Leave({
-//       email,
-//       empname,
-//       empid,
-//       managerEmail,
-//       applyDate: new Date(),
-//       leaveType,
-//       startDate: [formattedStartDate],
-//       endDate: [formattedEndDate],
-//       reason: reason ? [reason] : [],
-//       status: ["Pending"],
-//       attachments: [filePath || ""],
-//     });
-
-//     await newLeave.save();
-//     res
-//       .status(200)
-//       .json({ message: "Leave application submitted successfully." });
-//   } catch (error) {
-//     console.error("Error applying for leave:", error);
-//     res.status(500).json({ message: "Server error while applying leave." });
-//   }
-// });
 app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
   const { email } = req.query;
   const { empname, empid, leaveType, startDate, endDate, reason, managerEmail } = req.body;
@@ -277,24 +172,7 @@ app.get("/leavesummary", async (req, res) => {
   }
 });
 
-// app.get("/leaverequests", async (req, res) => {
-//   try {
-//     const excludeEmail = req.query.excludeEmail; // Get manager's email from query parameters
 
-//     if (!excludeEmail) {
-//       return res.status(400).json({ message: "Manager email is required" });
-//     }
-
-//     const query = { managerEmail: excludeEmail }; // Fetch requests where managerEmail matches excludeEmail
-//     console.log("Query:", query); // Debugging
-
-//     const leaveRequests = await Leave.find(query); // Query the database correctly
-//     res.json(leaveRequests);
-//   } catch (error) {
-//     console.error("Error fetching leave requests:", error);
-//     res.status(500).send("Server error");
-//   }
-// });
 
 app.get("/leaverequests", async (req, res) => {
   try {
