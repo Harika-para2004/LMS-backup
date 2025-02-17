@@ -26,7 +26,7 @@ function App() {
             />
             <Route
               path="/admin"
-              element={<Admin/>}
+              element={<PrivateRoute allowedRoles={["admin"]}><Admin /></PrivateRoute>}
             />
           </Routes>
         </SnackbarProvider>

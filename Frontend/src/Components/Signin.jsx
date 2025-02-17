@@ -27,6 +27,8 @@ const LoginForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.email === "admin@gmail.com" && formData.password === "1234") {
+      localStorage.setItem("admin", JSON.stringify(formData.email));
+
       navigate(`/admin`);
     } else {
       try {

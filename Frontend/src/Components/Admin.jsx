@@ -58,11 +58,13 @@ function AdminDashboard() {
   const filteredEmployees = employeeList.filter((emp)=> emp.empname.toLowerCase().includes(searchTerm.toLowerCase()));
   const excludeEmail = "admin@gmail.com"; // Email to exclude from the list
   // const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
+
   const handleLogout = (e) => {
     e.preventDefault();
     localStorage.clear();
     navigate("/"); 
   };
+  
   useEffect(() => {
     fetchEmployees();
   }, []);
