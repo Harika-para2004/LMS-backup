@@ -11,7 +11,7 @@ const LeaveStatusChart = ({ email }) => {
 
   const yearsRange = useMemo(() => {
     const currentYear = new Date().getFullYear();
-    return Array.from({ length: 5 }, (_, i) => currentYear - i);
+    return Array.from({ length: 15 }, (_, i) => currentYear - i);
   }, []);
 
   useEffect(() => {

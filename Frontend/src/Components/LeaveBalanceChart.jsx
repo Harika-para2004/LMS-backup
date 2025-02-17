@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { Card, CardContent, Typography, Grid, MenuItem, Select, CircularProgress, Box, Divider, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from "@mui/material";
+import { Card, CardContent, Typography, Grid, MenuItem, Select, CircularProgress, Box, Divider, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, FormControl } from "@mui/material";
 import ReactECharts from "echarts-for-react";
 
 const LeaveBalanceChart = ({ email }) => {
@@ -9,6 +9,11 @@ const LeaveBalanceChart = ({ email }) => {
   const [leaveBalance, setLeaveBalance] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const yearsRange = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return Array.from({ length: 15 }, (_, i) => currentYear - i);
+  }, []);
 
   useEffect(() => {
     if (!email || !year) return;
@@ -82,41 +87,17 @@ const LeaveBalanceChart = ({ email }) => {
   return (
     <Card sx={{ maxWidth: 800, margin: "auto", padding: 3, boxShadow: 3, borderRadius: 3, backgroundColor: "#FFFFFF" }}>
       <CardContent>
-        <Typography variant="h5" align="center" sx={{ fontWeight: "bold", mb: 2 }}>
+        {/* <Typography variant="h5" align="center" sx={{ fontWeight: "bold", mb: 2 }}>
           Leave Balance Overview
-        </Typography>
-        <Select
-          value={year}
-          onChange={(e) => setYear(e.target.value)}
-        //   fullWidth
-          sx={{ mb: 3, backgroundColor: "#F5F5F5", borderRadius: 1 }}
-        >
-          {[currentYear - 1, currentYear, currentYear + 1].map((yr) => (
-            <MenuItem key={yr} value={yr}>
-              {yr}
-            </MenuItem>
-          ))}
-        </Select>
-        <Divider sx={{ mb: 3 }} />
-        <Grid container spacing={3} justifyContent="center">
-          <Grid item xs={12} md={6}>
-            <Card sx={{ borderRadius: 2, boxShadow: 1, padding: 2, backgroundColor: "#FAFAFA" }}>
-              {/* <Typography variant="subtitle1" align="center" fontWeight="bold">
-                Total Leaves
-              </Typography> */}
-              <ReactECharts option={getChartOption("Total Leaves", totalLeavesData)} style={{ height: 250 }} />
-            </Card>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Card sx={{ borderRadius: 2, boxShadow: 1, padding: 2, backgroundColor: "#FAFAFA" }}>
-              {/* <Typography variant="subtitle1" align="center" fontWeight="bold">
-                Available Leaves
-              </Typography> */}
-              <ReactECharts option={getChartOption("Available Leaves", availableLeavesData)} style={{ height: 250 }} />
-            </Card>
-          </Grid>
-        </Grid>
-        <Divider sx={{ my: 3 }} />
+        </Typography> */}
+        <FormControl  sx={{ marginBottom: 2,marginTop:3 }} >
+          <Select value={year} onChange={(e) => setYear(e.target.value)}>
+            {yearsRange.map((yr) => (
+              <MenuItem key={yr} value={yr}>{yr}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
         <Typography variant="h6" align="center" sx={{ fontWeight: "bold", mb: 2 }}>
           Leave Summary
         </Typography>

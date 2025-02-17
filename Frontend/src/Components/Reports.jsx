@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { formatDate } from "../utils/dateUtlis";
 import ManagerEmployeeDashboard from "./ManagerEmployeeDashboard";
+import { Button } from "@mui/material";
 
 const Reports = ({email}) => {
   const [reports, setReports] = useState([]);
@@ -88,9 +89,9 @@ const Reports = ({email}) => {
             Export Excel
           </button>
         </div>
-        <button onClick={() => setShowAnalytics(!showAnalytics)} className="btn-analytics">
+        <Button onClick={() => setShowAnalytics(!showAnalytics)} sx={{textTransform:"none" }} className="btn-analytics">
           {showAnalytics ? "Hide Analytics" : "Show Analytics"}
-        </button>
+        </Button>
       </div>
 
       {showAnalytics && <ManagerEmployeeDashboard email={email}/>}

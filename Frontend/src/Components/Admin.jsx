@@ -64,7 +64,7 @@ function AdminDashboard() {
     localStorage.clear();
     navigate("/"); 
   };
-  
+
   useEffect(() => {
     fetchEmployees();
   }, []);
@@ -917,9 +917,10 @@ function AdminDashboard() {
               </Modal>
             )}
 
-            <div className="header">
+            <div className="head">
               <h2 className="content-heading">Holiday Calendar {year}</h2>
-     
+
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <Button
                 variant="contained"
                 onClick={() => setShowModal(true)}
@@ -927,7 +928,6 @@ function AdminDashboard() {
                   textTransform: "capitalize",
                   backgroundColor: "#006400", // Align the button absolutely
                   // marginTop: "-40px", // Push it to the right edge
-                   marginLeft: "50%", // Optional: Add some spacing from the right edge
                   "&:focus": {
                     outline: "none",
                   },
@@ -935,7 +935,6 @@ function AdminDashboard() {
               >
                 Add Holiday
               </Button>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <Button
                  id="file-input"
                  variant="contained"
@@ -1173,7 +1172,7 @@ function AdminDashboard() {
       case "employee-list":
         return (
           <div className="emp-list-container">
-            <div className="header">
+            <div className="head">
               <h2 className="content-heading">Employee Details</h2>
               <TextField
                   variant="outlined"
