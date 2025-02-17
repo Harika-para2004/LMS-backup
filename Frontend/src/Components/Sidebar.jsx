@@ -217,7 +217,7 @@ const Sidebar = ({
 
         <ul>{generateLinks()}</ul>
 
-        {(isEmployee || isManager) && (
+        {(isEmployee || isManager || isAdmin) && (
           <div className="logout">
             <Link to="#" onClick={handleLogout}>
               <FontAwesomeIcon icon={faSignOutAlt} /> Logout

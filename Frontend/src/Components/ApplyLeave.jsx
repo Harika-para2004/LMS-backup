@@ -104,9 +104,7 @@ const ApplyLeave = ({
                 size="small"
                 variant="outlined"
               >
-                <MenuItem value="Select Leave Type" disabled>
-                  Select Leave Type
-                </MenuItem>
+          
                 {leavePolicies.length > 0 ? (
                   leavePolicies.map((leaveType, index) => (
                     <MenuItem

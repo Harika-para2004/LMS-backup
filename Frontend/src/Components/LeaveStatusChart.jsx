@@ -40,11 +40,11 @@ const LeaveStatusChart = ({ email }) => {
 
     fetchData();
   }, [email, year]);
-
   const getOption = () => {
     const leaveTypes = chartData.map((item) => item.leaveType);
     const statuses = ["Pending", "Approved", "Rejected"];
-
+    const barCount = leaveTypes.length;
+  
     const seriesData = statuses.map((status) => ({
       name: status,
       type: "bar",
@@ -52,19 +52,38 @@ const LeaveStatusChart = ({ email }) => {
       emphasis: { focus: "series" },
       data: chartData.map((item) => item.statuses[status] || 0),
     }));
-
+  
     return {
       tooltip: { trigger: "axis" },
-      legend: { data: statuses, bottom: 0 },
-      grid: { left: "3%", right: "4%", bottom: "10%", containLabel: true },
-      xAxis: { type: "category", data: leaveTypes },
+      legend: { 
+        data: statuses, 
+        orient: "horizontal", // Arrange horizontally
+        bottom: "5%",         // Place at bottom
+        left: "center",       // Center align
+      },
+      grid: { 
+        left: "5%", 
+        right: "5%", 
+        bottom: "15%", // Adjust to avoid legend overlap
+        containLabel: true,
+      },
+      xAxis: {
+        type: "category",
+        data: leaveTypes,
+        axisLabel: {
+          interval: 0, 
+          rotate: barCount > 5 ? 45 : 0, 
+          margin: 10, 
+        },
+      },
       yAxis: { type: "value" },
       series: seriesData,
     };
   };
-
+  
+  
   return (
-    <Card sx={{ maxWidth: 700, margin: "auto", padding: 2, boxShadow: 3 }}>
+    <Card sx={{ maxWidth: 700, margin: "auto", padding: 3, boxShadow: 3 }}>
       <CardContent>
         <Typography variant="h6" align="center">Leave Status Overview ({year})</Typography>
 

@@ -428,7 +428,7 @@ body, html {
 /* Holidays Table */
 
  .holiday-cal-container{
-  max-width: 800px;
+  max-width: 1000px;
   margin: auto;
   overflow-y: auto;
  }
@@ -445,7 +445,7 @@ body, html {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   border-spacing: 0;
   border-radius: 8px;
-  padding-top: 20px;
+  padding-top: 10px;
   margin-bottom: 20px;
 }
 
@@ -967,7 +967,7 @@ body, html {
 
 .history-container table th, table td {
   padding: 4px;
-  text-align: left;
+  text-align: left; 
   font-size: 14px;
   border: 1px solid #ddd;
 }
@@ -1607,7 +1607,6 @@ body {
 .reports-container {
   text-align: center;
   color: #333;
-  max-width: 800px;
   margin: auto;
   padding-top: 20px;
 }

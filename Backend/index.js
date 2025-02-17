@@ -385,8 +385,58 @@ app.delete("/employee-del/:id", async (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
-
 app.get("/reports", async (req, res) => {
+  try {
+    const { project, search, email } = req.query;
+    let query = { managerEmail: email }; // Filter by manager's email
+
+    if (project) query.project = project;
+    if (search) {
+      query.$or = [
+        { empname: new RegExp(search, "i") },
+        { empid: new RegExp(search, "i") },
+        { project: new RegExp(search, "i") },
+      ];
+    }
+
+    // Fetch employees based on manager's email, project & search
+    const employees = await User.find(query);
+
+    // Fetch leave data for each employee
+    const reports = await Promise.all(
+      employees.map(async (employee) => {
+        const leaves = await Leave.find({ email: employee.email });
+
+        return {
+          empid: employee.empid,
+          empname: employee.empname,
+          project: employee.project,
+          email: employee.email,
+          managerEmail: employee.managerEmail,
+          leaves: leaves.flatMap((leave) =>
+            leave.startDate.map((start, index) => ({
+              leaveType: leave.leaveType,
+              startDate: new Date(start).toLocaleDateString(),
+              endDate: leave.endDate[index]
+                ? new Date(leave.endDate[index]).toLocaleDateString()
+                : "N/A",
+              status: leave.status[index] || "Pending",
+              reason: leave.reason[index] || "No reason provided",
+              duration: leave.duration[index] || "N/A",
+              attachments: leave.attachments[index] || [],
+            }))
+          ),
+        };
+      })
+    );
+
+    res.status(200).json(reports);
+  } catch (error) {
+    console.error("Error fetching reports:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+app.get("/reports-admin", async (req, res) => {
   try {
     const { project, search } = req.query;
     let query = {};

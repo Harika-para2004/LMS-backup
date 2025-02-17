@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { formatDate } from "../utils/dateUtlis";
 
-const Reports = ({email}) => {
+const Reports = () => {
   const [reports, setReports] = useState([]);
   const [project, setProject] = useState("");
   const [search, setSearch] = useState("");
@@ -13,7 +13,7 @@ const Reports = ({email}) => {
   const fetchReports = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5001/reports?project=${project}&search=${search}`
+        `http://localhost:5001/reports-admin?project=${project}&search=${search}`
       );
       if (!response.ok) throw new Error("Failed to fetch reports");
       const data = await response.json();
@@ -96,7 +96,6 @@ const Reports = ({email}) => {
             <tr>
               <th>Employee</th>
               <th>Employee ID</th>
-              <th>Email</th>
               <th>Project</th>
               <th>Leave Type</th>
               <th>Start Date</th>
@@ -112,7 +111,6 @@ const Reports = ({email}) => {
                   <tr key={index}>
                     <td>{report.empname}</td>
                     <td>{report.empid}</td>
-                    <td>{report.email}</td>
                     <td>{report.project}</td>
                     <td>{report.leaveType}</td>
                     <td>{report.startDate.getTime() === 0 ? "N/A" : formatDate(report.startDate)}</td>

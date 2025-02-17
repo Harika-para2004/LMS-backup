@@ -13,7 +13,7 @@ import { formatDate } from "../utils/dateUtlis";
 
 const LeaveHistory = ({ leaveHistory }) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8; // Show 5 leave requests per page
+  const itemsPerPage = 10;
 
   // 🔹 Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;

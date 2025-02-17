@@ -12,7 +12,7 @@ const LeaveRequestsTable = ({
 }) => {
   // 🔹 Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 7; // Show 5 leave requests per page
+  const itemsPerPage = 10; // Show 10 leave requests per page
 
   // 🔹 Pagination logic
 

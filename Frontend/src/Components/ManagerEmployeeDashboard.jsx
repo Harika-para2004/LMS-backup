@@ -82,7 +82,6 @@ const employeeLeaveTypes = {
       },
     ],
   });
-
   const getLeaveTypeChart = () => {
     const types = leaveTypeData.map((lt) => lt.leaveType);
     const statuses = ["Pending", "Approved", "Rejected"];
@@ -92,15 +91,32 @@ const employeeLeaveTypes = {
       stack: "total",
       data: types.map((type) => leaveTypeData.find((lt) => lt.leaveType === type)?.[status.toLowerCase()] || 0),
     }));
-
+  
     return {
       tooltip: { trigger: "axis" },
       legend: { data: statuses },
-      xAxis: { type: "category", data: types },
+      grid: {
+        left: "10%",  // Adds more space on the left
+        right: "5%",
+        bottom: "15%", // Prevents labels from being cut
+        containLabel: true, // Ensures labels fit within the chart
+      },
+      xAxis: { 
+        type: "category", 
+        data: types,
+        axisLabel: {
+          interval: 0, 
+          rotate: 20, // Rotate labels slightly
+          fontSize: 10, // Reduce font size to fit better
+          margin: 10, // Space between labels and axis
+        },
+      },
       yAxis: { type: "value" },
       series: seriesData,
     };
   };
+  
+  
   const getEmployeeMonthlyLeaveChart = () => {
     if (!Object.keys(employeeMonthlyLeaveData).length) return {};
   
@@ -167,16 +183,16 @@ const employeeLeaveTypes = {
 
   return (
     <Grid container spacing={3} sx={{ padding: 3 }}>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={16} md={5}>
         <Card>
           <CardContent>
-            <Typography variant="h6">Leave Approval Rate</Typography>
+            <Typography variant="h6">Leave Approval status</Typography>
             <ReactECharts option={getLeaveApprovalRateChart()} style={{ height: 300 }} />
           </CardContent>
         </Card>
       </Grid>
 
-      <Grid item xs={12} md={6}>
+      <Grid item xs={16} md={7}>
         <Card>
           <CardContent>
             <Typography variant="h6">Leave Breakdown by Type</Typography>

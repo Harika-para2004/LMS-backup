@@ -5,6 +5,7 @@ import { BASE_URL } from "../Config";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import axios from "axios";
 import { FaEdit, FaTrash } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import {
   AiOutlineClose,
 } from "react-icons/ai";
@@ -41,6 +42,7 @@ function AdminDashboard() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     date: "",
     holidayName: "",
@@ -56,7 +58,11 @@ function AdminDashboard() {
   const filteredEmployees = employeeList.filter((emp)=> emp.empname.toLowerCase().includes(searchTerm.toLowerCase()));
   const excludeEmail = "admin@gmail.com"; // Email to exclude from the list
   // const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
-
+  const handleLogout = (e) => {
+    e.preventDefault();
+    localStorage.clear();
+    navigate("/"); 
+  };
   useEffect(() => {
     fetchEmployees();
   }, []);
@@ -919,7 +925,7 @@ function AdminDashboard() {
                   textTransform: "capitalize",
                   backgroundColor: "#006400", // Align the button absolutely
                   // marginTop: "-40px", // Push it to the right edge
-                  // marginRight: "35px", // Optional: Add some spacing from the right edge
+                   marginLeft: "50%", // Optional: Add some spacing from the right edge
                   "&:focus": {
                     outline: "none",
                   },
@@ -1332,11 +1338,12 @@ function AdminDashboard() {
   return (
     <div className="dashboard-container">
       <div className="content">
-        <Sidebar
+      <Sidebar
           userType="admin"
           selectedCategory={selectedCategory}
           setSelectedCategory={setSelectedCategory}
           logo={logo}
+          handleLogout={handleLogout}
         />
 
         <main className="main-content">{renderContent()}</main>
