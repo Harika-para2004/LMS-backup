@@ -10,7 +10,7 @@ import {
   Modal,
 } from "@mui/material";
 
-const ProfilePage = ({ Profile, username, empid,email, project, leaveData,userData,gender }) => {
+const ProfilePage = ({ Profile, username, empid, email, project, leaveData,userData,gender }) => {
   const [mergedLeaveData, setMergedLeaveData] = useState([]);
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
