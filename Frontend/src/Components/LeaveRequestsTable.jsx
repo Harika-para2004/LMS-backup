@@ -25,9 +25,9 @@ const LeaveRequestsTable = ({
       leaveType:
         leave.leaveType.charAt(0).toUpperCase() + leave.leaveType.slice(1),
       duration: leave.duration ? leave.duration[index] : "N/A",
-      applyDate: new Date(leave.applyDate[index]).toLocaleDateString(),
-      startDate: new Date(startDate).toLocaleDateString(),
-      endDate: new Date(leave.endDate[index]).toLocaleDateString(),
+      applyDate: new Date(leave.applyDate[index]).toLocaleDateString("en-GB"),
+      startDate: new Date(startDate).toLocaleDateString("en-GB"),
+      endDate: new Date(leave.endDate[index]).toLocaleDateString("en-GB"),
       availableLeaves: leave.availableLeaves,
       document: leave.attachments?.[index]
         ? getDownloadLink(leave.attachments[index])

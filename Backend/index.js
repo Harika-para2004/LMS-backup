@@ -132,9 +132,9 @@ app.get("/leave-history", async (req, res) => {
       .map((leave) => {
         return leave.startDate.map((start, index) => ({
           leaveType: leave.leaveType,
-          applyDate: new Date(leave.applyDate).toLocaleDateString(), // Format and include apply date
-          startDate: new Date(start).toLocaleDateString(),
-          endDate: new Date(leave.endDate[index]).toLocaleDateString(),
+          applyDate: new Date(leave.applyDate).toLocaleDateString("en-GB"), // Format and include apply date
+          startDate: new Date(start).toLocaleDateString("en-GB"),
+          endDate: new Date(leave.endDate[index]).toLocaleDateString("en-GB"),
           reason: leave.reason[index],
           status: leave.status[index] || "Pending",
           duration: leave.duration[index],

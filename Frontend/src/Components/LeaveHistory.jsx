@@ -1,14 +1,6 @@
 import React, { useState } from "react";
 import { AiFillFilePdf, AiOutlineExclamationCircle } from "react-icons/ai";
 import { MdCheckCircle, MdCancel, MdWatchLater } from "react-icons/md";
-import { FiSlash } from "react-icons/fi";
-import {
-  FiChevronLeft,
-  FiChevronRight,
-  FiSkipBack,
-  FiSkipForward,
-} from "react-icons/fi";
-import { Pagination } from "@mui/material";
 import { formatDate } from "../utils/dateUtlis";
 
 const LeaveHistory = ({ leaveHistory }) => {
