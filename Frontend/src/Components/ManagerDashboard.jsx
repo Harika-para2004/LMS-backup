@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Box, Button, Stack } from "@mui/material";
+import ManagerAnalytics from "./EmployeeDashboard";
+import Reports from "./Reports";
+import EmployeeAnalytics from "./EmployeeDashboard";
+import EmployeesUnderManager from "./EmployeesUnderManager";
 
-import ManagersList from "./ManagersList";
-import ReportsAdmin from "./ReportsAdmin";
-
-const AdminTrends = ({ email }) => {
+const ManagerDashboard = ({ email }) => {
   const [selectedTab, setSelectedTab] = useState(1);
   return (
     <Box sx={{ width: "100%", typography: "body1", p: 2 }}>
@@ -24,7 +25,7 @@ const AdminTrends = ({ email }) => {
             },
           }}
         >
-          Manager List
+          Manager Analytics
         </Button>
         <Button
           variant={selectedTab === 2 ? "contained" : "outlined"}
@@ -42,15 +43,30 @@ const AdminTrends = ({ email }) => {
         >
           Reports
         </Button>
-        
+        <Button
+          variant={selectedTab === 3 ? "contained" : "outlined"}
+          onClick={() => setSelectedTab(3)}
+          sx={{
+            backgroundColor:
+              selectedTab === 3 ? "var(--deep-blue)" : "transparent",
+            color: selectedTab === 3 ? "white" : "var(--deep-blue)",
+            minWidth: "200px",
+            "&:hover": {
+              backgroundColor:
+                selectedTab === 3 ? "var(--deep-blue)" : "rgba(0, 0, 255, 0.1)", // Slight hover effect
+            },
+          }}
+        >
+          Employee List
+        </Button>
       </Stack>
 
       {/* Tab Content */}
-      {selectedTab === 1 && <ManagersList email={email} />}
-      {selectedTab === 2 && <ReportsAdmin email={email} />}
-      {/* {selectedTab === 3 && <EmployeesUnderManager email={email} />} */}
+      {selectedTab === 1 && <ManagerAnalytics email={email} />}
+      {selectedTab === 2 && <Reports email={email} />}
+      {selectedTab === 3 && <EmployeesUnderManager email={email} />}
     </Box>
   );
 };
 
-export default AdminTrends;
+export default ManagerDashboard;

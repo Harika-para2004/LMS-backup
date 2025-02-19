@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const authRoutes = require("./routes/authRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 const leavepolicyRoutes = require("./routes/LeavePolicyRoutes");
 const Leave = require("./models/Leave");
 const User = require("./models/User");
@@ -35,7 +36,17 @@ app.use("/api/auth", authRoutes);
 app.use("/api/leave-policies", leavepolicyRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/excel",exceluploads);
+app.use("/admin", adminRoutes);
+app.use("/api/employees", require("./routes/empUnderMang"));
 
+app.get("/managers-list", async (req, res) => {
+  try {
+    const managers = await User.find({ role: "Manager" }, { empname: 1, empid: 1, email: 1,project:1,gender:1, _id: 0 }); 
+    res.status(200).json(managers);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching managers", error: error.message });
+  }
+});
 
 app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
   const { email } = req.query;
@@ -619,70 +630,6 @@ const formatLeaveDate = (date) => {
   return moment(date).isValid() ? moment(date).format("DD/MM/YYYY") : "N/A";
 };
 
-// Export Report to PDF
-// app.get("/reports/export-pdf", async (req, res) => {
-//   try {
-//     const { project } = req.query;
-//     let query = {};
-//     if (project) query.project = project;
-//     const employees = await User.find(query);
-//     const doc = new pdfkit();
-//     const filePath = "reports.pdf";
-//     doc.pipe(fs.createWriteStream(filePath));
-//     doc.fontSize(12).text("Leave Reports", { align: "center" });
-//     doc.moveDown();
-//     employees.forEach((emp) => {
-//       doc
-//         .fontSize(10)
-//         .text(
-//           `ID: ${emp.empid}, Name: ${emp.empname}, Project: ${emp.project}`
-//         );
-//       doc.moveDown();
-//     });
-//     doc.end();
-//     res.download(filePath, "leave_reports.pdf", () => fs.unlinkSync(filePath));
-//   } catch (error) {
-//     console.error("Error exporting PDF:", error);
-//     res.status(500).json({ message: "Server Error" });
-//   }
-// });
-
-// const PDFDocument = require("pdfkit");
-
-// app.get("/reports/export-pdf", async (req, res) => {
-//   try {
-//     const { project } = req.query;
-//     let query = {};
-//     if (project) query.project = project;
-//     const employees = await User.find(query);
-
-//     // Set response headers
-//     res.setHeader("Content-Type", "application/pdf");
-//     res.setHeader("Content-Disposition", "attachment; filename=leave_reports.pdf");
-
-//     const doc = new PDFDocument();
-//     doc.pipe(res); // Stream PDF directly to response
-
-//     // Title
-//     doc.fontSize(16).text("Leave Reports", { align: "center" });
-//     doc.moveDown(2);
-
-//     // Table Headers
-//     doc.fontSize(12).text("ID | Name | Project", { underline: true });
-//     doc.moveDown();
-
-//     // Employee Data
-//     employees.forEach((emp) => {
-//       doc.text(`${emp.empid} | ${emp.empname} | ${emp.project}`);
-//       doc.moveDown();
-//     });
-
-//     doc.end();
-//   } catch (error) {
-//     console.error("Error exporting PDF:", error);
-//     res.status(500).json({ message: "Server Error" });
-//   }
-// });
 
 const PDFDocument = require("pdfkit");
 const moment = require("moment");
@@ -779,6 +726,24 @@ app.get("/reports/export-pdf", async (req, res) => {
 
 
 // --------------------Dahboard------------
+app.get("/admin-leave-trends/:year", async (req, res) => {
+  try {
+    console.log("year",year);
+    const leaves = await Leave.aggregate([
+      { $match: { year: { $in: [parseInt(year)] } } },
+      { $unwind: "$month" },
+      { $group: { _id: "$month", count: { $sum: 1 } } },
+      { $sort: { _id: 1 } }
+    ]);
+    
+    res.json({
+      months: leaves.map(l => l._id),
+      leaveCounts: leaves.map(l => l.count)
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 //Employee
 app.get("/leave-trends/:email/:year", async (req, res) => {

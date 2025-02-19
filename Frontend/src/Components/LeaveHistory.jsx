@@ -5,12 +5,15 @@ import { formatDate } from "../utils/dateUtlis";
 
 const LeaveHistory = ({ leaveHistory }) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 11;
+  const itemsPerPage = 10;
 
   // 🔹 Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentLeaves = leaveHistory.slice(indexOfFirstItem, indexOfLastItem);
+
+  const currentLeaves = leaveHistory
+    .sort((a, b) => new Date(b.startDate) - new Date(a.startDate))
+    .slice(indexOfFirstItem, indexOfLastItem);
 
   const totalPages = Math.ceil(leaveHistory.length / itemsPerPage);
 

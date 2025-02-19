@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { formatDate } from "../utils/dateUtlis";
+import { Button } from "@mui/material";
+import AdminAnalytics from "./AdminAnalytics";
 
-const Reports = () => {
+const ReportsAdmin = () => {
   const [reports, setReports] = useState([]);
   const [project, setProject] = useState("");
   const [search, setSearch] = useState("");
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   useEffect(() => {
     fetchReports();
@@ -40,7 +43,9 @@ const Reports = () => {
   };
 
   const formatName = (str) =>
-    str ? str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase()) : "N/A";
+    str
+      ? str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
+      : "N/A";
 
   const sortedReports = reports
     .flatMap((report) =>
@@ -68,7 +73,9 @@ const Reports = () => {
             },
           ]
     )
-    .sort((a, b) => a.empname.localeCompare(b.empname) || a.startDate - b.startDate);
+    .sort(
+      (a, b) => a.empname.localeCompare(b.empname) || a.startDate - b.startDate
+    );
 
   return (
     <div className="reports-container">
@@ -82,12 +89,29 @@ const Reports = () => {
           onChange={(e) => setSearch(e.target.value)}
         />
         <div className="export-buttons">
-          <button onClick={() => exportFile(`http://localhost:5001/reports/export-excel`, "leave_reports.xlsx")} className="btn-excel">
+          <Button
+            onClick={() =>
+              exportFile(
+                `http://localhost:5001/reports/export-excel`,
+                "leave_reports.xlsx"
+              )
+            }
+            sx={{ textTransform: "none" }}
+            className="btn-excel"
+          >
             Export Excel
-          </button>
+          </Button>
+          
         </div>
-       
+        <Button
+            onClick={() => setShowAnalytics(!showAnalytics)}
+            sx={{ textTransform: "none" }}
+            className="btn-analytics"
+          >
+            {showAnalytics ? "Hide Analytics" : "Show Analytics"}
+          </Button>
       </div>
+      {showAnalytics && <AdminAnalytics />}
 
 
       <div className="table-container">
@@ -113,7 +137,11 @@ const Reports = () => {
                     <td>{report.empid}</td>
                     <td>{report.project}</td>
                     <td>{report.leaveType}</td>
-                    <td>{report.startDate.getTime() === 0 ? "N/A" : formatDate(report.startDate)}</td>
+                    <td>
+                      {report.startDate.getTime() === 0
+                        ? "N/A"
+                        : formatDate(report.startDate)}
+                    </td>
                     <td>{report.endDate}</td>
                     <td>{report.status}</td>
                   </tr>
@@ -132,4 +160,4 @@ const Reports = () => {
   );
 };
 
-export default Reports;
+export default ReportsAdmin;

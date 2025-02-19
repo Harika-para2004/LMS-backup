@@ -73,42 +73,68 @@ const employeeLeaveTypes = {
     series: [
       {
         type: "pie",
-        radius: ["40%", "70%"],
+        radius: ["40%", "70%"], // Doughnut-style chart
         data: [
-          { value: approvalRateData.approved, name: "Approved" },
-          { value: approvalRateData.rejected, name: "Rejected" },
-          { value: approvalRateData.pending, name: "Pending" },
+          {
+            value: approvalRateData.approved,
+            name: "Approved",
+            itemStyle: { color: "#4CAF50" }, // Green
+          },
+          {
+            value: approvalRateData.rejected,
+            name: "Rejected",
+            itemStyle: { color: "#F44336" }, // Red
+          },
+          {
+            value: approvalRateData.pending,
+            name: "Pending",
+            itemStyle: { color: "#F4C542" }, // Yellow
+          },
         ],
       },
     ],
   });
+  
   const getLeaveTypeChart = () => {
     const types = leaveTypeData.map((lt) => lt.leaveType);
     const statuses = ["Pending", "Approved", "Rejected"];
+    
+    const statusColors = {
+      Pending: "#F4C542",  // Yellow
+      Approved: "#4CAF50", // Green
+      Rejected: "#F44336", // Red
+    };
+  
+    const barWidth = types.length < 4 ? 30 : "60%"; // Dynamic bar width
+  
     const seriesData = statuses.map((status) => ({
       name: status,
       type: "bar",
       stack: "total",
-      data: types.map((type) => leaveTypeData.find((lt) => lt.leaveType === type)?.[status.toLowerCase()] || 0),
+      barWidth, // Set bar width
+      itemStyle: { color: statusColors[status] }, 
+      data: types.map((type) => 
+        leaveTypeData.find((lt) => lt.leaveType === type)?.[status.toLowerCase()] || 0
+      ),
     }));
   
     return {
       tooltip: { trigger: "axis" },
       legend: { data: statuses },
       grid: {
-        left: "10%",  // Adds more space on the left
+        left: "10%",  
         right: "5%",
-        bottom: "15%", // Prevents labels from being cut
-        containLabel: true, // Ensures labels fit within the chart
+        bottom: "15%", 
+        containLabel: true, 
       },
       xAxis: { 
         type: "category", 
         data: types,
         axisLabel: {
           interval: 0, 
-          rotate: 20, // Rotate labels slightly
-          fontSize: 10, // Reduce font size to fit better
-          margin: 10, // Space between labels and axis
+          rotate: 20, 
+          fontSize: 10, 
+          margin: 10, 
         },
       },
       yAxis: { type: "value" },
@@ -123,15 +149,18 @@ const employeeLeaveTypes = {
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   
     const months = Object.keys(employeeMonthlyLeaveData[Object.keys(employeeMonthlyLeaveData)[0]]).map(
-      (month) => monthNames[parseInt(month) - 1] // Convert month number to month name
+      (month) => monthNames[parseInt(month) - 1] 
     );
   
     const employees = Object.keys(employeeMonthlyLeaveData);
+  
+    const barWidth = employees.length < 4 ? 40 : "60%"; // Dynamic bar width
   
     const seriesData = employees.map((emp) => ({
       name: emp,
       type: "bar",
       stack: "total",
+      barWidth, // Set bar width
       data: months.map((month, index) => employeeMonthlyLeaveData[emp][Object.keys(employeeMonthlyLeaveData[emp])[index]] || 0),
     }));
   
@@ -143,6 +172,8 @@ const employeeLeaveTypes = {
       series: seriesData,
     };
   };
+  
+
   const getEmployeeLeaveChart = () => ({
     tooltip: { trigger: "axis" },
     xAxis: { type: "category", data: sampleData.employees.map((e) => e.name) },
@@ -186,7 +217,7 @@ const employeeLeaveTypes = {
       <Grid item xs={16} md={5}>
         <Card>
           <CardContent>
-            <Typography variant="h6">Leave Approval status</Typography>
+            <Typography variant="h6">Leave Requests Status Trend</Typography>
             <ReactECharts option={getLeaveApprovalRateChart()} style={{ height: 300 }} />
           </CardContent>
         </Card>

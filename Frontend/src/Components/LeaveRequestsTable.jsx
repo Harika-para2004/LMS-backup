@@ -14,7 +14,22 @@ const LeaveRequestsTable = ({
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10; // Show 10 leave requests per page
 
+  const formatCase = (text) => {
+    return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
+
+  const truncateReason = (reason) => {
+    if (!reason) return "";
+    const words = reason.split(" ");
+    if (words.length > 2) {
+      return words.slice(0, 2).join(" ") + "...";
+    }
+    return reason;
+  };
+
   // 🔹 Pagination logic
+
 
   // 🔹 Filtered data based on selected filter
   const filteredData = filteredLeaveHistory.flatMap((leave) =>
@@ -121,8 +136,8 @@ const LeaveRequestsTable = ({
           {currentItems.length > 0 ? (
             currentItems.map((leave) => (
               <tr key={leave.id}>
-                <td>{leave.empid}</td>
-                <td>{leave.empname}</td>
+                <td>{leave.empid}</td> 
+                <td>{formatCase(leave.empname)}</td>
                 <td>{leave.leaveType}</td>
                 <td>{leave.duration}</td>
                 <td>{leave.startDate}</td>
@@ -140,7 +155,7 @@ const LeaveRequestsTable = ({
                     />
                   )}
                 </td>
-                <td>{leave.reason}</td>
+                <td>{truncateReason(leave.reason)}</td>
                 <td>
                   {leave.status === "approved" && (
                     <button
