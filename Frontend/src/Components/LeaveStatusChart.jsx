@@ -85,8 +85,10 @@ const LeaveStatusChart = ({ email }) => {
           margin: 10, 
         },
       },
-      yAxis: { type: "value" },
-      series: seriesData,
+      yAxis: { 
+        type: "value",
+        minInterval: 1, // Ensures only whole numbers are displayed
+      },      series: seriesData,
     };
   };
   

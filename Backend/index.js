@@ -142,10 +142,11 @@ app.get("/leave-history", async (req, res) => {
     const formattedHistory = leaveHistory
       .map((leave) => {
         return leave.startDate.map((start, index) => ({
+          _id: leave._id,
           leaveType: leave.leaveType,
-          applyDate: new Date(leave.applyDate).toLocaleDateString("en-GB"), // Format and include apply date
-          startDate: new Date(start).toLocaleDateString("en-GB"),
-          endDate: new Date(leave.endDate[index]).toLocaleDateString("en-GB"),
+          applyDate: new Date(leave.applyDate).toLocaleDateString(), // Format and include apply date
+          startDate: new Date(start).toLocaleDateString(),
+          endDate: new Date(leave.endDate[index]).toLocaleDateString(),
           reason: leave.reason[index],
           status: leave.status[index] || "Pending",
           duration: leave.duration[index],
@@ -160,7 +161,6 @@ app.get("/leave-history", async (req, res) => {
     res.status(500).json({ message: "An error occurred" });
   }
 });
-
 app.get("/leavesummary", async (req, res) => {
   const { email } = req.query; // Get the email from the query parameters
   if (!email) {
@@ -421,19 +421,15 @@ app.get("/reports", async (req, res) => {
     // Fetch employees based on manager's email, project & search
     const employees = await User.find(query);
 
-    // Fetch leave data for each employee
+    // Fetch leave data for each employee (only approved leaves)
     const reports = await Promise.all(
       employees.map(async (employee) => {
         const leaves = await Leave.find({ email: employee.email });
 
-        return {
-          empid: employee.empid,
-          empname: employee.empname,
-          project: employee.project,
-          email: employee.email,
-          managerEmail: employee.managerEmail,
-          leaves: leaves.flatMap((leave) =>
-            leave.startDate.map((start, index) => ({
+        // Filter only approved leaves
+        const approvedLeaves = leaves.flatMap((leave) =>
+          leave.startDate
+            .map((start, index) => ({
               leaveType: leave.leaveType,
               startDate: new Date(start).toLocaleDateString(),
               endDate: leave.endDate[index]
@@ -444,12 +440,30 @@ app.get("/reports", async (req, res) => {
               duration: leave.duration[index] || "N/A",
               attachments: leave.attachments[index] || [],
             }))
-          ),
-        };
+            .filter((leave) => leave.status === "Approved") // ✅ Only approved leaves
+        );
+
+        // Only return employees who have at least one approved leave
+        if (approvedLeaves.length > 0) {
+          return {
+            empid: employee.empid,
+            empname: employee.empname,
+            project: employee.project,
+            email: employee.email,
+            managerEmail: employee.managerEmail,
+            role: employee.role,
+            leaves: approvedLeaves,
+          };
+        }
+
+        return null; // Ignore employees with no approved leaves
       })
     );
 
-    res.status(200).json(reports);
+    // Remove null values (employees with no approved leaves)
+    const filteredReports = reports.filter((report) => report !== null);
+
+    res.status(200).json(filteredReports);
   } catch (error) {
     console.error("Error fetching reports:", error);
     res.status(500).json({ message: "Server Error" });
@@ -472,18 +486,15 @@ app.get("/reports-admin", async (req, res) => {
     // Fetch employees based on project & search
     const employees = await User.find(query);
 
-    // Fetch leave data for each employee
+    // Fetch leave data for each employee (only approved leaves)
     const reports = await Promise.all(
       employees.map(async (employee) => {
         const leaves = await Leave.find({ email: employee.email });
 
-        return {
-          empid: employee.empid,
-          empname: employee.empname,
-          project: employee.project,
-          email: employee.email,
-          leaves: leaves.flatMap((leave) =>
-            leave.startDate.map((start, index) => ({
+        // Filter only approved leaves
+        const approvedLeaves = leaves.flatMap((leave) =>
+          leave.startDate
+            .map((start, index) => ({
               leaveType: leave.leaveType,
               startDate: new Date(start).toLocaleDateString(),
               endDate: leave.endDate[index]
@@ -494,18 +505,34 @@ app.get("/reports-admin", async (req, res) => {
               duration: leave.duration[index] || "N/A",
               attachments: leave.attachments[index] || [],
             }))
-          ),
-        };
+            .filter((leave) => leave.status === "Approved") // ✅ Only approved leaves
+        );
+
+        // Only return employees who have at least one approved leave
+        if (approvedLeaves.length > 0) {
+          return {
+            empid: employee.empid,
+            empname: employee.empname,
+            project: employee.project,
+            email: employee.email,
+            leaves: approvedLeaves,
+          };
+        }
+
+        return null; // Ignore employees with no approved leaves
       })
     );
 
-    // console.log(reports);
-    res.status(200).json(reports);
+    // Remove null values (employees with no approved leaves)
+    const filteredReports = reports.filter((report) => report !== null);
+
+    res.status(200).json(filteredReports);
   } catch (error) {
-    console.error("Error fetching reports:", error);
+    console.error("Error fetching admin reports:", error);
     res.status(500).json({ message: "Server Error" });
   }
 });
+
 
 app.get("/reports/export-excel", async (req, res) => {
   try {
@@ -1310,3 +1337,88 @@ app.get("/employee-monthly-leaves", async (req, res) => {
 });
 
 
+app.get("/employee-yearly-leaves", async (req, res) => {
+  try {
+    const { userEmail } = req.query; // Manager's email
+
+    // ✅ Fetch only APPROVED leaves under this manager
+    const approvedLeaves = await Leave.find({ managerEmail: userEmail, status: "Approved" });
+
+    const yearlyLeaveData = {};
+
+    approvedLeaves.forEach((leave) => {
+      const employee = leave.empname;
+      leave.year.forEach((year, index) => {
+        if (leave.status[index] !== "Approved") return; // ✅ Ignore non-approved leaves
+
+        if (!yearlyLeaveData[employee]) {
+          yearlyLeaveData[employee] = {};
+        }
+
+        yearlyLeaveData[employee][year] =
+          (yearlyLeaveData[employee][year] || 0) + leave.duration[index];
+      });
+    });
+
+    res.json(yearlyLeaveData);
+  } catch (error) {
+    console.error("Error fetching employee yearly leave data:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+app.delete("/leaves/:id", async (req, res) => {
+  const { id } = req.params;
+  const { startDate } = req.body; // Assume the startDate is passed in the request body for matching
+
+  console.log("Received ID:", id);
+  console.log("Start Date to Match:", startDate); // Debugging line
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ error: "Invalid MongoDB ID format" });
+  }
+
+  // Function to convert DD/MM/YYYY to YYYY-MM-DD
+  const parseDate = (dateString) => {
+    const [day, month, year] = dateString.split('/'); // Split the date string into day, month, and year
+    return new Date(`${year}-${month}-${day}`); // Create a new Date object in YYYY-MM-DD format
+  };
+
+  try {
+    // Find the leave by id
+    const leave = await Leave.findById(id);
+
+    if (!leave) {
+      return res.status(404).json({ error: "Leave not found" });
+    }
+
+    // Convert the frontend startDate (DD/MM/YYYY) to a Date object
+    const parsedStartDate = parseDate(startDate);
+
+    // Find the index of the matched startDate by comparing the ISO string representations
+    const indexToRemove = leave.startDate.findIndex(date => 
+      new Date(date).toISOString().slice(0, 10) === parsedStartDate.toISOString().slice(0, 10)
+    );
+
+    if (indexToRemove === -1) {
+      return res.status(404).json({ error: "Start date not found" });
+    }
+
+    // Remove the element from arrays based on the matched index
+    leave.startDate.splice(indexToRemove, 1);
+    leave.endDate.splice(indexToRemove, 1);
+    leave.reason.splice(indexToRemove, 1);
+    leave.status.splice(indexToRemove, 1);
+    leave.duration.splice(indexToRemove, 1);
+    leave.year.splice(indexToRemove, 1);
+    leave.month.splice(indexToRemove, 1);
+    leave.attachments.splice(indexToRemove, 1);
+leave.applyDate.splice(indexToRemove, 1);
+    // Save the updated leave document
+    await leave.save();
+
+    res.status(200).json({ message: "Leave entry deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting leave:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});

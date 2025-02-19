@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import logo from "./../assets/img/quadfacelogo-hd.png";
 import { Modal, Box, IconButton } from "@mui/material";
 import Profile from "../assets/img/profile.png";
@@ -13,7 +13,7 @@ import ApplyLeave from "./ApplyLeave";
 import Sidebar from "./Sidebar";
 import ProfilePage from "./ProfilePage";
 import useToast from "./useToast";
-import ManagerDashboard from "./ManagerDashboard";
+import EmployeeDashboard from "./ManagerDashboard";
 
 import {
   AiFillFilePdf,
@@ -24,14 +24,12 @@ import Reports from "./Reports";
 import { formatDate } from "../utils/dateUtlis";
 import LeaveRequestsTable from "./LeaveRequestsTable";
 import dayjs from "dayjs";
-import EmployeesUnderManager from "./EmployeesUnderManager";
+
 
 function LeaveRequests() {
   const [modalOpen, setModalOpen] = useState(false);
   const [leaveHistory, setLeaveHistory] = useState([]);
   const [selectedLeave, setSelectedLeave] = useState(null);
-  // const [selectedCategory, setSelectedCategory] = useState("leaverequests");
-  const location = useLocation();
   const [selectedCategory, setSelectedCategory] = useState("leaverequests");
   const [leaveData, setLeaveData] = useState([]);
   const [managerEmail, setmanagerEmail] = useState("");
@@ -55,7 +53,6 @@ function LeaveRequests() {
   const year = new Date().getFullYear();
   const showToast = useToast();
 
-
   const [errors, setErrors] = useState({
     leaveType: "",
     from: "",
@@ -71,10 +68,6 @@ function LeaveRequests() {
     reason: "",
   });
   const [mergedLeaveData, setMergedLeaveData] = useState([]);
-
-  // useEffect(() => {
-  //   setSelectedCategory(sessionStorage.getItem("previousPage")); 
-  // }, []);
 
   useEffect(() => {
     const fetchLeavePolicies = async () => {
@@ -228,15 +221,11 @@ function LeaveRequests() {
 
   const fetchLeaveHistory = async () => {
     try {
-      const response = await fetch(
-        `http://localhost:5001/leaverequests?userRole=${userData.role}&userEmail=${userData.email}`
-      );
+      const response = await fetch(`http://localhost:5001/leaverequests?userRole=${userData.role}&userEmail=${userData.email}`);
       // console.log("user-role: ",userData.role);
       if (response.ok) {
         const data = await response.json();
-        const sortedData = data.sort(
-          (a, b) => new Date(b.applyDate) - new Date(a.applyDate)
-        );
+        const sortedData = data.sort((a, b) => new Date(b.applyDate) - new Date(a.applyDate));
 
         setLeaveHistory(sortedData); // Directly set the filtered data from backend
       } else {
@@ -261,7 +250,7 @@ function LeaveRequests() {
           setUserData(parsedUserData);
           setUsername(parsedUserData.empname || "");
           setEmpid(parsedUserData.empid || "");
-          setmanagerEmail(parsedUserData.managerEmail || "");
+          setmanagerEmail(parsedUserData.managerEmail || "")
           setEmail(parsedUserData.email || "");
           setGender(parsedUserData.gender || "");
           setProject(parsedUserData.project || "");
@@ -293,7 +282,7 @@ function LeaveRequests() {
       fetchLeaveData();
     }
   }, [email]);
-
+  
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -328,7 +317,7 @@ function LeaveRequests() {
   const handleLogout = (e) => {
     e.preventDefault();
     localStorage.clear();
-    navigate("/"); // Redirects user after logout
+    navigate("/");  // Redirects user after logout
   };
 
   const getTodayDate = () => {
@@ -340,6 +329,7 @@ function LeaveRequests() {
     return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
   };
 
+  
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -502,10 +492,11 @@ function LeaveRequests() {
     }
   };
 
+  
   const handleReject = async () => {
     if (selectedLeave) {
       const { selectedIndex, ...leave } = selectedLeave;
-
+  
       // Ensure selectedIndex is valid
       if (
         selectedIndex === undefined ||
@@ -513,35 +504,25 @@ function LeaveRequests() {
         leave.duration.length === 0 ||
         selectedIndex >= leave.duration.length
       ) {
-        console.error(
-          "Invalid leave duration or selected index:",
-          selectedLeave
-        );
+        console.error("Invalid leave duration or selected index:", selectedLeave);
         return;
       }
-
+  
       const leaveDuration = leave.duration[selectedIndex]; // Fix: Ensure valid duration
-
-      const wasApproved =
-        leave.status[selectedIndex]?.toLowerCase() === "approved"; // Add optional chaining
-
+  
+      const wasApproved = leave.status[selectedIndex]?.toLowerCase() === "approved"; // Add optional chaining
+  
       const updatedLeave = {
         ...leave,
         status: leave.status.map((stat, index) =>
-          index === selectedIndex &&
-          (stat.toLowerCase() === "pending" ||
-            stat.toLowerCase() === "approved")
+          index === selectedIndex && (stat.toLowerCase() === "pending" || stat.toLowerCase() === "approved")
             ? "Rejected"
             : stat
         ),
-        availableLeaves: wasApproved
-          ? leave.availableLeaves + leaveDuration
-          : leave.availableLeaves,
-        usedLeaves: wasApproved
-          ? leave.usedLeaves - leaveDuration
-          : leave.usedLeaves,
+        availableLeaves: wasApproved ? leave.availableLeaves + leaveDuration : leave.availableLeaves,
+        usedLeaves: wasApproved ? leave.usedLeaves - leaveDuration : leave.usedLeaves,
       };
-
+  
       try {
         const response = await fetch(
           `http://localhost:5001/leaverequests/${leave._id}`,
@@ -551,22 +532,17 @@ function LeaveRequests() {
             body: JSON.stringify(updatedLeave),
           }
         );
-
+  
         if (response.ok) {
           const updatedLeaveFromServer = await response.json();
           setLeaveHistory((prevHistory) =>
             prevHistory.map((item) =>
-              item._id === updatedLeaveFromServer._id
-                ? updatedLeaveFromServer
-                : item
+              item._id === updatedLeaveFromServer._id ? updatedLeaveFromServer : item
             )
           );
           setSelectedLeave(null);
           setModalOpen(false);
-          console.log(
-            "Rejected and updated in the database:",
-            updatedLeaveFromServer
-          );
+          console.log("Rejected and updated in the database:", updatedLeaveFromServer);
         } else {
           console.error("Failed to update leave status in the database");
         }
@@ -575,11 +551,11 @@ function LeaveRequests() {
       }
     }
   };
-
+  
   const handleApprove = async () => {
     if (selectedLeave) {
       const { selectedIndex, ...leave } = selectedLeave;
-
+  
       // Ensure selectedIndex is valid
       if (
         selectedIndex === undefined ||
@@ -587,43 +563,35 @@ function LeaveRequests() {
         leave.duration.length === 0 ||
         selectedIndex >= leave.duration.length
       ) {
-        console.error(
-          "Invalid leave duration or selected index:",
-          selectedLeave
-        );
+        console.error("Invalid leave duration or selected index:", selectedLeave);
         return;
       }
-
+  
       const leaveDuration = leave.duration[selectedIndex]; // Fix: Use 'duration' (not 'durations')
-
+  
       const currentStatus = leave.status[selectedIndex]?.toLowerCase(); // Add optional chaining
-
-      if (
-        !currentStatus ||
-        (currentStatus !== "pending" && currentStatus !== "rejected")
-      ) {
+  
+      if (!currentStatus || (currentStatus !== "pending" && currentStatus !== "rejected")) {
         console.log("This leave is already approved.");
         return;
       }
-
+  
       if (leave.availableLeaves < leaveDuration) {
         console.log("Not enough available leaves.");
         return;
       }
-
+  
       const updatedLeave = {
         ...leave,
         availableLeaves: leave.availableLeaves - leaveDuration,
         usedLeaves: leave.usedLeaves + leaveDuration,
         status: leave.status.map((stat, index) =>
-          index === selectedIndex &&
-          (stat.toLowerCase() === "pending" ||
-            stat.toLowerCase() === "rejected")
+          index === selectedIndex && (stat.toLowerCase() === "pending" || stat.toLowerCase() === "rejected")
             ? "Approved"
             : stat
         ),
       };
-
+  
       try {
         const response = await fetch(
           `http://localhost:5001/leaverequests/${leave._id}`,
@@ -633,22 +601,17 @@ function LeaveRequests() {
             body: JSON.stringify(updatedLeave),
           }
         );
-
+  
         if (response.ok) {
           const updatedLeaveFromServer = await response.json();
           setLeaveHistory((prevHistory) =>
             prevHistory.map((item) =>
-              item._id === updatedLeaveFromServer._id
-                ? updatedLeaveFromServer
-                : item
+              item._id === updatedLeaveFromServer._id ? updatedLeaveFromServer : item
             )
           );
           setSelectedLeave(null);
           setModalOpen(false);
-          console.log(
-            "Approved and updated in the database:",
-            updatedLeaveFromServer
-          );
+          console.log("Approved and updated in the database:", updatedLeaveFromServer);
         } else {
           console.error("Failed to update leave in the database");
         }
@@ -657,6 +620,7 @@ function LeaveRequests() {
       }
     }
   };
+  
 
   const handleRowClick = (leave, index) => {
     setSelectedLeave({ ...leave, selectedIndex: index });
@@ -678,29 +642,56 @@ function LeaveRequests() {
           (status) => status.toLowerCase() === selectedFilter.toLowerCase()
         )
   );
-
+  const handleDelete = async (id, startDate) => {
+    if (!id || !startDate) {
+      console.error("Error: ID or startDate is undefined");
+      return;
+    }
+  
+    try {
+      const response = await fetch(`http://localhost:5001/leaves/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ startDate }), // Pass startDate in the body for matching
+      });
+  
+      if (!response.ok) {
+        throw new Error("Failed to delete leave");
+      }
+  
+      showToast("Leave deleted successfully!", "success");
+      // Remove the deleted leave from the state
+ fetchLeavehistory()
+    } catch (error) {
+      console.error("Error deleting leave:", error);
+    }
+  };
+  
   const getDownloadLink = (attachments) =>
     `http://localhost:5001/${attachments}`;
 
   const renderContent = () => {
     switch (selectedCategory) {
       case "dashboard":
-        return <ManagerDashboard email={email} />;
+        return(
+        <EmployeeDashboard email={email} /> );
       case "profile":
         return (
           <div>
-            <ProfilePage
-              Profile={Profile}
-              username={username}
-              empid={empid}
-              email={email}
-              project={project}
-              leaveData={leaveData}
-              userData={userData}
-              gender={gender}
-            />
-
-            {/* <table className="holiday-table">
+              <ProfilePage
+            Profile={Profile}
+            username={username}
+            empid={empid}
+            email={email}
+            project={project}
+            leaveData={leaveData}
+            userData={userData}
+            gender={gender}
+          />
+           
+                       {/* <table className="holiday-table">
               <thead>
                 <tr>
                   <th>Date</th>
@@ -747,19 +738,23 @@ function LeaveRequests() {
           />
         );
 
+     
+
       case "leaverequests":
         return (
-          <div>
-            <LeaveRequestsTable
-              filteredLeaveHistory={filteredLeaveHistory}
-              selectedFilter={selectedFilter}
-              handleFilterChange={handleFilterChange}
-              handleRowClick={handleRowClick}
-              getDownloadLink={getDownloadLink}
-            />
 
-            {/* Modal for Approve/Reject */}
-            <Modal open={modalOpen} onClose={handleCloseModal}>
+
+          <div>
+          <LeaveRequestsTable
+            filteredLeaveHistory={filteredLeaveHistory}
+            selectedFilter={selectedFilter}
+            handleFilterChange={handleFilterChange}
+            handleRowClick={handleRowClick}
+            getDownloadLink={getDownloadLink}
+          />
+    
+          {/* Modal for Approve/Reject */}
+        <Modal open={modalOpen} onClose={handleCloseModal}>
               <Box
                 sx={{
                   position: "absolute",
@@ -841,16 +836,11 @@ function LeaveRequests() {
                   })()}
               </Box>
             </Modal>
-          </div>
+        </div>
         );
-      case "reports":
-        return (
-          <div className="profile-content">
-            <ManagerDashboard email={email} />
-          </div>
-        );
+
       case "history":
-        return <LeaveHistory leaveHistory={leavehistory} />;
+        return <LeaveHistory leaveHistory={leavehistory} handleDelete={handleDelete}/>;
       default:
         return null;
     }

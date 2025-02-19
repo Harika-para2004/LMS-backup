@@ -1157,6 +1157,7 @@ function AdminDashboard() {
         );
 
       case "employee-list":
+        case "employee-list":
         return (
           <div className="emp-list-container">
             <div className="head">
@@ -1192,42 +1193,16 @@ function AdminDashboard() {
               
             </div>
             <div>
-      {/* <input type="file" accept=".xlsx, .xls" onChange={handleFileChange} id="file-input"/>
+      <input type="file" accept=".xlsx, .xls" onChange={handleFileChange} id="file-input"/>
       <Button
         onClick={handleUpload}
         variant="contained"
         color="primary"
         disabled={!file || loading}
         startIcon={!loading && <CloudUploadIcon />}
-        sx={{marginBottom:3,marginTop:3}}
-      >
-        {loading ? <CircularProgress size={24} color="inherit" /> : "Upload Employees"}
-      </Button> */}
-      <div style={styles.container}>
-      {/* File Input (Styled Label for better UI) */}
-      <label htmlFor="file-input" style={styles.fileInputLabel}>
-        <input
-          type="file"
-          accept=".xlsx, .xls"
-          onChange={handleFileChange}
-          id="file-input"
-          style={styles.fileInput}
-        />
-        Choose File
-      </label>
-
-      {/* Upload Button */}
-      <Button
-        onClick={handleUpload}
-        variant="contained"
-        color="primary"
-        disabled={!file || loading}
-        startIcon={!loading && <CloudUploadIcon />}
-        style={styles.uploadButton}
       >
         {loading ? <CircularProgress size={24} color="inherit" /> : "Upload Employees"}
       </Button>
-    </div>
       {message && <p>{message}</p>}
     </div>
 
@@ -1343,6 +1318,7 @@ function AdminDashboard() {
             </table>
           </div>
         );
+
 
       default:
         return <div>Select a category to get started!</div>;

@@ -132,11 +132,16 @@ const AdminAnalytics = () => {
 
   const isSingleBar = leaveTrends?.months?.length === 3;
 
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
   const trendsOptions = {
-    title: { text: `Leave Trends - ${year}`, left: "center" },
+    title: { text: `Monthly Leave Trends - ${year}`, left: "center" },
     tooltip: { trigger: "axis" },
     grid: { left: "5%", right: "5%", bottom: "10%", containLabel: true },
-    xAxis: { type: "category", data: leaveTrends?.months || [] },
+    xAxis: { 
+      type: "category", 
+      data: leaveTrends?.months?.map(month => monthNames[month - 1]) || [] // Convert numbers to month names
+    },
     yAxis: { type: "value" },
     series: [
       {
@@ -147,7 +152,7 @@ const AdminAnalytics = () => {
       },
     ],
   };
-
+  
   const leaveTypesOptions = {
     title: { text: `Leave Type Distribution - ${year}`, left: "center" },
     tooltip: { trigger: "item" },
@@ -349,47 +354,7 @@ const AdminAnalytics = () => {
               )}
             </Grid>
 
-            <Grid item xs={12} md={6} style={{ height: 400, width: "100%" }}>
-              <FormControl fullWidth>
-                <InputLabel id="select-label">Select Manager</InputLabel>
-                <Select
-                  labelId="select-label"
-                  value={selectedManager}
-                  onChange={(e) => setSelectedManager(e.target.value)}
-                  disabled={managers.length === 0}
-                  label="Select Manager"
-                  id="simple-select"
-                >
-                  {managers.map((manager) => (
-                    <MenuItem key={manager} value={manager}>
-                      {manager}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              {/* Handle case when no manager is selected */}
-              {!selectedManager && (
-                <div style={{ textAlign: "center", marginTop: 20 }}>
-                  <p>Please select a manager to view the leave trends.</p>
-                </div>
-              )}
-
-              {/* Handle case when there is no data for the selected manager */}
-              {selectedManager && !managerLeaveTrends && (
-                <div style={{ textAlign: "center", marginTop: 20 }}>
-                  <p>No leave data available for the selected manager.</p>
-                </div>
-              )}
-
-              {/* Display manager leave trends if data is available */}
-              {selectedManager && managerLeaveTrends && (
-                <ReactECharts
-                  option={managerLeaveTrendsOptions}
-                  style={{ height: 400, width: "100%" }}
-                />
-              )}
-            </Grid>
+          
           </Grid>
         )}
       </CardContent>

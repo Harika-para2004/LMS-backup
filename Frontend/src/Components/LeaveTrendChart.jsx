@@ -90,10 +90,12 @@ const LeaveTrendChart = ({ email }) => {
       tooltip: { trigger: "axis" },
       legend: { 
         data: leaveTypes, 
-        orient: "horizontal", // Arrange horizontally
-        bottom: "5%",         // Place at bottom
-        left: "center",       // Center align
-      },      grid: { left: "3%", right: "4%", bottom: "10%", containLabel: true },
+        orient: "horizontal",
+        bottom: 0,  // Place it at the bottom
+        left: "center",
+        padding: [10, 0, 0, 0], // Adds some space from the chart
+      },
+           grid: { left: "3%", right: "4%", bottom: "10%", containLabel: true },
       xAxis: {
         type: "category",
         data: months,

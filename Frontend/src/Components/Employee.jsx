@@ -1,4 +1,3 @@
-/*imports*/
 import React, { useEffect, useState } from "react";
 import "../App.css";
 import Profile from "../assets/img/profile.png";
@@ -7,32 +6,12 @@ import logo from "./../assets/img/quadfacelogo-hd.png";
 import Grid from "@mui/material/Grid";
 import axios from "axios";
 import useToast from "./useToast";
-import {
-  TextField,
-  MenuItem,
-  Button,
-  TextareaAutosize,
-  Typography,
-} from "@mui/material";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faChartLine,
-  faPaperPlane,
-  faCalendarPlus,
-  faHistory,
-  faUser,
-  faSignOutAlt,
-  faUserCircle,
-  faKey,
-} from "@fortawesome/free-solid-svg-icons";
 import ProfilePage from "./ProfilePage";
 import LeaveHistory from "./LeaveHistory";
 import ApplyLeave from "./ApplyLeave";
 import Sidebar from "./Sidebar";
-import { formatDate } from "../utils/dateUtlis";
 import dayjs from "dayjs";
 import EmployeeDashboard from "./EmployeeDashboard";
-
 const App = () => {
   const [selectedCategory, setSelectedCategory] = useState("dashboard");
   const [userData, setUserData] = useState(null);
@@ -54,7 +33,6 @@ const App = () => {
   const year = new Date().getFullYear();
   const navigate = useNavigate(); // Correct usage of useNavigate
   const showToast = useToast();
-
   const [errors, setErrors] = useState({
     leaveType: "",
     from: "",
@@ -62,7 +40,6 @@ const App = () => {
     reason: "",
     mismatch: "",
   });
-
   const [formData, setFormData] = useState({
     leaveType: "",
     applyDate: "",
@@ -72,7 +49,6 @@ const App = () => {
   });
   const [leavePolicies, setLeavePolicies] = useState([]);
   const [leavePolicyRef, setLeavePolicyRef] = useState([]);
-
   useEffect(() => {
     const fetchLeavePolicies = async () => {
       try {
@@ -135,25 +111,12 @@ const App = () => {
     const today = new Date();
     return today.toISOString().split("T")[0];
   };
-
-  // const handleFileChange = (event) => {
-  //   const file = event.target.files[0];
-  //   if (file) {
-  //     console.log("Selected file:", file);
-  //     // Update the state or form data as needed
-  //   }
-  // };
-
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
     if (selectedFile) {
       setFile(selectedFile);
     }
   };
-
-  // const handleLogout = () => {
-  //   window.location.href = "/login";
-  // };
   const handleLogout = (e) => {
     e.preventDefault();
     localStorage.clear();
@@ -164,182 +127,7 @@ const App = () => {
     return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
   };
 
-  // const handleSubmit = async (event) => {
-  //   event.preventDefault();
-
-  //   // console.log('leaveHistory',leaveHistory);
-  //   // console.log('leaveData',leaveData);
-
-  //   const { leaveType, startDate, endDate, reason } = formData;
-  //   const today = dayjs().format("YYYY-MM-DD");
-  //   const formattedStartDate = dayjs(startDate, "DD/MM/YYYY").format(
-  //     "YYYY-MM-DD"
-  //   );
-  //   const formattedEndDate = dayjs(endDate, "DD/MM/YYYY").format("YYYY-MM-DD");
-
-  //   // **✅ 1. Required Fields Check**
-  //   if (!leaveType || !startDate || !endDate) {
-  //     alert("All fields (Leave Type, Start Date, End Date) are required.");
-  //     return;
-  //   }
-
-  //   // **✅ 2. Valid Date Range Check**
-  //   if (new Date(formattedEndDate) < new Date(formattedStartDate)) {
-  //     alert("End Date cannot be before Start Date.");
-  //     return;
-  //   }
-
-  //   // **✅ 3 & 4. No Holidays or Weekends**
-  //   const isHoliday = holidays.some(
-  //     (holiday) =>
-  //       holiday.type === "Mandatory" &&
-  //       dayjs(holiday.date).isSame(formattedStartDate, "day")
-  //   );
-
-  //   if (isHoliday) {
-  //     alert("You cannot apply leave on company holidays.");
-  //     return;
-  //   }
-
-  //   const isWeekend =
-  //     dayjs(formattedStartDate).day() === 0 ||
-  //     dayjs(formattedStartDate).day() === 6;
-  //   if (isWeekend) {
-  //     alert("You cannot apply leave on weekends.");
-  //     return;
-  //   }
-
-  //   // **✅ 5. Cannot Apply for Same Leave Twice**
-  //   const alreadyApplied = leaveHistory.some(
-  //     (leave) =>
-  //       leave.leaveType === leaveType &&
-  //       dayjs(leave.startDate).isSame(formattedStartDate, "day") &&
-  //       dayjs(leave.endDate).isSame(formattedEndDate, "day")
-  //   );
-  //   if (alreadyApplied) {
-  //     alert(`You have already applied for ${leaveType} on these dates.`);
-  //     return;
-  //   }
-
-  //   // **✅ 6. Leave Balance Check**
-  //   const appliedLeave = leaveData.find(
-  //     (leave) => formatCase(leave.leaveType) === formatCase(leaveType)
-  //   );
-
-  //   const leaveBalance =
-  //     appliedLeave?.availableLeaves ??
-  //     leavePolicyRef.find(
-  //       (policy) => formatCase(policy.leaveType) === formatCase(leaveType)
-  //     )?.maxAllowedLeaves ??
-  //     0;
-
-  //   const requestedDays = dayjs(formattedEndDate).diff(dayjs(formattedStartDate), "day") + 1;
-
-  //   if (requestedDays > leaveBalance && leaveType !== "LOP") {
-  //     alert(
-  //       `You do not have enough ${leaveType} balance,you have only ${leaveBalance} leaves.`
-  //     );
-  //     return;
-  //   }
-
-  //   console.log("leaveType", leaveType);
-  //   console.log("userData gender", email);
-
-  //   // **✅ 7 & 8. Gender-Based Leave Restrictions**
-  //   if (leaveType.includes("Maternity") && gender !== "Female") {
-  //     alert("Maternity Leave is only applicable to female employees.");
-  //     return;
-  //   }
-  //   console.log(gender)
-
-  //   if (leaveType.includes("Paternity") && gender !== "Male") {
-  //     alert("Paternity Leave is only applicable to male employees.");
-  //     return;
-  //   }
-
-  //   // **✅ 9. Sick Leave can only be applied for past and current dates**
-  //   if (
-  //     leaveType === "Sick Leave" &&
-  //     dayjs(formattedStartDate).isAfter(today)
-  //   ) {
-  //     alert("Sick Leave can only be applied for past or current dates.");
-  //     return;
-  //   }
-
-  //   // **✅ 10 & 11. No Overlapping Leaves**
-  //   const hasOverlap = leaveHistory.some(
-  //     (leave) =>
-  //       dayjs(leave.startDate, "DD/MM/YYYY").isBefore(
-  //         dayjs(formattedEndDate, "YYYY-MM-DD")
-  //       ) &&
-  //       dayjs(leave.endDate, "DD/MM/YYYY").isAfter(
-  //         dayjs(formattedStartDate, "YYYY-MM-DD")
-  //       )
-  //   );
-
-  //   if (hasOverlap) {
-  //     alert(
-  //       "You have an existing leave that overlaps with the selected dates."
-  //     );
-  //     return;
-  //   }
-
-  //   // **✅ 12. LOP (Unpaid Leave) when no casual leaves are left**
-  //   if (
-  //     leaveType === "LOP" &&
-  //     leaveData.find((leave) => leave.leaveType === "Casual Leave")
-  //       ?.availableLeaves > 0
-  //   ) {
-  //     alert("LOP can only be taken if Casual Leaves are exhausted.");
-  //     return;
-  //   }
-
-  //   // **✅ Optional: Prevent multiple pending leave requests**
-  //   // if (leaveHistory.some((leave) => leave.status.includes("Pending"))) {
-  //   //   alert(
-  //   //     "You already have a pending leave request. Wait for approval before applying again."
-  //   //   );
-  //   //   return;
-  //   // }
-
-  //   // **Proceed with submission**
-  //   const formDataToSend = new FormData();
-  //   formDataToSend.append("email", email);
-  //   formDataToSend.append("empname", username);
-  //   formDataToSend.append("empid", empid);
-  //   formDataToSend.append("managerEmail", managerEmail);
-  //   formDataToSend.append("leaveType", leaveType);
-  //   formDataToSend.append("applyDate", today);
-  //   formDataToSend.append("startDate", formattedStartDate);
-  //   formDataToSend.append("endDate", formattedEndDate);
-  //   if (file) formDataToSend.append("attachment", file);
-  //   formDataToSend.append("reason", reason || "N/A");
-
-  //   try {
-  //     const response = await fetch(
-  //       `http://localhost:5001/apply-leave?email=${encodeURIComponent(email)}`,
-  //       {
-  //         method: "POST",
-  //         body: formDataToSend,
-  //       }
-  //     );
-
-  //     if (!response.ok) {
-  //       const errorData = await response.json();
-  //       throw new Error(
-  //         errorData.message || "Failed to submit form. Please try again."
-  //       );
-  //     }
-
-  //     alert("Leave application submitted successfully.");
-  //     setFormData({ leaveType: "", startDate: "", endDate: "", reason: "" });
-  //     setFile(null);
-  //     setErrors({});
-  //   } catch (error) {
-  //     console.error("Error submitting form:", error);
-  //     alert(error.message);
-  //   }
-  // };
+  
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -454,10 +242,7 @@ const App = () => {
         "error"
       );
       return;
-    }
-
-    // **✅ LOP (Unpaid Leave) only when Casual Leaves are exhausted**
-    if (
+    }    if (
       leaveType === "LOP" &&
       leaveData.find((leave) => leave.leaveType === "Casual Leave")
         ?.availableLeaves > 0
@@ -466,11 +251,7 @@ const App = () => {
         "LOP can only be applied when Casual Leaves are exhausted.",
         "info"
       );
-      return;
-    }
-
-    // **Proceed with submission**
-    const formDataToSend = new FormData();
+      return;}    const formDataToSend = new FormData();
     formDataToSend.append("email", email);
     formDataToSend.append("empname", username);
     formDataToSend.append("empid", empid);
@@ -502,10 +283,8 @@ const App = () => {
       showToast(error.message, "error");
     }
   };
-
   useEffect(() => {
     const storedUserData = localStorage.getItem("userData");
-    // console.log(storedUserData);
     if (storedUserData) {
       try {
         const parsedUserData = JSON.parse(storedUserData);
@@ -547,14 +326,9 @@ const App = () => {
 
       const monthIndexA = monthNames.indexOf(monthA);
       const monthIndexB = monthNames.indexOf(monthB);
-
-      // First, compare months
       if (monthIndexA !== monthIndexB) {
         return monthIndexA - monthIndexB;
-      }
-
-      // If months are the same, compare days (numerically)
-      return parseInt(dayA, 10) - parseInt(dayB, 10);
+      }      return parseInt(dayA, 10) - parseInt(dayB, 10);
     });
   };
 
@@ -578,7 +352,6 @@ const App = () => {
 
     fetchLeaveData();
   }, [email]);
-
   useEffect(() => {
     const fetchHolidays = async () => {
       try {
@@ -601,7 +374,6 @@ const App = () => {
 
     fetchHolidays();
   }, []);
-
   const fetchLeaveHistory = async () => {
     try {
       const response = await fetch(
@@ -617,7 +389,6 @@ const App = () => {
       console.error("Error fetching leave history:", error);
     }
   };
-
   useEffect(() => {
     if (selectedCategory === "history") {
       fetchLeaveHistory();
@@ -627,7 +398,34 @@ const App = () => {
   useEffect(() => {
     fetchLeaveHistory();
   }, []);
-
+  const handleDelete = async (id, startDate) => {
+    if (!id || !startDate) {
+      console.error("Error: ID or startDate is undefined");
+      return;
+    }
+  
+    try {
+      const response = await fetch(`http://localhost:5001/leaves/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ startDate }), // Pass startDate in the body for matching
+      });
+  
+      if (!response.ok) {
+        throw new Error("Failed to delete leave");
+      }
+  
+      showToast("Leave deleted successfully!", "success");
+      // Remove the deleted leave from the state
+ fetchLeaveHistory()
+    } catch (error) {
+      console.error("Error deleting leave:", error);
+    }
+  };
+  
+  
   const renderContent = () => {
     switch (selectedCategory) {
       case "dashboard":
@@ -664,9 +462,8 @@ const App = () => {
             gender={gender}
           />
         );
-
       case "history":
-        return <LeaveHistory leaveHistory={leaveHistory} />;
+        return <LeaveHistory leaveHistory={leaveHistory} handleDelete={handleDelete}/>;
       default:
         return null;
     }
@@ -674,9 +471,7 @@ const App = () => {
 
   return (
     <div className="dashboard-container">
-      {/* <header className="header">
-        
-      </header> */}
+
       <div className="content">
         <Sidebar
           userType="employee"

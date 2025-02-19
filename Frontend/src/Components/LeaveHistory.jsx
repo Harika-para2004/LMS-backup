@@ -1,26 +1,18 @@
 import React, { useState } from "react";
 import { AiFillFilePdf, AiOutlineExclamationCircle } from "react-icons/ai";
 import { MdCheckCircle, MdCancel, MdWatchLater } from "react-icons/md";
+import { FaTrash } from "react-icons/fa";
 import { formatDate } from "../utils/dateUtlis";
 
-const LeaveHistory = ({ leaveHistory }) => {
+const LeaveHistory = ({ leaveHistory, handleDelete }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // 🔹 Pagination logic
+  // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-
-  const currentLeaves = leaveHistory
-    .sort((a, b) => new Date(b.startDate) - new Date(a.startDate))
-    .slice(indexOfFirstItem, indexOfLastItem);
-
+  const currentLeaves = leaveHistory.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(leaveHistory.length / itemsPerPage);
-
-  // const currentLeaves = leaveHistory.slice(
-  //   (currentPage - 1) * itemsPerPage,
-  //   currentPage * itemsPerPage
-  // );
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -35,111 +27,9 @@ const LeaveHistory = ({ leaveHistory }) => {
     }
   };
 
-  const truncateReason = (reason) => {
-    if (!reason) return "";
-    const words = reason.split(" ");
-    if (words.length > 2) {
-      return words.slice(0, 2).join(" ") + "...";
-    }
-    return reason;
-  };
-
-  const getDownloadLink = (attachments) =>
-    `http://localhost:5001/${attachments}`;
-
-  const changePage = (page) => {
-    setCurrentPage(page);
-  };
-
-  // Pagination buttons
-  const getPaginationRange = () => {
-    let pageNumbers = [];
-
-    if (totalPages <= 3) {
-      pageNumbers = [...Array(totalPages)].map((_, i) => i + 1);
-    } else {
-      if (currentPage === 1) {
-        pageNumbers = [1, 2, 3];
-      } else if (currentPage === totalPages) {
-        pageNumbers = [totalPages - 2, totalPages - 1, totalPages];
-      } else {
-        pageNumbers = [currentPage - 1, currentPage, currentPage + 1];
-      }
-    }
-    return pageNumbers;
-  };
-
   return (
     <div className="history-container">
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <h2 className="content-heading">Leave History</h2>
-
-        <span className="status-icons">
-          <span className="status-item">
-            <MdWatchLater size={25} color="blue" title="Pending" />
-            <span>Pending</span>
-          </span>
-          <span className="status-item">
-            <MdCheckCircle size={25} color="green" title="Approved" />
-            <span>Approved</span>
-          </span>
-          <span className="status-item">
-            <MdCancel size={25} color="red" title="Rejected" />
-            <span>Rejected</span>
-          </span>
-        </span>
-
-        {/* <div className="pagination-numbered">
-        <button
-          className="arrow"
-          onClick={() => changePage(1)}
-          disabled={currentPage === 1}
-        >
-          <FiSkipBack size={14} />
-        </button>
-        <button
-          className="arrow"
-          onClick={() => changePage(currentPage - 1)}
-          disabled={currentPage === 1}
-        >
-          <FiChevronLeft size={14} />
-        </button>
-
-        <div className="page-numbers">
-          {getPaginationRange().map((pageNumber) => (
-            <button
-              key={pageNumber}
-              onClick={() => changePage(pageNumber)}
-              className={currentPage === pageNumber ? "active" : ""}
-              disabled={currentPage === pageNumber}
-            >
-              {pageNumber}
-            </button>
-          ))}
-        </div>
-
-        <button
-          className="arrow"
-          onClick={() => changePage(currentPage + 1)}
-          disabled={currentPage === totalPages}
-        >
-          <FiChevronRight size={14} />
-        </button>
-        <button
-          className="arrow"
-          onClick={() => changePage(totalPages)}
-          disabled={currentPage === totalPages}
-        >
-          <FiSkipForward size={14} />
-        </button>
-      </div> */}
-      </div>
+      <h2 className="content-heading">Leave History</h2>
 
       <table>
         <thead>
@@ -151,41 +41,23 @@ const LeaveHistory = ({ leaveHistory }) => {
             <th>Reason</th>
             <th>Document</th>
             <th>Status</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>
           {currentLeaves.length > 0 ? (
             currentLeaves
-              .sort((a, b) => new Date(b.startDate) - new Date(a.startDate)) // Sorting in descending order
+              .sort((a, b) => new Date(b.startDate) - new Date(a.startDate))
               .map((leave, index) => (
                 <tr key={index}>
                   <td>{leave.leaveType || "N/A"}</td>
                   <td>{formatDate(leave.startDate) || "N/A"}</td>
                   <td>{formatDate(leave.endDate) || "N/A"}</td>
                   <td>{leave.duration}</td>
-                  <td>
-                    {leave.reason === "null" || !leave.reason ? (
-                      "N/A"
-                    ) : (
-                      <span
-                        className="reason-text"
-                        title={
-                          leave.reason.charAt(0).toUpperCase() +
-                          leave.reason.slice(1).toLowerCase()
-                        }
-                      >
-                        {truncateReason(
-                          leave.reason
-                            ? leave.reason.charAt(0).toUpperCase() +
-                                leave.reason.slice(1).toLowerCase()
-                            : "N/A"
-                        )}
-                      </span>
-                    )}
-                  </td>
+                  <td>{leave.reason || "N/A"}</td>
                   <td>
                     {leave.attachments ? (
-                      <a href={getDownloadLink(leave.attachments)} download>
+                      <a href={leave.attachments} download>
                         <AiFillFilePdf size={23} color="red" />
                       </a>
                     ) : (
@@ -193,16 +65,29 @@ const LeaveHistory = ({ leaveHistory }) => {
                     )}
                   </td>
                   <td>{getStatusIcon(leave.status)}</td>
+            <td>     <button
+  onClick={() => {
+    console.log(leave);
+    console.log("Deleting leave with ID:", leave._id); // Debugging
+    handleDelete(leave._id, formatDate(leave.startDate));
+  }}
+  className="delete-btn"
+  disabled={leave.status !== "Pending"} // Disable if not pending
+  style={{
+    border:"none",
+    cursor: leave.status !== "Pending" ? "not-allowed" : "pointer", // Change cursor to 'not-allowed' when disabled
+    opacity: leave.status !== "Pending" ? 0.5 : 1, // Reduce opacity when disabled
+  }}
+>
+  <FaTrash size={18} color={leave.status === "Pending" ? "red" : "gray"} />
+</button>
+
+</td>
                 </tr>
               ))
           ) : (
             <tr>
-              <td
-                colSpan="7"
-                style={{ textAlign: "center", fontStyle: "italic" }}
-              >
-                No leave history available.
-              </td>
+              <td colSpan="8" style={{ textAlign: "center" }}>No leave history available.</td>
             </tr>
           )}
         </tbody>
@@ -210,31 +95,15 @@ const LeaveHistory = ({ leaveHistory }) => {
 
       {totalPages > 1 && (
         <div className="pagination">
-          <button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-            className="pagination-btn"
-          >
+          <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
             ◀
           </button>
-
-          <span className="pagination-info">
-            {currentPage} / {totalPages}
-          </span>
-
-          <button
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-            }
-            disabled={currentPage === totalPages}
-            className="pagination-btn"
-          >
+          <span>{currentPage} / {totalPages}</span>
+          <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}>
             ▶
           </button>
         </div>
       )}
-
-      {/* Pagination Controls (Positioned at Bottom Right) */}
     </div>
   );
 };

@@ -7,7 +7,48 @@ const ManagerDashboard = ({email}) => {
   const [leaveTypeData, setLeaveTypeData] = useState([]);
   const [employeeMonthlyLeaveData, setEmployeeMonthlyLeaveData] = useState({});
   const [selectedEmployee, setSelectedEmployee] = useState("");
+  const [employeeYearlyLeaveData, setEmployeeYearlyLeaveData] = useState([]);
 
+  const fetchEmployeeYearlyLeaveData = async () => {
+    try {
+      const response = await fetch(`http://localhost:5001/employee-yearly-leaves?userEmail=${email}`);
+      if (!response.ok) throw new Error("Failed to fetch employee yearly leave data");
+      
+      const data = await response.json();
+      setEmployeeYearlyLeaveData(data);
+    } catch (error) {
+      console.error("Error fetching employee yearly leave data:", error);
+    }
+  };
+
+  const getEmployeeYearlyLeaveChart = () => {
+    if (!Object.keys(employeeYearlyLeaveData).length) return {};
+    
+    const employees = Object.keys(employeeYearlyLeaveData);
+    const years = [...new Set(employees.flatMap(emp => Object.keys(employeeYearlyLeaveData[emp])))].sort();
+
+    const seriesData = years.map(year => ({
+      name: year,
+      type: "bar",
+      stack: "total",
+      data: employees.map(emp => employeeYearlyLeaveData[emp][year] || 0),
+    }));
+
+    return {
+      tooltip: { trigger: "axis" },
+      legend: { data: years },
+      xAxis: { type: "category", data: employees },
+      yAxis: { type: "value" },
+      barWidth: (employeeYearlyLeaveData?.employees?.length || 0) < 3 ? 50 : "60%",
+
+      series: seriesData,
+    };
+  };
+
+  useEffect(() => {
+    fetchEmployeeYearlyLeaveData();
+  }, []);
+  
   useEffect(() => {
     fetchLeaveApprovalRate();
     fetchLeaveTypes();
@@ -73,72 +114,48 @@ const employeeLeaveTypes = {
     series: [
       {
         type: "pie",
-        radius: ["40%", "70%"], // Doughnut-style chart
+        radius: "50%",
         data: [
-          {
-            value: approvalRateData.approved,
-            name: "Approved",
-            itemStyle: { color: "#4CAF50" }, // Green
-          },
-          {
-            value: approvalRateData.rejected,
-            name: "Rejected",
-            itemStyle: { color: "#F44336" }, // Red
-          },
-          {
-            value: approvalRateData.pending,
-            name: "Pending",
-            itemStyle: { color: "#F4C542" }, // Yellow
-          },
+          { value: approvalRateData.approved, name: "Approved" },
+          { value: approvalRateData.rejected, name: "Rejected" },
+          { value: approvalRateData.pending, name: "Pending" },
         ],
       },
     ],
   });
-  
   const getLeaveTypeChart = () => {
     const types = leaveTypeData.map((lt) => lt.leaveType);
     const statuses = ["Pending", "Approved", "Rejected"];
-    
-    const statusColors = {
-      Pending: "#F4C542",  // Yellow
-      Approved: "#4CAF50", // Green
-      Rejected: "#F44336", // Red
-    };
-  
-    const barWidth = types.length < 4 ? 30 : "60%"; // Dynamic bar width
-  
     const seriesData = statuses.map((status) => ({
       name: status,
       type: "bar",
       stack: "total",
-      barWidth, // Set bar width
-      itemStyle: { color: statusColors[status] }, 
-      data: types.map((type) => 
-        leaveTypeData.find((lt) => lt.leaveType === type)?.[status.toLowerCase()] || 0
-      ),
+      data: types.map((type) => leaveTypeData.find((lt) => lt.leaveType === type)?.[status.toLowerCase()] || 0),
     }));
   
     return {
       tooltip: { trigger: "axis" },
       legend: { data: statuses },
       grid: {
-        left: "10%",  
+        left: "10%",  // Adds more space on the left
         right: "5%",
-        bottom: "15%", 
-        containLabel: true, 
+        bottom: "15%", // Prevents labels from being cut
+        containLabel: true, // Ensures labels fit within the chart
       },
       xAxis: { 
         type: "category", 
         data: types,
         axisLabel: {
           interval: 0, 
-          rotate: 20, 
-          fontSize: 10, 
-          margin: 10, 
+          rotate: 20, // Rotate labels slightly
+          fontSize: 10, // Reduce font size to fit better
+          margin: 10, // Space between labels and axis
         },
       },
-      yAxis: { type: "value" },
-      series: seriesData,
+      yAxis: { 
+        type: "value",
+        minInterval: 1, // Ensures only whole numbers are displayed
+      },       series: seriesData,
     };
   };
   
@@ -149,18 +166,15 @@ const employeeLeaveTypes = {
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   
     const months = Object.keys(employeeMonthlyLeaveData[Object.keys(employeeMonthlyLeaveData)[0]]).map(
-      (month) => monthNames[parseInt(month) - 1] 
+      (month) => monthNames[parseInt(month) - 1] // Convert month number to month name
     );
   
     const employees = Object.keys(employeeMonthlyLeaveData);
-  
-    const barWidth = employees.length < 4 ? 40 : "60%"; // Dynamic bar width
   
     const seriesData = employees.map((emp) => ({
       name: emp,
       type: "bar",
       stack: "total",
-      barWidth, // Set bar width
       data: months.map((month, index) => employeeMonthlyLeaveData[emp][Object.keys(employeeMonthlyLeaveData[emp])[index]] || 0),
     }));
   
@@ -169,27 +183,47 @@ const employeeLeaveTypes = {
       legend: { data: employees },
       xAxis: { type: "category", data: months },
       yAxis: { type: "value" },
+      barWidth: (employeeMonthlyLeaveData?.months?.length || 0) < 3 ? 50 : "60%",
+
       series: seriesData,
     };
   };
+ 
   
-
   const getEmployeeLeaveChart = () => ({
     tooltip: { trigger: "axis" },
     xAxis: { type: "category", data: sampleData.employees.map((e) => e.name) },
     yAxis: { type: "value" },
     series: [{ type: "bar", data: sampleData.employees.map((e) => e.leavesTaken), name: "Leaves Taken" }],
   });
-
   const getHighestLeaveChart = () => {
-    const sortedEmployees = [...sampleData.employees].sort((a, b) => b.thisYear - a.thisYear);
-    const topThree = sortedEmployees.slice(0, 3);
+    if (!Object.keys(employeeYearlyLeaveData).length) return {};
+    
+    const employees = Object.keys(employeeYearlyLeaveData);
+    const years = [...new Set(employees.flatMap(emp => Object.keys(employeeYearlyLeaveData[emp])))].sort();
+    
+    const topEmployees = employees.map(emp => ({
+      name: emp,
+      totalLeaves: years.reduce((sum, year) => sum + (employeeYearlyLeaveData[emp][year] || 0), 0),
+    })).sort((a, b) => b.totalLeaves - a.totalLeaves).slice(0, 3);
+
+    const seriesData = topEmployees.map(emp => ({
+      name: emp.name,
+      value: emp.totalLeaves,
+    }));
 
     return {
       tooltip: { trigger: "item" },
-      series: [{ type: "pie", radius: "50%", data: topThree.map((e) => ({ value: e.thisYear, name: e.name })), label: { show: true, formatter: "{b}: {c} leaves" } }],
+      legend: { show: false },
+      series: [{
+        type: "pie",
+        radius: "50%",
+        data: seriesData,
+        label: { show: true, formatter: "{b}: {c} leaves" },
+      }],
     };
   };
+
 
   const getMonthlyLeaveChart = () => ({
     tooltip: { trigger: "axis" },
@@ -217,7 +251,7 @@ const employeeLeaveTypes = {
       <Grid item xs={16} md={5}>
         <Card>
           <CardContent>
-            <Typography variant="h6">Leave Requests Status Trend</Typography>
+            <Typography variant="h6">Leave Approval status</Typography>
             <ReactECharts option={getLeaveApprovalRateChart()} style={{ height: 300 }} />
           </CardContent>
         </Card>
@@ -243,47 +277,24 @@ const employeeLeaveTypes = {
       <Grid item xs={12} md={6}>
         <Card>
           <CardContent>
-            <Typography variant="h6">Employee Leave Status</Typography>
-            <ReactECharts option={getEmployeeLeaveChart()} style={{ height: 300 }} />
+            <Typography variant="h6">Employee Leave Status by Year</Typography>
+            <ReactECharts option={getEmployeeYearlyLeaveChart()} style={{ height: 300 }} />
           </CardContent>
         </Card>
       </Grid>
 
+
       <Grid item xs={12} md={6}>
         <Card>
           <CardContent>
-            <Typography variant="h6">Highest Leave Taken Employee</Typography>
+            <Typography variant="h6">Top 3 Leave Takers</Typography>
             <ReactECharts option={getHighestLeaveChart()} style={{ height: 300 }} />
           </CardContent>
         </Card>
       </Grid>
 
-      <Grid item xs={12}>
-        <Card>
-          <CardContent>
-            <Typography variant="h6">Monthly Leave Trends</Typography>
-            <ReactECharts option={getMonthlyLeaveChart()} style={{ height: 300 }} />
-          </CardContent>
-        </Card>
-      </Grid>
 
-      <Grid item xs={12} md={6}>
-        <Card>
-          <CardContent>
-            <Typography variant="h6">Employee Leave Types</Typography>
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <Select value={selectedEmployee} onChange={(e) => setSelectedEmployee(e.target.value)}>
-                {Object.keys(employeeLeaveTypes).map((emp) => (
-                  <MenuItem key={emp} value={emp}>
-                    {emp}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <ReactECharts option={getEmployeeLeaveTypeChart(selectedEmployee)} style={{ height: 300 }} />
-          </CardContent>
-        </Card>
-      </Grid>
+      
     </Grid>
   );
 };

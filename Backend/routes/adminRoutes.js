@@ -2,24 +2,57 @@ const express = require("express");
 const Leave = require("../models/Leave");
 const User = require("../models/User");
 const router = express.Router();
-
-
 router.get("/leave-trends/:year", async (req, res) => {
   try {
     const { year } = req.params;
+
     const leaves = await Leave.aggregate([
-      { $match: { year: { $in: [parseInt(year)] } } },
-      { $unwind: "$month" },
-      { $group: { _id: "$month", count: { $sum: 1 } } },
+      {
+        $match: {
+          year: { $in: [parseInt(year)] }, // ✅ Ensure correct year filtering
+        }
+      },
+      {
+        $project: {
+          month: 1,
+          duration: 1,
+          status: 1
+        }
+      },
+      {
+        $unwind: {
+          path: "$month",
+          includeArrayIndex: "index" // ✅ Get index to align with duration & status
+        }
+      },
+      {
+        $project: {
+          month: 1,
+          duration: { $arrayElemAt: ["$duration", "$index"] }, // ✅ Get correct duration using index
+          status: { $arrayElemAt: ["$status", "$index"] } // ✅ Get correct status using index
+        }
+      },
+      {
+        $match: {
+          status: "Approved" // ✅ Only consider approved leaves
+        }
+      },
+      {
+        $group: {
+          _id: "$month",
+          totalLeaveDays: { $sum: "$duration" } // ✅ Sum durations correctly
+        }
+      },
       { $sort: { _id: 1 } }
     ]);
-    
+
     res.json({
       months: leaves.map(l => l._id),
-      leaveCounts: leaves.map(l => l.count)
+      leaveCounts: leaves.map(l => l.totalLeaveDays)
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error fetching leave trends:", err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
@@ -47,42 +80,46 @@ router.get("/department-leave/:year", async (req, res) => {
   }
 });
 
+// ✅ 4. Top Employees Who Took Leaves
 router.get("/top-leave-takers/:year", async (req, res) => {
   try {
     const { year } = req.params;
-    const reports = await getAdminReports();
+    const topEmployees = await Leave.aggregate([
+      { $match: { year: { $in: [parseInt(year)] } } }, // Match the year
+      { $match: { status: "Approved" } }, // Filter only "Approved" leaves
+      { $group: { 
+        _id: "$email", 
+        leavesTaken: { $sum: 1 }, 
+        empname: { $first: "$empname" } 
+      }},
+      { $sort: { leavesTaken: -1 } }, // Sort by leavesTaken in descending order
+      { $limit: 10 } // Get the top 10
+    ]);
 
-    const leaveTakers = reports
-      .map((report) => ({
-        empname: report.empname,
-        empid: report.empid,
-        email: report.email,
-        totalLeaves: report.leaves.filter(
-          (leave) => new Date(leave.startDate).getFullYear() === parseInt(year)
-        ).length,
-      }))
-      .filter((item) => item.totalLeaves > 0)
-      .sort((a, b) => b.totalLeaves - a.totalLeaves)
-      .slice(0, 10);
-
-    res.status(200).json(leaveTakers);
-  } catch (error) {
-    console.error("Error fetching top leave takers:", error);
-    res.status(500).json({ message: "Server Error" });
+    res.json(topEmployees);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
-
 router.get("/leave-status/:year", async (req, res) => {
   try {
     const { year } = req.params;
-    const reports = await getAdminReports();
 
-    const leaveStatuses = reports.flatMap((report) =>
-      report.leaves
-        .filter((leave) => new Date(leave.startDate).getFullYear() === parseInt(year))
+    // Fetch all leaves that have a start date in the given year
+    const leaves = await Leave.find();
+
+    // Filter leaves for the given year and extract statuses
+    const leaveStatuses = leaves.flatMap((leave) =>
+      leave.startDate
+        .map((start, index) => ({
+          status: leave.status[index],
+          year: new Date(start).getFullYear(),
+        }))
+        .filter((leave) => leave.year === parseInt(year))
         .map((leave) => leave.status)
     );
 
+    // Count occurrences of each status
     const statusCounts = leaveStatuses.reduce((acc, status) => {
       acc[status] = (acc[status] || 0) + 1;
       return acc;
@@ -94,11 +131,6 @@ router.get("/leave-status/:year", async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 });
-
-
-
-
-
 
 router.get("/leave-type-distribution/:year", async (req, res) => {
   try {
@@ -122,7 +154,6 @@ router.get("/leave-type-distribution/:year", async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 });
-
 async function getAdminReports(project = "", search = "") {
   try {
     let query = {};
@@ -146,17 +177,19 @@ async function getAdminReports(project = "", search = "") {
           project: employee.project,
           email: employee.email,
           leaves: leaves.flatMap((leave) =>
-            leave.startDate.map((start, index) => ({
-              leaveType: leave.leaveType,
-              startDate: new Date(start).toLocaleDateString(),
-              endDate: leave.endDate[index]
-                ? new Date(leave.endDate[index]).toLocaleDateString()
-                : "N/A",
-              status: leave.status[index] || "Pending",
-              reason: leave.reason[index] || "No reason provided",
-              duration: leave.duration[index] || "N/A",
-              attachments: leave.attachments[index] || [],
-            }))
+            leave.startDate
+              .map((start, index) => ({
+                leaveType: leave.leaveType,
+                startDate: new Date(start).toLocaleDateString(),
+                endDate: leave.endDate[index]
+                  ? new Date(leave.endDate[index]).toLocaleDateString()
+                  : "N/A",
+                status: leave.status[index] || "Pending",
+                reason: leave.reason[index] || "No reason provided",
+                duration: leave.duration[index] || "N/A",
+                attachments: leave.attachments[index] || [],
+              }))
+              .filter((leave) => leave.status === "Approved") // ✅ Filter only approved requests
           ),
         };
       })
