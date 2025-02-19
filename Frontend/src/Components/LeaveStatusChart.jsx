@@ -11,7 +11,7 @@ const LeaveStatusChart = ({ email }) => {
 
   const yearsRange = useMemo(() => {
     const currentYear = new Date().getFullYear();
-    return Array.from({ length: 15 }, (_, i) => currentYear - i);
+    return Array.from({ length: 15 }, (_, i) => currentYear + 1 - i);
   }, []);
 
   useEffect(() => {
@@ -44,12 +44,21 @@ const LeaveStatusChart = ({ email }) => {
     const leaveTypes = chartData.map((item) => item.leaveType);
     const statuses = ["Pending", "Approved", "Rejected"];
     const barCount = leaveTypes.length;
+    const barWidth = barCount < 4 ? 40 : "60%";
+  
+    const statusColors = {
+      Pending: "#F4C542",  // Yellow for waiting
+      Approved: "#4CAF50", // Green for approved
+      Rejected: "#F44336", // Red for rejected
+    };
   
     const seriesData = statuses.map((status) => ({
       name: status,
       type: "bar",
       stack: "total",
+      barWidth,
       emphasis: { focus: "series" },
+      itemStyle: { color: statusColors[status] }, // Assign colors dynamically
       data: chartData.map((item) => item.statuses[status] || 0),
     }));
   
@@ -57,14 +66,14 @@ const LeaveStatusChart = ({ email }) => {
       tooltip: { trigger: "axis" },
       legend: { 
         data: statuses, 
-        orient: "horizontal", // Arrange horizontally
-        bottom: "5%",         // Place at bottom
-        left: "center",       // Center align
+        orient: "horizontal",
+        bottom: "5%",
+        left: "center",
       },
       grid: { 
         left: "5%", 
         right: "5%", 
-        bottom: "15%", // Adjust to avoid legend overlap
+        bottom: "15%",
         containLabel: true,
       },
       xAxis: {
@@ -80,6 +89,7 @@ const LeaveStatusChart = ({ email }) => {
       series: seriesData,
     };
   };
+  
   
   
   return (

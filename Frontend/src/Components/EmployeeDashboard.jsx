@@ -1,12 +1,35 @@
 import { useEffect, useState, useMemo } from "react";
 import ReactECharts from "echarts-for-react";
-import { Card, CardContent, Typography, Grid, MenuItem, Select } from "@mui/material";
+import {
+  Card,
+  CardContent,
+  Typography,
+  Grid,
+  MenuItem,
+  Select,
+} from "@mui/material";
 import axios from "axios";
 import LeaveStatusChart from "./LeaveStatusChart";
 import LeaveBalanceChart from "./LeaveBalanceChart";
 import LeaveTrendChart from "./LeaveTrendChart";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
-const EmployeeDashboard = ({ email }) => {
+const EmployeeDashboard = ({ email: propEmail }) => {
+  const { email: routeEmail } = useParams(); // Get email from URL if available
+  const email = propEmail || routeEmail; // Use prop email if passed, otherwise use route email
+
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Check if the user came from "Reports"
+  const cameFromReports = location.state?.fromReports || false;
+
+  const handleBack = () => {
+    if (cameFromReports) {
+      navigate(-1); // Go back to reports
+    }
+  };
+
   const [monthlyTrends, setMonthlyTrends] = useState([]);
   const [leaveTypes, setLeaveTypes] = useState([]);
   const [leaveData, setLeaveData] = useState([]);
@@ -16,7 +39,7 @@ const EmployeeDashboard = ({ email }) => {
 
   const yearsRange = useMemo(() => {
     const currentYear = new Date().getFullYear();
-    return Array.from({ length: 5 }, (_, i) => currentYear - i);
+    return Array.from({ length: 15 }, (_, i) => currentYear + 1 - i);
   }, []);
 
   // 🔹 Fetch Leave Trends & Leave Types (On Mount)
@@ -58,7 +81,7 @@ const EmployeeDashboard = ({ email }) => {
 
   // 🟢 Monthly Leave Trends - Bar Chart
   const monthlyTrendsOptions = {
-    title: { text: "Monthly Leave Trends", left: "center" },
+    title: { text: "Monthly Approved Leave Trends", left: "center" },
     tooltip: { trigger: "axis" },
     xAxis: {
       type: "category",
@@ -113,18 +136,17 @@ const EmployeeDashboard = ({ email }) => {
   //   })),
   // };
 
-
   // const leaveTypesOptions = {
   //   title: { text: "Leave Status Breakdown", left: "center" },
   //   tooltip: { trigger: "axis" },
   //   legend: { bottom: 0 },
-  
+
   //   xAxis: {
   //     type: "category",
   //     data: [...new Set(leaveTypes.map((item) => item._id.leaveType))], // Unique leave types
   //   },
   //   yAxis: { type: "value" },
-  
+
   //   series: [
   //     {
   //       name: "Pending",
@@ -171,8 +193,7 @@ const EmployeeDashboard = ({ email }) => {
               )}
             </CardContent>
           </Card> */}
-                    <LeaveStatusChart email={email} />
-
+          <LeaveStatusChart email={email} />
         </Grid>
 
         {/* 🔹 Leave Type Distribution */}
@@ -194,7 +215,7 @@ const EmployeeDashboard = ({ email }) => {
 
       <Grid container spacing={3} sx={{ p: 3 }}>
         {/* 🔹 Leave Status Breakdown */}
-        <Grid item xs={12} >
+        <Grid item xs={12}>
           {/* <Card>
             <CardContent>
               {loading ? (
@@ -220,7 +241,6 @@ const EmployeeDashboard = ({ email }) => {
             </CardContent>
           </Card> */}
           <LeaveBalanceChart email={email} />
-
         </Grid>
       </Grid>
     </Grid>

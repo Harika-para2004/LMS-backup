@@ -144,13 +144,13 @@ const Sidebar = ({
               <FontAwesomeIcon icon={faChartLine} /> Leave Balances
             </Link>
           </li> */}
-          <li>
+             <li>
             <Link
               to="#"
-              className={selectedCategory === "reports" ? "active-tab" : ""}
-              onClick={() => setSelectedCategory("reports")}
+              className={selectedCategory === "dashboard" ? "active-tab" : ""}
+              onClick={() => setSelectedCategory("dashboard")}
             >
-              <FontAwesomeIcon icon={faFileAlt} /> Reports
+              <FontAwesomeIcon icon={faChartLine} /> Dashboard
             </Link>
           </li>
           {/* <li className="seg">Employee Actions</li> */}
@@ -173,15 +173,7 @@ const Sidebar = ({
               <FontAwesomeIcon icon={faHistory} /> History
             </Link>
           </li>
-          <li>
-            <Link
-              to="#"
-              className={selectedCategory === "dashboard" ? "active-tab" : ""}
-              onClick={() => setSelectedCategory("dashboard")}
-            >
-              <FontAwesomeIcon icon={faChartLine} /> Dashboard
-            </Link>
-          </li>
+      
         </>
       );
     }

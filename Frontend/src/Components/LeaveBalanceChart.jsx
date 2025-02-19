@@ -12,7 +12,7 @@ const LeaveBalanceChart = ({ email }) => {
 
   const yearsRange = useMemo(() => {
     const currentYear = new Date().getFullYear();
-    return Array.from({ length: 15 }, (_, i) => currentYear - i);
+    return Array.from({ length: 15 }, (_, i) => currentYear + 1 - i);
   }, []);
 
   useEffect(() => {

@@ -107,7 +107,7 @@ const Reports = ({email}) => {
               <th>Start Date</th>
               <th>End Date</th>
               <th>Status</th>
-            </tr>
+            </tr> 
           </thead>
           <tbody>
             {sortedReports.length > 0 ? (

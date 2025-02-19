@@ -551,7 +551,7 @@ body, html {
   font-size: 1.5rem;
   font-weight: bold;
   margin-bottom: 10px;
-  color: #384959;
+  color: var(--dark-blue);
   border-bottom: 2px solid #f0f0f0;
   padding-bottom: 8px;
   text-align: center;

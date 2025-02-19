@@ -30,8 +30,9 @@ import {
 } from "@mui/material";
 import LeavePolicyPage from "./LeavePolicyPage";
 import Sidebar from "./Sidebar";
-import Reports from "./ReportsAdmin";
+import ReportsAdmin from "./ReportsAdmin";
 import LeaveRequestsTable from "./LeaveRequestsTable";
+import AdminTrends from "./AdminTrends";
 
 function AdminDashboard() {
   const [selectedCategory, setSelectedCategory] = useState("holiday-calendar");
@@ -1070,7 +1071,7 @@ function AdminDashboard() {
           </div>
         );
       case "reports":
-        return <Reports />;
+        return <AdminTrends />;
 
       case "leaverequests":
         return (
@@ -1205,7 +1206,7 @@ function AdminDashboard() {
               
             </div>
             <div>
-      <input type="file" accept=".xlsx, .xls" onChange={handleFileChange} id="file-input"/>
+      {/* <input type="file" accept=".xlsx, .xls" onChange={handleFileChange} id="file-input"/>
       <Button
         onClick={handleUpload}
         variant="contained"
@@ -1214,7 +1215,32 @@ function AdminDashboard() {
         startIcon={!loading && <CloudUploadIcon />}
       >
         {loading ? <CircularProgress size={24} color="inherit" /> : "Upload Employees"}
+      </Button> */}
+      <div style={styles.container}>
+      {/* File Input (Styled Label for better UI) */}
+      <label htmlFor="file-input" style={styles.fileInputLabel}>
+        <input
+          type="file"
+          accept=".xlsx, .xls"
+          onChange={handleFileChange}
+          id="file-input"
+          style={styles.fileInput}
+        />
+        Choose File
+      </label>
+
+      {/* Upload Button */}
+      <Button
+        onClick={handleUpload}
+        variant="contained"
+        color="primary"
+        disabled={!file || loading}
+        startIcon={!loading && <CloudUploadIcon />}
+        style={styles.uploadButton}
+      >
+        {loading ? <CircularProgress size={24} color="inherit" /> : "Upload Employees"}
       </Button>
+    </div>
       {message && <p>{message}</p>}
     </div>
 
@@ -1471,5 +1497,42 @@ function AdminDashboard() {
     </div>
   );
 }
+
+const styles = {
+  container: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "1rem",
+    padding: "1.5rem",
+    border: "1px solid #ddd",
+    borderRadius: "8px",
+    backgroundColor: "#f9f9f9",
+    width: "300px",
+    boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+    marginBottom: "20px",
+  },
+  fileInputLabel: {
+    backgroundColor: "#007bff",
+    color: "#fff",
+    padding: "10px 20px",
+    borderRadius: "5px",
+    cursor: "pointer",
+    fontWeight: "bold",
+    transition: "background 0.3s ease",
+    textAlign: "center",
+    width: "100%",
+  },
+  fileInputLabelHover: {
+    backgroundColor: "#0056b3",
+  },
+  fileInput: {
+    display: "none",
+  },
+  uploadButton: {
+    width: "100%",
+    padding: "10px",
+  },
+};
 
 export default AdminDashboard;

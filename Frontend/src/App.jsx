@@ -7,6 +7,8 @@ import Manager from "./Components/Manager";
 import Admin from "./Components/Admin";
 import SessionExpired from "./Components/SessionExpired";
 import PrivateRoute from "./Components/PrivateRoute";
+import EmployeeDashboard from "./Components/EmployeeDashboard";
+import DashboardLayout from "./Components/DashboardLayout";
 
 function App() {
   return (
@@ -18,16 +20,31 @@ function App() {
             <Route path="/session-expired" element={<SessionExpired />} />
             <Route
               path="/employee"
-              element={<PrivateRoute allowedRoles={["employee"]}><Employee /></PrivateRoute>}
+              element={
+                <PrivateRoute allowedRoles={["employee"]}>
+                  <Employee />
+                </PrivateRoute>
+              }
             />
             <Route
               path="/manager"
-              element={<PrivateRoute allowedRoles={["manager"]}><Manager /></PrivateRoute>}
+              element={
+                <PrivateRoute allowedRoles={["manager"]}>
+                  <Manager />
+                </PrivateRoute>
+              }
             />
             <Route
               path="/admin"
-              element={<PrivateRoute allowedRoles={["admin"]}><Admin /></PrivateRoute>}
+              element={
+                <PrivateRoute allowedRoles={["admin"]}>
+                  <Admin />
+                </PrivateRoute>
+              }
             />
+            <Route path="/employee-dashboard" element={<DashboardLayout />}>
+              <Route path=":email" element={<EmployeeDashboard />} />
+            </Route>
           </Routes>
         </SnackbarProvider>
       </BrowserRouter>
