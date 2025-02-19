@@ -50,6 +50,14 @@ router.post('/uploadEmployees', upload.single('file'), async (req, res) => {
                 failedEntries.push({ email: Email, reason: "User already exists!" });
                 continue;
             }
+            if (String(Role).toLowerCase() === "manager") {
+              const existingManager = await User.findOne({ role: "manager", project:Project  });
+              if (existingManager) {
+                 
+                  failedEntries.push({ email: Email, reason: `Manager already exists for project '${Project}'` });
+                  continue;
+              }
+          }
             // Store original password for email
             const originalPassword = Password.toString();
   
@@ -113,6 +121,7 @@ router.post('/uploadEmployees', upload.single('file'), async (req, res) => {
         res.status(500).json({ message: "Error processing file" });
     }
   });
+  
   const formatExcelDate = (serial) => {
     if (!serial || typeof serial !== "number") return null;
   

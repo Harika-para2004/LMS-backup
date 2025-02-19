@@ -7,18 +7,29 @@ require('dotenv').config();
 
 
 router.post('/addEmployee', async (req, res) => {
-  const { empname,empid, email, password,gender, project ,role,managerEmail} = req.body;
-/* app name:lmsappgmail*/
-/* password:jmfe rmka otnc upxe*/
+  let { empname, empid, email, password, gender, project, role, managerEmail } = req.body;
 
   try {
+    // Check if email already exists
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: "User already exists!" });
     }
+    if (project) {
+      project = project.trim().toLowerCase();
+    }
 
+    // Enforce unique project per Manager
+    if (role === "Manager") {
+      const projectExists = await User.findOne({ project, role: "Manager" });
+      if (projectExists) {
+        return res.status(400).json({ message: "A Manager already exists for this project!" });
+      }
+    }
+    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Create new user
     const newUser = new User({
       empname,
       empid,
@@ -27,27 +38,27 @@ router.post('/addEmployee', async (req, res) => {
       gender,
       project,
       role,
-      ...(role === "Employee" && { managerEmail })
+      ...(role === "Employee" && { managerEmail }),
     });
 
     await newUser.save();
 
+    // Send welcome email
     const transporter = nodemailer.createTransport({
-      service: 'Gmail', // You can use any email service, like 'Outlook', 'Yahoo', etc.
+      service: 'Gmail',
       auth: {
-        user: 'lahirikokkiligadda@gmail.com', // Replace with your email
-        pass: 'jmfe rmka otnc upxe' // Replace with your email password or app-specific password
+        user: 'lahirikokkiligadda@gmail.com',
+        pass: 'jmfe rmka otnc upxe'
       }
     });
 
-    // Email content
     const mailOptions = {
       from: 'lahirikokkiligadda@gmail.com',
       to: email,
       subject: 'Welcome to Quadface Company!',
-      text: `Hello ${empname},\n\nWelcome To Leave Management System. We are excited to have you on board.\nUsername:${email}\nPassword:${password}\n\nBest regards,\nAdmin`    };
+      text: `Hello ${empname},\n\nWelcome To Leave Management System. We are excited to have you on board.\nUsername: ${email}\nPassword: ${password}\n\nBest regards,\nAdmin`
+    };
 
-    // Send the email
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
         console.log('Error sending email:', error);
@@ -57,11 +68,13 @@ router.post('/addEmployee', async (req, res) => {
         res.status(201).json({ message: 'Employee Added successfully!', userId: newUser._id });
       }
     });
+
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: 'Error registering user' });
   }
 });
+
 
 // Sign-in route
 router.post('/signin', async (req, res) => {

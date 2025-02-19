@@ -106,7 +106,6 @@ function AdminDashboard() {
       const selectedFile = event.target.files[0];
       if (selectedFile) {
         setFile(selectedFile);
-        console.log("File selected:", selectedFile);
       }
     };
    
@@ -128,6 +127,13 @@ function AdminDashboard() {
        );
    
        setMessage(response.data.message);
+       if (response.data.failedEntries.length > 0) {
+        const failureMessages = response.data.failedEntries
+          .map(entry => `• ${entry.email}: ${entry.reason}`)
+          .join("\n");
+        
+        alert(`Some entries were skipped:\n${failureMessages}`);
+      }
        setFile(null);
        document.getElementById("file-input").value = null;
        fetchEmployees();
@@ -272,31 +278,33 @@ function AdminDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(empData),
       });
-
+  
+      const responseData = await response.json(); // Parse JSON response
+  
       if (response.ok) {
-        const responseData = await response.json();
         alert(responseData.message);
-
+  
         if (response.status === 200 || response.status === 201) {
           const userDataResponse = await fetch(
             `${BASE_URL}api/auth/user/${responseData.userId}`
           );
+  
           if (userDataResponse.ok) {
             const userData = await userDataResponse.json();
-
+  
             // Update employee list immediately
             setEmpList((prevList) => [...prevList, userData]);
-
+  
             // Set active category to "employee-list" (to navigate to the employee list view)
             setSelectedCategory("employee-list");
-
+  
             // Store user data in local storage
             localStorage.setItem("userData", JSON.stringify(userData));
           } else {
             alert("Failed to fetch user data");
           }
         }
-
+  
         // Clear the form and close the modal
         setEmpData({
           empname: "",
@@ -306,15 +314,18 @@ function AdminDashboard() {
           project: "",
           gender: "",
           role: "",
+          managerEmail: "",
         });
         handleAddEmployeeClose();
       } else {
-        alert("Failed to add employee");
+        // Display specific error message from the backend
+        alert(responseData.message || "Failed to add employee");
       }
     } catch (error) {
-      alert("Error:", error.message);
+      alert("Error: " + error.message);
     }
   };
+  
 
   const [errors, setErrors] = useState({});
 
@@ -354,67 +365,42 @@ function AdminDashboard() {
 
   const handleAddHoliday = async () => {
     if (!validateForm()) return;
-
+  
     try {
       const { date, holidayName, holidayType } = formData;
-
-      // Convert date to "dd-MMM" format (e.g., "10-Jan")
-      const [year, month, day] = date.split("-"); // Split the date into year, month, and day
-      const monthNames = [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-      ];
-      const formattedDate = `${day}-${
-        monthNames[parseInt(month, 10) - 1]
-      }-${year}`; // Format the date
-
+  
+      // Convert date format (dd-MMM-yyyy)
+      const [year, month, day] = date.split("-");
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const formattedDate = `${day}-${monthNames[parseInt(month, 10) - 1]}-${year}`;
+  
+      // Send API request
       const response = await fetch(`${BASE_URL}holidays`, {
         method: "POST",
-        body: JSON.stringify({
-          date: formattedDate, // Send the formatted date
-          name: holidayName,
-          type: holidayType,
-        }),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        body: JSON.stringify({ date: formattedDate, name: holidayName, type: holidayType }),
+        headers: { "Content-Type": "application/json" },
       });
-
+  
+      const data = await response.json();
+  
       if (!response.ok) {
-        throw new Error("Failed to add holiday.");
+        alert(data.message); //  Show alert if holiday already exists
+        return;
       }
-
-      const newHoliday = await response.json();
-
-      // Update state with the sorted holidays after adding
-      setHolidays(
-        (prevHolidays) =>
-          sortHolidaysByMonthAndCustomDay([...prevHolidays, newHoliday]) // Sort after adding the new holiday
-      );
-
-      // Reset the form
-      setFormData({
-        date: "",
-        holidayName: "",
-        holidayType: "Mandatory",
-      });
-
-      setShowModal(false); // Close the modal
+  
+      // Update state with the new holiday
+      setHolidays((prevHolidays) => sortHolidaysByMonthAndCustomDay([...prevHolidays, data]));
+  
+      // Reset form
+      setFormData({ date: "", holidayName: "", holidayType: "Mandatory" });
+      setShowModal(false);
     } catch (error) {
       console.error("Error adding holiday:", error);
-      setError("Failed to add holiday. Please try again later.");
+      alert("Failed to add holiday. Please try again later."); //  Show alert on error
     }
   };
+  
+  
 
   const handleEditHoliday = () => {
     if (!validateForm()) return; // Don't proceed if validation fails
@@ -1212,6 +1198,7 @@ function AdminDashboard() {
         color="primary"
         disabled={!file || loading}
         startIcon={!loading && <CloudUploadIcon />}
+        sx={{marginBottom:3,marginTop:3}}
       >
         {loading ? <CircularProgress size={24} color="inherit" /> : "Upload Employees"}
       </Button>

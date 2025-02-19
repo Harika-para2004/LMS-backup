@@ -273,22 +273,30 @@ app.post("/holidays", async (req, res) => {
     return res.status(400).json({ message: "All fields are required!" });
   }
 
-  const holidayDate = new Date(date);
-  const dayOfWeek = holidayDate.toLocaleString("en-us", { weekday: "long" });
-
-  const newHoliday = new Holiday({ date, day: dayOfWeek, name, type });
-  console.log(newHoliday);
-
   try {
+    // ✅ Check if a holiday already exists on the same date
+    const existingHoliday = await Holiday.findOne({ date });
+
+    if (existingHoliday) {
+      return res.status(400).json({ message: `A holiday already exists on ${date}: ${existingHoliday.name}` });
+    }
+
+    // Get the day of the week
+    const holidayDate = new Date(date);
+    const dayOfWeek = holidayDate.toLocaleString("en-us", { weekday: "long" });
+
+    // Create and save new holiday
+    const newHoliday = new Holiday({ date, day: dayOfWeek, name, type });
     const savedHoliday = await newHoliday.save();
+
     res.status(201).json(savedHoliday);
   } catch (err) {
     console.error("Error saving holiday:", err);
-    res
-      .status(500)
-      .json({ message: "Error creating holiday", error: err.message });
+    res.status(500).json({ message: "Error creating holiday", error: err.message });
   }
 });
+
+
 
 // Update a holiday
 app.put("/holidays/:id", async (req, res) => {
