@@ -55,7 +55,7 @@ import {
                 <TableCell sx={{ fontWeight: "bold", color: "#fff" }}>Dashboard</TableCell>
               </TableRow>
             </TableHead>
-            <TableBody>
+            <TableBody >
               {employees.map((emp) => (
                 <TableRow key={emp.empid}>
                   <TableCell>{emp.empid}</TableCell>

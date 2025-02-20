@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import ReactECharts from "echarts-for-react";
 import axios from "axios";
+import OverlapReport from "./OverlapReport";
 
 const AdminAnalytics = () => {
   const [year, setYear] = useState(new Date().getFullYear());
@@ -133,14 +134,19 @@ const AdminAnalytics = () => {
   const isSingleBar = leaveTrends?.months?.length === 3;
 
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
+  const colors = [
+    "#FF5733", "#33FF57", "#3357FF", "#FF33A8", "#FFC300", 
+    "#DAF7A6", "#581845", "#900C3F", "#C70039", "#E74C3C", 
+    "#8E44AD", "#1ABC9C"
+  ];
+  
   const trendsOptions = {
     title: { text: `Monthly Leave Trends - ${year}`, left: "center" },
     tooltip: { trigger: "axis" },
     grid: { left: "5%", right: "5%", bottom: "10%", containLabel: true },
     xAxis: { 
       type: "category", 
-      data: leaveTrends?.months?.map(month => monthNames[month - 1]) || [] // Convert numbers to month names
+      data: leaveTrends?.months?.map(month => monthNames[month - 1]) || [] 
     },
     yAxis: { type: "value" },
     series: [
@@ -149,9 +155,41 @@ const AdminAnalytics = () => {
         type: "bar",
         barWidth: leaveTrends?.months?.length < 3 ? 40 : "60%",
         data: leaveTrends?.leaveCounts || [],
+        itemStyle: {
+          color: (params) => {
+            const colors = [
+              ["#FF6B6B", "#FF8E8E"], // Soft Red
+              ["#6B8E23", "#A0C84C"], // Olive Green
+              ["#1E90FF", "#87CEFA"], // Sky Blue
+              ["#FFB84D", "#FFD580"], // Warm Orange
+              ["#9370DB", "#D8BFD8"], // Lavender
+              ["#2E8B57", "#66CDAA"], // Sea Green
+              ["#DC143C", "#FF6F61"], // Crimson
+              ["#4682B4", "#5F9EA0"], // Steel Blue
+              ["#8B4513", "#CD853F"], // Saddle Brown
+              ["#708090", "#A9A9A9"], // Slate Gray
+              ["#32CD32", "#90EE90"], // Lime Green
+              ["#9932CC", "#BA55D3"], // Dark Orchid
+            ];
+            const gradient = colors[params.dataIndex % colors.length];
+            return {
+              type: "linear",
+              x: 0,
+              y: 0,
+              x2: 0,
+              y2: 1,
+              colorStops: [
+                { offset: 0, color: gradient[0] }, // Top color
+                { offset: 1, color: gradient[1] }, // Bottom color
+              ],
+            };
+          },
+        },
       },
     ],
   };
+  
+  
   
   const leaveTypesOptions = {
     title: { text: `Leave Type Distribution - ${year}`, left: "center" },
@@ -182,7 +220,7 @@ const AdminAnalytics = () => {
     grid: { left: "5%", right: "5%", bottom: "10%", containLabel: true },
     xAxis: {
       type: "category",
-      data:  (departmentLeaves?.departments) || [],
+      data: departmentLeaves?.departments || [],
       axisLabel: {
         interval: 0,
         rotate: 45,
@@ -196,9 +234,27 @@ const AdminAnalytics = () => {
         type: "bar",
         barWidth: (departmentLeaves?.departments?.length || 0) < 3 ? 50 : "60%",
         data: departmentLeaves?.leaveCounts || [],
+        itemStyle: {
+          color: (params) => {
+            const total = departmentLeaves?.departments?.length || 1;
+            const hue = (params.dataIndex * (360 / total)) % 360; // Spread colors evenly
+            return {
+              type: "linear",
+              x: 0,
+              y: 0,
+              x2: 0,
+              y2: 1,
+              colorStops: [
+                { offset: 0, color: `hsl(${hue}, 80%, 60%)` }, // Brighter top
+                { offset: 1, color: `hsl(${hue}, 70%, 40%)` }, // Darker bottom
+              ],
+            };
+          },
+        },
       },
     ],
   };
+  
 
   const topLeaveTakersOptions = {
     title: { text: `Top 10 Leave Takers - ${year}`, left: "center" },
@@ -213,7 +269,23 @@ const AdminAnalytics = () => {
         type: "bar",
         data: topLeaveTakers?.leaveCounts || [],
         barWidth: topLeaveTakers?.length < 4 ? 40 : "60%",
-        // itemStyle: { color: "#ff7f50" },
+        itemStyle: {
+          color: (params) => {
+            const total = topLeaveTakers?.employees?.length || 1;
+            const hue = (params.dataIndex * (360 / total)) % 360; // Spread colors evenly
+            return {
+              type: "linear",
+              x: 0,
+              y: 0,
+              x2: 0,
+              y2: 1,
+              colorStops: [
+                { offset: 0, color: `hsl(${hue}, 80%, 60%)` }, // Brighter top
+                { offset: 1, color: `hsl(${hue}, 70%, 40%)` }, // Darker bottom
+              ],
+            };
+          },
+        },
       },
     ],
   };
@@ -254,7 +326,7 @@ const AdminAnalytics = () => {
   };
 
   return (
-    <Card sx={{ p: 2, width: "100%", mb: 2 }}>
+    <Card sx={{ p: 2, width: "100%", mb: 2,overflowY:"auto" }}>
       <CardContent>
         <FormControl>
           <InputLabel id="select-label">Select Year</InputLabel>
@@ -352,6 +424,10 @@ const AdminAnalytics = () => {
                   style={{ height: 400, width: "100%" }}
                 />
               )}
+            </Grid>
+
+            <Grid item md={12} style={{ height: 400, width: "100%" }}>
+              <OverlapReport/>
             </Grid>
 
           

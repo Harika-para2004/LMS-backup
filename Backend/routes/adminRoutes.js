@@ -2,6 +2,83 @@ const express = require("express");
 const Leave = require("../models/Leave");
 const User = require("../models/User");
 const router = express.Router();
+
+router.get("/projects", async (req, res) => {
+  try {
+    const projects = await User.distinct("project", { project: { $ne: null } }); // Fetch unique non-null projects
+    if (!projects.length) {
+      return res.status(404).json({ message: "No projects found" });
+    }
+    res.json(projects.map((name) => ({ name }))); // Format as [{ name: "Project A" }]
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ✅ Route to get leave overlap report for a selected project
+router.get("/leaves/overlap-report", async (req, res) => {
+  try {
+    const { project } = req.query;
+    if (!project) {
+      return res.status(400).json({ error: "Project is required" });
+    }
+
+    // ✅ Step 1: Get all employees in the project
+    const employees = await User.find({ project }, "empid empname email");
+    if (employees.length === 0) {
+      return res.status(404).json({ message: "No employees found in this project" });
+    }
+
+    // ✅ Step 2: Fetch leave records of employees
+    const employeeMap = new Map();
+    for (const emp of employees) {
+      const leaves = await Leave.find({ email: emp.email });
+      employeeMap.set(emp.empid, { empname: emp.empname, leaves });
+    }
+
+    // ✅ Step 3: Compare leave dates for overlaps
+    const overlapReport = [];
+
+    const empIds = Array.from(employeeMap.keys());
+    for (let i = 0; i < empIds.length; i++) {
+      for (let j = i + 1; j < empIds.length; j++) {
+        const emp1 = employeeMap.get(empIds[i]);
+        const emp2 = employeeMap.get(empIds[j]);
+
+        emp1.leaves.forEach((leave1) => {
+          emp2.leaves.forEach((leave2) => {
+            leave1.startDate.forEach((start1, idx1) => {
+              leave2.startDate.forEach((start2, idx2) => {
+                const end1 = new Date(leave1.endDate[idx1]);
+                const end2 = new Date(leave2.endDate[idx2]);
+
+                // ✅ Check for overlap: start1 <= end2 && start2 <= end1
+                if (new Date(start1) <= end2 && new Date(start2) <= end1) {
+                  overlapReport.push({
+                    employee1: emp1.empname,
+                    employee2: emp2.empname,
+                    overlappedStart: new Date(Math.max(new Date(start1), new Date(start2))),
+                    overlappedEnd: new Date(Math.min(end1, end2)),
+                    leaveType: leave1.leaveType,
+                  });
+                }
+              });
+            });
+          });
+        });
+      }
+    }
+
+    return res.json({ overlapReport });
+
+  } catch (error) {
+    console.error("Error fetching leave overlap report:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+
 router.get("/leave-trends/:year", async (req, res) => {
   try {
     const { year } = req.params;
@@ -84,23 +161,50 @@ router.get("/department-leave/:year", async (req, res) => {
 router.get("/top-leave-takers/:year", async (req, res) => {
   try {
     const { year } = req.params;
+
     const topEmployees = await Leave.aggregate([
-      { $match: { year: { $in: [parseInt(year)] } } }, // Match the year
-      { $match: { status: "Approved" } }, // Filter only "Approved" leaves
-      { $group: { 
-        _id: "$email", 
-        leavesTaken: { $sum: 1 }, 
-        empname: { $first: "$empname" } 
-      }},
-      { $sort: { leavesTaken: -1 } }, // Sort by leavesTaken in descending order
-      { $limit: 10 } // Get the top 10
+      {
+        $match: {
+          year: parseInt(year), // ✅ Ensure correct year filtering
+        },
+      },
+      {
+        $unwind: { path: "$status", includeArrayIndex: "index" }, // ✅ Get index to align with duration
+      },
+      {
+        $project: {
+          email: 1,
+          empname: 1,
+          duration: { $arrayElemAt: ["$duration", "$index"] }, // ✅ Get correct duration using index
+          status: 1,
+        },
+      },
+      {
+        $match: { status: "Approved" }, // ✅ Only include approved leaves
+      },
+      {
+        $group: {
+          _id: "$email",
+          empname: { $first: "$empname" },
+          leavesTaken: { $sum: "$duration" }, // ✅ Correctly sum only approved durations
+        },
+      },
+      {
+        $sort: { leavesTaken: -1 }, // ✅ Sort by total approved leave days
+      },
+      {
+        $limit: 10, // ✅ Get top 10 employees
+      },
     ]);
 
-    res.json(topEmployees);
+    res.status(200).json(topEmployees);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error fetching top leave takers:", err);
+    res.status(500).json({ error: "Server Error" });
   }
 });
+
+
 router.get("/leave-status/:year", async (req, res) => {
   try {
     const { year } = req.params;

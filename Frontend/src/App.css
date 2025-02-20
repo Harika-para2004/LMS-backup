@@ -7,6 +7,8 @@
   --purple: #9F32B2;       /* Purple */
   /* --dark-blue: rgba(46, 131, 146, 0.8);     */
   --dark-blue: #408591;    
+  --dark-blue: linear-gradient(180deg, #A3A7E4 , #313896 );
+
   --light-bg: #f8f9fa;     /* Neutral Light Background */
   --shadow-color: rgba(0, 0, 0, 0.15);
   /* --highlight-color: #9f32b2; */
@@ -478,8 +480,10 @@ body, html {
   border-bottom: 1px solid #ddd;
 }
 
+
+
 .holiday-table th {
-  background-color:var(--dark-blue);
+  background: var(--dark-blue);
   color: #fff;
   font-size: 16px;
   padding: 8px 5px;
@@ -985,7 +989,7 @@ body, html {
 }
 
 .history-container table th {
-  background-color:var(--dark-blue);
+  background:var(--dark-blue);
   font-weight: bold;
   color:white;
   padding: 7px;
@@ -1809,6 +1813,7 @@ body {
   white-space: nowrap; /* Prevents text from wrapping */
   min-width: 120px; /* Ensures columns don't shrink too much */
 }
+
 
 /* Table data */
  td {
