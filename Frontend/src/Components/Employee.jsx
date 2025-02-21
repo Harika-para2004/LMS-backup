@@ -12,43 +12,80 @@ import ApplyLeave from "./ApplyLeave";
 import Sidebar from "./Sidebar";
 import dayjs from "dayjs";
 import EmployeeDashboard from "./EmployeeDashboard";
+import { Outlet } from "react-router-dom";
+import { useManagerContext } from "../context/ManagerContext";
+
 const App = () => {
-  const [selectedCategory, setSelectedCategory] = useState("dashboard");
-  const [userData, setUserData] = useState(null);
-  const [username, setUsername] = useState("");
-  const [empid, setEmpid] = useState("");
-  const [email, setEmail] = useState("");
-  const [gender, setGender] = useState("");
-  const [managerEmail, setmanagerEmail] = useState("");
-  const [designation, setDesignation] = useState("");
-  const [project, setProject] = useState("");
-  const [holidays, setHolidays] = useState([]);
-  const [leaveHistory, setLeaveHistory] = useState([]);
-  const [leaveData, setLeaveData] = useState([]);
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [profileImage, setProfileImage] = useState(Profile);
-  const [file, setFile] = useState(null);
-  const [error, setError] = useState("");
-  const year = new Date().getFullYear();
-  const navigate = useNavigate(); // Correct usage of useNavigate
-  const showToast = useToast();
-  const [errors, setErrors] = useState({
-    leaveType: "",
-    from: "",
-    to: "",
-    reason: "",
-    mismatch: "",
-  });
-  const [formData, setFormData] = useState({
-    leaveType: "",
-    applyDate: "",
-    startDate: "",
-    endDate: "",
-    reason: "",
-  });
-  const [leavePolicies, setLeavePolicies] = useState([]);
-  const [leavePolicyRef, setLeavePolicyRef] = useState([]);
+  // const [selectedCategory, setSelectedCategory] = useState("dashboard");
+  // const [userData, setUserData] = useState(null);
+  // const [username, setUsername] = useState("");
+  // const [empid, setEmpid] = useState("");
+  // const [email, setEmail] = useState("");
+  // const [gender, setGender] = useState("");
+  // const [managerEmail, setmanagerEmail] = useState("");
+  // const [designation, setDesignation] = useState("");
+  // const [project, setProject] = useState("");
+  // const [holidays, setHolidays] = useState([]);
+  // const [leaveHistory, setLeaveHistory] = useState([]);
+  // const [leaveData, setLeaveData] = useState([]);
+  // const [newPassword, setNewPassword] = useState("");
+  // const [confirmPassword, setConfirmPassword] = useState("");
+  // const [profileImage, setProfileImage] = useState(Profile);
+  // const [file, setFile] = useState(null);
+  // const [error, setError] = useState("");
+  // const year = new Date().getFullYear();
+  // const navigate = useNavigate(); // Correct usage of useNavigate
+  // const showToast = useToast();
+  // const [errors, setErrors] = useState({
+  //   leaveType: "",
+  //   from: "",
+  //   to: "",
+  //   reason: "",
+  //   mismatch: "",
+  // });
+  // const [formData, setFormData] = useState({
+  //   leaveType: "",
+  //   applyDate: "",
+  //   startDate: "",
+  //   endDate: "",
+  //   reason: "",
+  // });
+  // const [leavePolicies, setLeavePolicies] = useState([]);
+  // const [leavePolicyRef, setLeavePolicyRef] = useState([]);
+
+  const {
+    modalOpen, setModalOpen,
+    leaveRequests, setLeaveRequests,
+        selectedLeave, setSelectedLeave,
+        selectedCategory, setSelectedCategory,
+        leaveData, setLeaveData,
+        managerEmail, setManagerEmail,
+        email, setEmail,
+        gender, setGender,
+        empid, setEmpid,
+        username, setUsername,
+        project, setProject,
+        designation, setDesignation,
+        leaveHistory, setLeaveHistory,
+        holidays, setHolidays,
+        profileImage, setProfileImage,
+        newPassword, setNewPassword,
+        confirmPassword, setConfirmPassword,
+        userData, setUserData,
+        file, setFile,
+        selectedFilter, setSelectedFilter,
+        error, setError,
+        leavePolicyRef, setLeavePolicyRef,
+        mergedLeaveData, setMergedLeaveData,
+        errors, setErrors,
+        formData, setFormData,
+        leavePolicies,setLeavePolicies,
+        navigate,
+        showToast
+  } = useManagerContext();
+
+
+
   useEffect(() => {
     const fetchLeavePolicies = async () => {
       try {
@@ -283,6 +320,7 @@ const App = () => {
       showToast(error.message, "error");
     }
   };
+
   useEffect(() => {
     const storedUserData = localStorage.getItem("userData");
     if (storedUserData) {
@@ -293,7 +331,7 @@ const App = () => {
           setUsername(parsedUserData.empname || "");
           setEmpid(parsedUserData.empid || "");
           setGender(parsedUserData.gender || "");
-          setmanagerEmail(parsedUserData.managerEmail || "");
+          setManagerEmail(parsedUserData.managerEmail || "");
           setEmail(parsedUserData.email || "");
           setProject(parsedUserData.project || "");
         }
@@ -352,6 +390,7 @@ const App = () => {
 
     fetchLeaveData();
   }, [email]);
+
   useEffect(() => {
     const fetchHolidays = async () => {
       try {
@@ -374,6 +413,7 @@ const App = () => {
 
     fetchHolidays();
   }, []);
+
   const fetchLeaveHistory = async () => {
     try {
       const response = await fetch(
@@ -390,10 +430,8 @@ const App = () => {
     }
   };
   useEffect(() => {
-    if (selectedCategory === "history") {
       fetchLeaveHistory();
-    }
-  }, [selectedCategory]);
+  }, []);
 
   useEffect(() => {
     fetchLeaveHistory();
@@ -484,9 +522,13 @@ const App = () => {
           Profile={Profile}
         />
 
-        <div className="main-content">{renderContent()}</div>
+        {/* <div className="main-content">{renderContent()}</div> */}
+        <main className="main-content">
+  <Outlet />
+</main>
       </div>
     </div>
+
   );
 };
 

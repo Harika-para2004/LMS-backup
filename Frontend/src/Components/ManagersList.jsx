@@ -65,8 +65,7 @@ import {
                   <TableCell>
                     <IconButton
                       onClick={() => {
-                        sessionStorage.setItem("previousPage", "reports");
-                        navigate(`/employee-dashboard/${emp.email}`);
+                        navigate(`/manager/analytics/${emp.email}`);
                       }}
                     >
                       <DashboardIcon color="primary" />

@@ -4,8 +4,17 @@ import ManagerAnalytics from "./EmployeeDashboard";
 import Reports from "./Reports";
 import EmployeeAnalytics from "./EmployeeDashboard";
 import EmployeesUnderManager from "./EmployeesUnderManager";
+import { useManagerContext } from "../context/ManagerContext";
 
-const ManagerDashboard = ({ email }) => {
+const ManagerDashboard = () => {
+  const {
+        email, 
+        userData, setUserData,
+        error, setError,
+        navigate,
+        showToast
+  } = useManagerContext();
+
   const [selectedTab, setSelectedTab] = useState(1);
   return (
     <Box sx={{ width: "100%", typography: "body1", p: 2 }}>

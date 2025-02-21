@@ -1,15 +1,206 @@
 import React, { useState } from "react";
 import { FormGroup, FormControlLabel, Checkbox } from "@mui/material";
-import { AiFillFilePdf, AiOutlineExclamationCircle } from "react-icons/ai";
 import { MdCheckCircle, MdCancel, MdWatchLater } from "react-icons/md";
+import { useManagerContext } from "../context/ManagerContext";
+import { Modal, Box, IconButton } from "@mui/material";
+import {
+  AiFillFilePdf,
+  AiOutlineClose,
+  AiOutlineExclamationCircle,
+} from "react-icons/ai";
 
-const LeaveRequestsTable = ({
-  filteredLeaveHistory,
-  selectedFilter,
-  handleFilterChange,
-  handleRowClick,
-  getDownloadLink,
-}) => {
+const LeaveRequestsTable = (
+//   {
+//   filteredLeaveRequests,
+//   selectedFilter,
+//   handleFilterChange,
+//   handleRowClick,
+//   getDownloadLink,
+// }
+) => {
+  const {
+    modalOpen, setModalOpen,
+    leaveRequests, setLeaveRequests,
+    selectedLeave, setSelectedLeave,
+        selectedCategory, setSelectedCategory,
+        leaveData, setLeaveData,
+        managerEmail, setManagerEmail,
+        email, setEmail,
+        gender, setGender,
+        empid, setEmpid,
+        username, setUsername,
+        project, setProject,
+        designation, setDesignation,
+        leavehistory, setLeavehistory,
+        holidays, setHolidays,
+        profileImage, setProfileImage,
+        newPassword, setNewPassword,
+        confirmPassword, setConfirmPassword,
+        userData, setUserData,
+        file, setFile,
+        selectedFilter, setSelectedFilter,
+        error, setError,
+        leavePolicyRef, setLeavePolicyRef,
+        mergedLeaveData, setMergedLeaveData,
+        errors, setErrors,
+        formData, setFormData,
+        navigate,
+        showToast
+  } = useManagerContext();
+
+  const handleFilterChange = (e) => {
+    setSelectedFilter(e.target.value);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false); // Close the modal
+    setSelectedLeave(null); // Clear selected leave
+  };
+
+  const handleRowClick = (leave, index) => {
+    setSelectedLeave({ ...leave, selectedIndex: index });
+    setModalOpen(true); // Open the modal
+  };
+
+  const handleReject = async () => {
+    if (selectedLeave) {
+      const { selectedIndex, ...leave } = selectedLeave;
+  
+      // Ensure selectedIndex is valid
+      if (
+        selectedIndex === undefined ||
+        !Array.isArray(leave.duration) ||
+        leave.duration.length === 0 ||
+        selectedIndex >= leave.duration.length
+      ) {
+        console.error("Invalid leave duration or selected index:", selectedLeave);
+        return;
+      }
+  
+      const leaveDuration = leave.duration[selectedIndex]; // Fix: Ensure valid duration
+  
+      const wasApproved = leave.status[selectedIndex]?.toLowerCase() === "approved"; // Add optional chaining
+  
+      const updatedLeave = {
+        ...leave,
+        status: leave.status.map((stat, index) =>
+          index === selectedIndex && (stat.toLowerCase() === "pending" || stat.toLowerCase() === "approved")
+            ? "Rejected"
+            : stat
+        ),
+        availableLeaves: wasApproved ? leave.availableLeaves + leaveDuration : leave.availableLeaves,
+        usedLeaves: wasApproved ? leave.usedLeaves - leaveDuration : leave.usedLeaves,
+      };
+  
+      try {
+        const response = await fetch(
+          `http://localhost:5001/leaverequests/${leave._id}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updatedLeave),
+          }
+        );
+  
+        if (response.ok) {
+          const updatedLeaveFromServer = await response.json();
+          setLeaveRequests((prevHistory) =>
+            prevHistory.map((item) =>
+              item._id === updatedLeaveFromServer._id ? updatedLeaveFromServer : item
+            )
+          );
+          setSelectedLeave(null);
+          setModalOpen(false);
+          console.log("Rejected and updated in the database:", updatedLeaveFromServer);
+        } else {
+          console.error("Failed to update leave status in the database");
+        }
+      } catch (error) {
+        console.error("Error updating leave status in the database:", error);
+      }
+    }
+  };
+
+  const handleApprove = async () => {
+    if (selectedLeave) {
+      const { selectedIndex, ...leave } = selectedLeave;
+  
+      // Ensure selectedIndex is valid
+      if (
+        selectedIndex === undefined ||
+        !Array.isArray(leave.duration) ||
+        leave.duration.length === 0 ||
+        selectedIndex >= leave.duration.length
+      ) {
+        console.error("Invalid leave duration or selected index:", selectedLeave);
+        return;
+      }
+  
+      const leaveDuration = leave.duration[selectedIndex]; // Fix: Use 'duration' (not 'durations')
+  
+      const currentStatus = leave.status[selectedIndex]?.toLowerCase(); // Add optional chaining
+  
+      if (!currentStatus || (currentStatus !== "pending" && currentStatus !== "rejected")) {
+        console.log("This leave is already approved.");
+        return;
+      }
+  
+      if (leave.availableLeaves < leaveDuration) {
+        console.log("Not enough available leaves.");
+        return;
+      }
+  
+      const updatedLeave = {
+        ...leave,
+        availableLeaves: leave.availableLeaves - leaveDuration,
+        usedLeaves: leave.usedLeaves + leaveDuration,
+        status: leave.status.map((stat, index) =>
+          index === selectedIndex && (stat.toLowerCase() === "pending" || stat.toLowerCase() === "rejected")
+            ? "Approved"
+            : stat
+        ),
+      };
+  
+      try {
+        const response = await fetch(
+          `http://localhost:5001/leaverequests/${leave._id}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updatedLeave),
+          }
+        );
+  
+        if (response.ok) {
+          const updatedLeaveFromServer = await response.json();
+          setLeaveRequests((prevHistory) =>
+            prevHistory.map((item) =>
+              item._id === updatedLeaveFromServer._id ? updatedLeaveFromServer : item
+            )
+          );
+          setSelectedLeave(null);
+          setModalOpen(false);
+          console.log("Approved and updated in the database:", updatedLeaveFromServer);
+        } else {
+          console.error("Failed to update leave in the database");
+        }
+      } catch (error) {
+        console.error("Error updating leave in the database:", error);
+      }
+    }
+  };
+
+  const filteredLeaveRequests = leaveRequests.filter((leave) =>
+    selectedFilter === "All"
+      ? true
+      : leave.status.some(
+          (status) => status.toLowerCase() === selectedFilter.toLowerCase()
+        )
+  );
+
+  const getDownloadLink = (attachments) =>
+  `http://localhost:5001/${attachments}`;
+
   // 🔹 Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10; // Show 10 leave requests per page
@@ -32,7 +223,7 @@ const LeaveRequestsTable = ({
 
 
   // 🔹 Filtered data based on selected filter
-  const filteredData = filteredLeaveHistory.flatMap((leave) =>
+  const filteredData = filteredLeaveRequests.flatMap((leave) =>
     leave.startDate.map((startDate, index) => ({
       id: `${leave._id}-${index}`,
       empid: leave.empid || "N/A",
@@ -84,6 +275,7 @@ const LeaveRequestsTable = ({
   const totalPages = Math.ceil(displayedData.length / itemsPerPage);
 
   return (
+    <div>
     <div className="history-container">
       <h2 className="content-heading">Leave Requests</h2>
 
@@ -246,6 +438,88 @@ const LeaveRequestsTable = ({
         </div>
       )}
     </div>
+    <Modal open={modalOpen} onClose={handleCloseModal}>
+    <Box
+      sx={{
+        position: "absolute",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        width: 400,
+        bgcolor: "background.paper",
+        boxShadow: 24,
+        p: 4,
+        borderRadius: "10px",
+        textAlign: "center",
+      }}
+    >
+      {/* Close Icon */}
+      <IconButton
+        onClick={handleCloseModal}
+        sx={{
+          position: "absolute",
+          top: 10,
+          right: 10,
+          color: "gray",
+          "&:hover": { color: "black" },
+        }}
+      >
+        <AiOutlineClose size={24} />
+      </IconButton>
+      <h3 style={{ marginBottom: "20px" }}>
+        Approve or Reject Request?
+      </h3>
+
+      {/* Added code: Determine current status and toggle button enable/disable */}
+      {selectedLeave &&
+        (() => {
+          // Retrieve current status using the selected index
+          const currentStatus =
+            (selectedLeave.status &&
+              selectedLeave.status[selectedLeave.selectedIndex]) ||
+            "pending";
+
+          return (
+            <div className="action-buttons">
+              <button
+                onClick={handleApprove}
+                className="approve-btn"
+                disabled={currentStatus.toLowerCase() === "approved"}
+                style={{
+                  opacity:
+                    currentStatus.toLowerCase() === "approved"
+                      ? 0.5
+                      : 1,
+                  cursor:
+                    currentStatus.toLowerCase() === "approved"
+                      ? "not-allowed"
+                      : "pointer",
+                }}
+              >
+                ✅ Approve
+              </button>
+              <button
+                onClick={handleReject}
+                className="reject-btn"
+                disabled={currentStatus.toLowerCase() === "rejected"}
+                style={{
+                  opacity:
+                    currentStatus.toLowerCase() === "rejected"
+                      ? 0.5
+                      : 1,
+                  cursor:
+                    currentStatus.toLowerCase() === "rejected"
+                      ? "not-allowed"
+                      : "pointer",
+                }}
+              >
+                ❌ Reject
+              </button>
+            </div>
+          );
+        })()}
+    </Box>
+  </Modal></div>
   );
 };
 

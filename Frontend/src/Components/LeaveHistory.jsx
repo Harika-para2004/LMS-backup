@@ -1,12 +1,20 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { AiFillFilePdf, AiOutlineExclamationCircle } from "react-icons/ai";
 import { MdCheckCircle, MdCancel, MdWatchLater } from "react-icons/md";
 import { FaTrash } from "react-icons/fa";
 import { formatDate } from "../utils/dateUtlis";
+import { useManagerContext } from "../context/ManagerContext";
 
-const LeaveHistory = ({ leaveHistory, handleDelete }) => {
+const LeaveHistory = () => {
+  const {
+    modalOpen, setModalOpen,
+        leaveHistory, setLeaveHistory,
+        email, setEmail,
+        showToast
+  } = useManagerContext();
+
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 11;
 
   // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -26,6 +34,53 @@ const LeaveHistory = ({ leaveHistory, handleDelete }) => {
         return null;
     }
   };
+
+  const handleDelete = async (id, startDate) => {
+    if (!id || !startDate) {
+      console.error("Error: ID or startDate is undefined");
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:5001/leaves/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ startDate }), // Pass startDate in the body for matching
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete leave");
+      }
+
+      showToast("Leave deleted successfully!", "success");
+      // Remove the deleted leave from the state
+      fetchLeavehistory();
+    } catch (error) {
+      console.error("Error deleting leave:", error);
+    }
+  };
+
+  const fetchLeavehistory = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:5001/leave-history?email=${email}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setLeaveHistory(data);
+      } else {
+        console.error("Failed to fetch leave history");
+      }
+    } catch (error) {
+      console.error("Error fetching leave history:", error);
+    }
+  };
+
+  useEffect(() => {
+      fetchLeavehistory();
+  }, [email]);
 
   return (
     <div className="history-container">
@@ -65,29 +120,38 @@ const LeaveHistory = ({ leaveHistory, handleDelete }) => {
                     )}
                   </td>
                   <td>{getStatusIcon(leave.status)}</td>
-            <td>     <button
-  onClick={() => {
-    console.log(leave);
-    console.log("Deleting leave with ID:", leave._id); // Debugging
-    handleDelete(leave._id, formatDate(leave.startDate));
-  }}
-  className="delete-btn"
-  disabled={leave.status !== "Pending"} // Disable if not pending
-  style={{
-    border:"none",
-    cursor: leave.status !== "Pending" ? "not-allowed" : "pointer", // Change cursor to 'not-allowed' when disabled
-    opacity: leave.status !== "Pending" ? 0.5 : 1, // Reduce opacity when disabled
-  }}
->
-  <FaTrash size={18} color={leave.status === "Pending" ? "red" : "gray"} />
-</button>
-
-</td>
+                  <td>
+                    {" "}
+                    <button
+                      onClick={() => {
+                        console.log(leave);
+                        console.log("Deleting leave with ID:", leave._id); // Debugging
+                        handleDelete(leave._id, formatDate(leave.startDate));
+                      }}
+                      className="delete-btn"
+                      disabled={leave.status !== "Pending"} // Disable if not pending
+                      style={{
+                        border: "none",
+                        cursor:
+                          leave.status !== "Pending"
+                            ? "not-allowed"
+                            : "pointer", // Change cursor to 'not-allowed' when disabled
+                        opacity: leave.status !== "Pending" ? 0.5 : 1, // Reduce opacity when disabled
+                      }}
+                    >
+                      <FaTrash
+                        size={18}
+                        color={leave.status === "Pending" ? "red" : "gray"}
+                      />
+                    </button>
+                  </td>
                 </tr>
               ))
           ) : (
             <tr>
-              <td colSpan="8" style={{ textAlign: "center" }}>No leave history available.</td>
+              <td colSpan="8" style={{ textAlign: "center" }}>
+                No leave history available.
+              </td>
             </tr>
           )}
         </tbody>
@@ -95,11 +159,21 @@ const LeaveHistory = ({ leaveHistory, handleDelete }) => {
 
       {totalPages > 1 && (
         <div className="pagination">
-          <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+          >
             ◀
           </button>
-          <span>{currentPage} / {totalPages}</span>
-          <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}>
+          <span>
+            {currentPage} / {totalPages}
+          </span>
+          <button
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
+            disabled={currentPage === totalPages}
+          >
             ▶
           </button>
         </div>

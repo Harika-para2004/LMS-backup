@@ -17,7 +17,7 @@ import {
 import { FaListAlt } from "react-icons/fa";
 
 const Sidebar = ({
-  userType, // 'employee', 'manager', or 'admin'
+  userType,
   selectedCategory,
   setSelectedCategory,
   username,
@@ -30,35 +30,22 @@ const Sidebar = ({
   const isAdmin = userType === "admin";
   const isManager = userType === "manager";
 
-  // Function to generate links based on user type
   const generateLinks = () => {
     if (isEmployee) {
       return (
         <>
-        <li>
-            <Link
-              to="#"
-              className={selectedCategory === "dashboard" ? "active-tab" : ""}
-              onClick={() => setSelectedCategory("dashboard")}
-            >
+          <li>
+            <Link to="/employee/dashboard" className={selectedCategory === "dashboard" ? "active-tab" : ""}>
               <FontAwesomeIcon icon={faChartLine} /> Dashboard
             </Link>
           </li>
           <li>
-            <Link
-              to="#"
-              className={selectedCategory === "apply-leave" ? "active-tab" : ""}
-              onClick={() => setSelectedCategory("apply-leave")}
-            >
+            <Link to="/employee/apply-leave" className={selectedCategory === "apply-leave" ? "active-tab" : ""}>
               <FontAwesomeIcon icon={faPaperPlane} /> Apply Leave
             </Link>
           </li>
           <li>
-            <Link
-              to="#"
-              className={selectedCategory === "history" ? "active-tab" : ""}
-              onClick={() => setSelectedCategory("history")}
-            >
+            <Link to="/employee/history" className={selectedCategory === "history" ? "active-tab" : ""}>
               <FontAwesomeIcon icon={faHistory} /> History
             </Link>
           </li>
@@ -66,114 +53,79 @@ const Sidebar = ({
       );
     } else if (isAdmin) {
       return (
-        <div className="sidebar-comps-admin">
-          <li>
-            <Link
-              to="#"
-              className={
-                selectedCategory === "holiday-calendar" ? "active-tab" : ""
-              }
-              onClick={() => setSelectedCategory("holiday-calendar")}
-            >
-              <FontAwesomeIcon icon={faCalendarDays} /> Calendar
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="#"
-              className={selectedCategory === "employee-list" ? "active-tab" : ""}
-              onClick={() => setSelectedCategory("employee-list")}
-            >
-              <FaListAlt style={{ marginRight: "8px" }} />
-              Employee List
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="#"
-              className={selectedCategory === "reports" ? "active-tab" : ""}
-              onClick={() => setSelectedCategory("reports")}
-            >
-              <FontAwesomeIcon icon={faFileLines} /> Reports
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="#"
-              className={selectedCategory === "leavepolicy" ? "active-tab" : ""}
-              onClick={() => setSelectedCategory("leavepolicy")}
-            >
-              <FontAwesomeIcon icon={faClipboardList} /> Leave Policy
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="#"
-              className={
-                selectedCategory === "leaverequests" ? "active-tab" : ""
-              }
-              onClick={() => setSelectedCategory("leaverequests")}
-            >
-              <FontAwesomeIcon icon={faEnvelopeOpenText} /> Leave Requests
-            </Link>
-          </li>
-         
-        </div>
-      );
+         <div className="sidebar-comps-admin">
+         <li>
+           <Link
+             to="/admin/calendar"
+             className={
+               selectedCategory === "holiday-calendar" ? "active-tab" : ""
+             }
+           >
+             <FontAwesomeIcon icon={faCalendarDays} /> Calendar
+           </Link>
+         </li>
+         <li>
+           <Link
+             to="/admin/all-employees"
+             className={selectedCategory === "employee-list" ? "active-tab" : ""}
+           >
+             <FaListAlt style={{ marginRight: "8px" }} />
+             Employee List
+           </Link>
+         </li>
+         <li>
+           <Link
+             to="/admin/all-reports"
+             className={selectedCategory === "reports" ? "active-tab" : ""}
+           >
+             <FontAwesomeIcon icon={faFileLines} /> Reports
+           </Link>
+         </li>
+         <li>
+           <Link
+             to="/admin/leave-policies"
+             className={selectedCategory === "leavepolicy" ? "active-tab" : ""}
+           >
+             <FontAwesomeIcon icon={faClipboardList} /> Leave Policy
+           </Link>
+         </li>
+         <li>
+           <Link
+             to="/admin/leave-requests"
+             className={
+               selectedCategory === "leaverequests" ? "active-tab" : ""
+             }
+           >
+             <FontAwesomeIcon icon={faEnvelopeOpenText} /> Leave Requests
+           </Link>
+         </li>
+        
+       </div>
+     );
     } else {
       return (
         <>
-          {/* <li className="seg">Manager Actions</li> */}
           <li>
-            <Link
-              to="#"
-              className={
-                selectedCategory === "leaverequests" ? "active-tab" : ""
-              }
-              onClick={() => setSelectedCategory("leaverequests")}
-            >
+            <Link to="/manager/leave-requests" className={selectedCategory === "leaverequests" ? "active-tab" : ""}>
               <FontAwesomeIcon icon={faCalendarCheck} /> Leave Requests
             </Link>
           </li>
-          {/* <li>
-            <Link
-              to="#"
-              className={selectedCategory === "dashboard" ? "active-tab" : ""}
-              onClick={() => setSelectedCategory("dashboard")}
-            >
-              <FontAwesomeIcon icon={faChartLine} /> Leave Balances
-            </Link>
-          </li> */}
-             <li>
-            <Link
-              to="#"
-              className={selectedCategory === "dashboard" ? "active-tab" : ""}
-              onClick={() => setSelectedCategory("dashboard")}
-            >
+          <li>
+            <Link to="/manager/analytics" className={selectedCategory === "dashboard" ? "active-tab" : ""}>
               <FontAwesomeIcon icon={faChartLine} /> Dashboard
             </Link>
           </li>
-          {/* <li className="seg">Employee Actions</li> */}
-          <hr/>
+          <hr />
           <li>
-            <Link
-              to="#"
-              className={selectedCategory === "apply-leave" ? "active-tab" : ""}
-              onClick={() => setSelectedCategory("apply-leave")}
-            >
+            <Link to="/manager/apply-leave" className={selectedCategory === "apply-leave" ? "active-tab" : ""}>
               <FontAwesomeIcon icon={faPaperPlane} /> Apply Leave
             </Link>
           </li>
           <li>
-            <Link
-              to="#"
-              className={selectedCategory === "history" ? "active-tab" : ""}
-              onClick={() => setSelectedCategory("history")}
-            >
+            <Link to="/manager/history" className={selectedCategory === "history" ? "active-tab" : ""}>
               <FontAwesomeIcon icon={faHistory} /> History
             </Link>
           </li>
-      
         </>
       );
     }
@@ -184,31 +136,21 @@ const Sidebar = ({
       <div className="logo-cont">
         <img src={logo} alt="Quadface Logo" className="logo_das" />
       </div>
-
       <div className="sidebar-comps">
-        {(isEmployee || isManager)  && (
-          <Link
-            to="#"
-            className={selectedCategory === "profile" ? "active-tab" : ""}
-            onClick={() => setSelectedCategory("profile")}
-          >
+        {(isEmployee || isManager) && (
+          <Link to="/profile" className={selectedCategory === "profile" ? "active-tab" : ""}>
             <div className="profile-section">
               <div className="profile-pic" style={{ marginTop: "10%" }}>
                 <img src={Profile} alt="Profile" />
               </div>
               <div className="profile-details">
-                <div className="tooltip-container">
                 <p className="emp-name" data-fullname={username}>{username}</p>
-                {/* <span className="tooltip-text">{username}</span> */}
-                </div>
                 <p className="emp-id">Emp ID: {empid}</p>
               </div>
             </div>
           </Link>
         )}
-
         <ul>{generateLinks()}</ul>
-
         {(isEmployee || isManager || isAdmin) && (
           <div className="logout">
             <Link to="#" onClick={handleLogout}>

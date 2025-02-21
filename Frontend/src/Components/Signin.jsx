@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai"; // Importing eye icons from react-icons
@@ -13,6 +13,11 @@ const LoginForm = () => {
   });
   const [passwordVisible, setPasswordVisible] = useState(false); // State for password visibility
   const navigate = useNavigate();
+
+  useEffect( () => {
+    localStorage.removeItem("userData");
+    localStorage.removeItem("admin");
+  },[]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

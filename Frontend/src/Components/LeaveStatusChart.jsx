@@ -81,7 +81,7 @@ const LeaveStatusChart = ({ email }) => {
         data: leaveTypes,
         axisLabel: {
           interval: 0, 
-          rotate: barCount > 5 ? 45 : 0, 
+          rotate: barCount > 3 ? 45 : 0, 
           margin: 10, 
         },
       },

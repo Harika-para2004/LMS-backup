@@ -5,7 +5,7 @@ import { BASE_URL } from "../Config";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import axios from "axios";
 import { FaEdit, FaTrash } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import {
   AiOutlineClose,
 } from "react-icons/ai";
@@ -33,22 +33,24 @@ import Sidebar from "./Sidebar";
 import ReportsAdmin from "./ReportsAdmin";
 import LeaveRequestsTable from "./LeaveRequestsTable";
 import AdminTrends from "./AdminTrends";
+import HolidayCalendar from "./HolidayCalendar";
+import TotalEmployees from "./TotalEmployees";
 
 function AdminDashboard() {
   const [selectedCategory, setSelectedCategory] = useState("holiday-calendar");
   const [holidays, setHolidays] = useState([]);
-  const [leaveHistory, setLeaveHistory] = useState([]);
+  const [leaveRequests, setLeaveRequests] = useState([]);
   const [selectedLeave, setSelectedLeave] = useState(null);
   const [editingRow, setEditingRow] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState(null);
+  const [errors, setErrors] = useState({});
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    date: "",
-    holidayName: "",
-    holidayType: "Mandatory",
-  });
+  const [file, setFile] = useState(null);
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
   /*Add New Employee*/
   const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
   const [employeeList, setEmpList] = useState([]);
@@ -56,9 +58,26 @@ function AdminDashboard() {
   const [modalOpen, setModalOpen] = useState(false);
   const year = new Date().getFullYear();
   const [searchTerm, setSearchTerm] = useState("");
-  const filteredEmployees = employeeList.filter((emp)=> emp.empname.toLowerCase().includes(searchTerm.toLowerCase()));
   const excludeEmail = "admin@gmail.com"; // Email to exclude from the list
   // const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
+  const [empData, setEmpData] = useState({
+    empname: "",
+    empid: "",
+    email: "",
+    password: "",
+    gender: "",
+    project: "",
+    role: "",
+    managerEmail:""
+  });
+  const [formData, setFormData] = useState({
+    date: "",
+    holidayName: "",
+    holidayType: "Mandatory",
+  });
+  
+  const filteredEmployees = employeeList.filter((emp)=> emp.empname.toLowerCase().includes(searchTerm.toLowerCase()));
+
 
   const handleLogout = (e) => {
     e.preventDefault();
@@ -95,13 +114,6 @@ function AdminDashboard() {
       setError("Failed to fetch employees. Please try again later."); // Update error state for UI
     }
   };
-
-
-
-  //Add employee through excel
-    const [file, setFile] = useState(null);
-    const [message, setMessage] = useState("");
-    const [loading, setLoading] = useState(false);
   
     const handleFileChange = (event) => {
       const selectedFile = event.target.files[0];
@@ -153,11 +165,6 @@ function AdminDashboard() {
        setLoading(false);
      }
    };
-
-
-
-    //Add holiday through excel
-    const [selectedFile, setSelectedFile] = useState(null);
 
     const handlefileChange = (event) => {
       const file = event.target.files[0];
@@ -211,16 +218,6 @@ function AdminDashboard() {
     };
 
 
-  const [empData, setEmpData] = useState({
-    empname: "",
-    empid: "",
-    email: "",
-    password: "",
-    gender: "",
-    project: "",
-    role: "",
-    managerEmail:""
-  });
   const sortHolidaysByMonthAndCustomDay = (holidayList) => {
     const monthNames = [
       "Jan",
@@ -328,7 +325,6 @@ function AdminDashboard() {
   };
   
 
-  const [errors, setErrors] = useState({});
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -416,14 +412,14 @@ function AdminDashboard() {
     setShowModal(false);
   };
 
-  const fetchLeaveHistory = async () => {
+  const fetchLeaveRequests = async () => {
     const excludeEmail = "admin@gmail.com"; // Replace with the email to exclude
     try {
       const response = await fetch("http://localhost:5001/leaverequests");
       if (response.ok) {
         const data = await response.json();
         const filteredData = data.filter((item) => item.email !== excludeEmail); // Filter out records with the given email
-        setLeaveHistory(filteredData); // Update state with filtered data
+        setLeaveRequests(filteredData); // Update state with filtered data
       } else {
         console.error("Failed to fetch leave history");
       }
@@ -433,7 +429,7 @@ function AdminDashboard() {
   };
 
   useEffect(() => {
-    fetchLeaveHistory();
+    fetchLeaveRequests();
   }, []);
 
   useEffect(() => {
@@ -507,7 +503,7 @@ function AdminDashboard() {
   
         if (response.ok) {
           const updatedLeaveFromServer = await response.json();
-          setLeaveHistory((prevHistory) =>
+          setLeaveRequests((prevHistory) =>
             prevHistory.map((item) =>
               item._id === updatedLeaveFromServer._id ? updatedLeaveFromServer : item
             )
@@ -576,7 +572,7 @@ function AdminDashboard() {
   
         if (response.ok) {
           const updatedLeaveFromServer = await response.json();
-          setLeaveHistory((prevHistory) =>
+          setLeaveRequests((prevHistory) =>
             prevHistory.map((item) =>
               item._id === updatedLeaveFromServer._id ? updatedLeaveFromServer : item
             )
@@ -596,6 +592,7 @@ function AdminDashboard() {
     setEditingRow(index);
     setFormData(holidays[index]);
   };
+  
   const handleDeleteEmployee = async (id) => {
     // Ask for confirmation before proceeding
     const isConfirmed = window.confirm(
@@ -709,6 +706,7 @@ function AdminDashboard() {
       setError("Failed to update holiday. Please try again later.");
     }
   };
+
   const handleSave1 = async (index) => {
     // Validate all required fields
     if (
@@ -774,16 +772,18 @@ function AdminDashboard() {
     setSelectedLeave({ ...leave, selectedIndex: index });
     setModalOpen(true); // Open the modal
   };
+
   const handleCloseModal = () => {
     setModalOpen(false); // Close the modal
     setSelectedLeave(null); // Clear selected leave
   };
+
   const handleFilterChange = (e) => {
     setSelectedFilter(e.target.value);
   };
 
   // Filter the leave history based on the selected filter
-  const filteredLeaveHistory = leaveHistory.filter((leave) =>
+  const filteredLeaveRequests = leaveRequests.filter((leave) =>
     selectedFilter === "All"
       ? true
       : leave.status.some(
@@ -797,258 +797,7 @@ function AdminDashboard() {
     switch (selectedCategory) {
       case "holiday-calendar":
         return (
-          <div className="holiday-cal-container">
-
-            {showModal && (
-              <Modal
-                open={showModal}
-                onClose={() => setShowModal(false)}
-                aria-labelledby="holiday-modal"
-                aria-describedby="holiday-form"
-              >
-                <Box
-                  component="form"
-                  onSubmit={(e) => {
-                    e.preventDefault(); // Prevent default form submission
-                    if (isEditMode) {
-                      handleEditHoliday(); // Handle editing holiday
-                    } else {
-                      handleAddHoliday(); // Handle adding new holiday
-                    }
-                  }}
-                  sx={{
-                    position: "absolute",
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                    width: 400,
-                    bgcolor: "background.paper",
-                    borderRadius: 2,
-                    boxShadow: 24,
-                    p: 4,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 2,
-                    overflowY: "auto",
-                  }}
-                >
-                  <Typography
-                    variant="h5"
-                    id="holiday-modal"
-                    textAlign="center"
-                  >
-                    {isEditMode ? "Edit Holiday" : "Add Holiday"}
-                  </Typography>
-                  <TextField
-                    label="Date"
-                    type="date"
-                    name="date"
-                    value={formData.date}
-                    onChange={handleInputChange}
-                    InputLabelProps={{ shrink: true }}
-                    error={Boolean(errors.date)}
-                    helperText={errors.date}
-                  />
-                  <TextField
-                    label="Holiday Name"
-                    name="holidayName"
-                    value={formData.holidayName}
-                    onChange={handleInputChange}
-                    error={Boolean(errors.holidayName)}
-                    helperText={errors.holidayName}
-                    fullWidth
-                  />
-                  <FormControl component="fieldset">
-                    <FormLabel component="legend">Holiday Type</FormLabel>
-                    <RadioGroup
-                      name="holidayType"
-                      value={formData.holidayType}
-                      onChange={handleInputChange}
-                      row
-                    >
-                      <FormControlLabel
-                        value="Mandatory"
-                        control={<Radio />}
-                        label="Mandatory"
-                      />
-                      <FormControlLabel
-                        value="Optional"
-                        control={<Radio />}
-                        label="Optional"
-                      />
-                    </RadioGroup>
-                    {errors.holidayType && (
-                      <p
-                        style={{
-                          color: "red",
-                          fontSize: "0.8rem",
-                          marginTop: "0.25rem",
-                        }}
-                      >
-                        {errors.holidayType}
-                      </p>
-                    )}
-                  </FormControl>
-                  <Box display="flex" justifyContent="flex-end">
-                    <Button onClick={() => setShowModal(false)} sx={{ mr: 2 }}>
-                      Cancel
-                    </Button>
-                    <Button
-                      variant="contained"
-                      type="submit" // Use type="submit" to trigger form submission
-                    >
-                      {isEditMode ? "Save Changes" : "Add Holiday"}
-                    </Button>
-                  </Box>
-                </Box>
-              </Modal>
-            )}
-
-            <div className="head">
-              <h2 className="content-heading">Holiday Calendar {year}</h2>
-
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <Button
-                variant="contained"
-                onClick={() => setShowModal(true)}
-                sx={{
-                  textTransform: "capitalize",
-                  backgroundColor: "#006400", // Align the button absolutely
-                  // marginTop: "-40px", // Push it to the right edge
-                  "&:focus": {
-                    outline: "none",
-                  },
-                }}
-              >
-                Add Holiday
-              </Button>
-              <Button
-                 id="file-input"
-                 variant="contained"
-                 component="label"
-                 sx={{
-                 backgroundColor: "steelblue",
-                 padding: "8px 17px",
-                 borderRadius: "5px",
-                 "&:focus": { outline: "none" },
-                 }}
-                  >
-               <CloudUploadIcon fontSize="small" />
-               <input
-               type="file"
-               accept=".xlsx, .xls"
-               hidden
-               onChange={(e) => {
-               handlefileChange(e);
-               setSelectedFile(e.target.files[0]); // Update selected file state
-               }}
-               />
-              </Button>
-
-            {/* Show file name only if selected */}
-            {selectedFile && (
-            <Typography variant="body2" sx={{ fontWeight: "bold" }}>
-            {selectedFile.name}
-             </Typography>
-            )}
-
-              </div>
-            </div>
-
-            <table className="holiday-table">
-              {/* <caption>Holiday Calendar</caption> */}
-
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Day</th>
-                  <th>Name of Holiday</th>
-                  <th>Holiday Type</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {holidays ? (
-                  holidays.map((holiday, index) => (
-                    <tr key={holiday._id}>
-                      {editingRow === index ? (
-                        <>
-                          <td>
-                            <input
-                              type="text"
-                              name="date"
-                              value={formData.date}
-                              onChange={handleInputChange}
-                            />
-                          </td>
-                          <td>
-                            <input
-                              type="text"
-                              name="day"
-                              value={formData.day}
-                              onChange={handleInputChange}
-                            />
-                          </td>
-                          <td>
-                            <input
-                              type="text"
-                              name="name"
-                              value={formData.name
-                                .toLowerCase()
-                                .replace(/\b\w/g, (char) => char.toUpperCase())}
-                              onChange={handleInputChange}
-                            />
-                          </td>
-                          <td>
-                            <input
-                              type="text"
-                              name="type"
-                              value={formData.type}
-                              onChange={handleInputChange}
-                            />
-                          </td>
-                          <td>
-                            <button className="save-btn" onClick={() => handleSave(index)}>
-                              Save
-                            </button>
-                          </td>
-                        </>
-                      ) : (
-                        <>
-                          <td>
-                            {holiday.date.split("-").slice(0, 2).join("-")}{" "}
-                            {/* Display without the year */}
-                          </td>
-                          <td>{holiday.day}</td>
-                          <td>{holiday.name}</td>
-                          <td>{holiday.type}</td>
-                          <td>
-                            <button onClick={() => handleEdit(index)}>
-                              <FaEdit className="edit-icon" size={20} color="blue" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteHoliday(holiday._id)}
-                              style={{
-                                border: "none",
-                                background: "none",
-                                cursor: "pointer",
-                              }}
-                            >
-                              <FaTrash className="del-icon" size={20} color="red" />
-                            </button>
-                          </td>
-                        </>
-                      )}
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td>No Holidays available</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <HolidayCalendar />
         );
       case "leavepolicy":
         return (
@@ -1063,7 +812,7 @@ function AdminDashboard() {
         return (
           <div>
           <LeaveRequestsTable
-            filteredLeaveHistory={filteredLeaveHistory}
+            filteredLeaveRequests={filteredLeaveRequests}
             selectedFilter={selectedFilter}
             handleFilterChange={handleFilterChange}
             handleRowClick={handleRowClick}
@@ -1157,166 +906,8 @@ function AdminDashboard() {
         );
 
       case "employee-list":
-        case "employee-list":
         return (
-          <div className="emp-list-container">
-            <div className="head">
-              <h2 className="content-heading">Employee Details</h2>
-              <TextField
-                  variant="outlined"
-                  size="small"
-                  placeholder="Search Employee"
-                  value={searchTerm}
-                  onChange={(e)=>setSearchTerm(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <FontAwesomeIcon icon={faSearch} style={{ marginRight: "10px"}}/>
-                    ),
-                  }}
-                />
-              <Button
-                variant="contained"
-                onClick={() => handleAddEmployeeClick()}
-                // onClick={() => setShowModal(true)}
-                sx={{
-                  textTransform: "capitalize",
-                  backgroundColor: "#006400", // Align the button absolutely
-                  // marginTop: "-40px", // Push it to the right edge
-                  // marginRight: "35px", // Optional: Add some spacing from the right edge
-                  "&:focus": {
-                    outline: "none",
-                  },
-                }}
-              >
-                Add Employee
-              </Button>
-              
-            </div>
-            <div>
-      <input type="file" accept=".xlsx, .xls" onChange={handleFileChange} id="file-input"/>
-      <Button
-        onClick={handleUpload}
-        variant="contained"
-        color="primary"
-        disabled={!file || loading}
-        startIcon={!loading && <CloudUploadIcon />}
-      >
-        {loading ? <CircularProgress size={24} color="inherit" /> : "Upload Employees"}
-      </Button>
-      {message && <p>{message}</p>}
-    </div>
-
-            <table className="holiday-table">
-              {/* <caption>Employee Details</caption> */}
-              <thead>
-                <tr>
-                  <th>Employee ID</th>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Project</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {employeeList ? (
-                  filteredEmployees.map((emp, index) => (
-                    <tr key={emp._id}>
-                      {editingRow === index ? (
-                        <>
-                          <td>
-                            <input
-                              type="text"
-                              name="empid"
-                              value={empData.empid}
-                              onChange={handleEmployeeData}
-                            />
-                          </td>
-                          <td>
-                            <input
-                              type="text"
-                              name="empname"
-                              value={empData.empname}
-                              onChange={handleEmployeeData}
-                            />
-                          </td>
-                          <td>
-                            <input
-                              type="text"
-                              name="email"
-                              value={empData.email}
-                              onChange={handleEmployeeData}
-                            />
-                          </td>
-                          <td>
-                            <input
-                              type="text"
-                              name="role"
-                              value={empData.role}
-                              onChange={handleEmployeeData}
-                            />
-                          </td>
-                          <td>
-                            <input
-                              type="text"
-                              name="project"
-                              value={empData.project
-                                .toLowerCase()
-                                .replace(/\b\w/g, (char) => char.toUpperCase())}
-                              onChange={handleEmployeeData}
-                            />
-                          </td>
-
-                          <td>
-                            <button className="save-btn" onClick={() => handleSave1(index)}>
-                              Save
-                            </button>
-                          </td>
-                        </>
-                      ) : (
-                        <>
-                          <td>{emp.empid}</td>
-                          <td>{emp.empname.toLowerCase()
-          .replace(/\b\w/g, (char) => char.toUpperCase())}</td>
-                          <td>{emp.email}</td>
-                          <td>{emp.role}</td>
-                          <td>{emp.project.toLowerCase()
-          .replace(/\b\w/g, (char) => char.toUpperCase())}</td>
-                          <td>
-                            <button
-                              onClick={() => handleEditEmployee(index)}
-                              style={{
-                                border: "none",
-                                background: "none",
-                                cursor: "pointer",
-                              }}
-                            >
-                              <FaEdit className="edit-icon" size={20} color="blue" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteEmployee(emp._id)}
-                              style={{
-                                border: "none",
-                                background: "none",
-                                cursor: "pointer",
-                              }}
-                            >
-                              <FaTrash className="del-icon" size={20} color="red" />
-                            </button>
-                          </td>
-                        </>
-                      )}
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td>No Employees Available</td>
-                  </tr>
-                )}
-              </tbody>
-        
-            </table>
-          </div>
+          <TotalEmployees />
         );
 
 
@@ -1336,7 +927,11 @@ function AdminDashboard() {
           handleLogout={handleLogout}
         />
 
-        <main className="main-content">{renderContent()}</main>
+        {/* <main className="main-content">{renderContent()}</main> */}
+        <div className="main-content">
+        <Outlet />
+      </div>
+
       </div>
 
       <Modal

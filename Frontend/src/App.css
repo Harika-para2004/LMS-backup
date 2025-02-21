@@ -71,7 +71,7 @@ body, html {
 }
 
 .emp-list-container{
-  max-width: 800px;
+  max-width: 1022px;
   margin: auto;
 }
 
@@ -1006,7 +1006,6 @@ body, html {
 
 .history-container table tr:hover td {
   background-color: #f1f1f1;
-  cursor: pointer;
 }
 
 .history-container table td {
@@ -1563,7 +1562,7 @@ body {
   height: 2px;
   background-color: #333;
   margin: 8px 0;
-  cursor: pointer;
+  /* cursor: pointer; */
 }
 
 .holiday-table-section, .leave-policy-section {

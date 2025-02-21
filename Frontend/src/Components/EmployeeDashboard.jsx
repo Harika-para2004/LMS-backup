@@ -13,13 +13,18 @@ import LeaveStatusChart from "./LeaveStatusChart";
 import LeaveBalanceChart from "./LeaveBalanceChart";
 import LeaveTrendChart from "./LeaveTrendChart";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useManagerContext } from "../context/ManagerContext";
 
-const EmployeeDashboard = ({ email: propEmail }) => {
-  const { email: routeEmail } = useParams(); // Get email from URL if available
-  const email = propEmail || routeEmail; // Use prop email if passed, otherwise use route email
+const EmployeeDashboard = () => {
+  const {
+    email, 
+    userData, setUserData,
+    navigate,
+    showToast
+} = useManagerContext();
 
-  const location = useLocation();
-  const navigate = useNavigate();
+  // const location = useLocation();
+  // const navigate = useNavigate();
 
   // Check if the user came from "Reports"
   const cameFromReports = location.state?.fromReports || false;

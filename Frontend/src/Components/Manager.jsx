@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Link } from "react-router-dom";
+import { Link, Outlet } from "react-router-dom";
 import logo from "./../assets/img/quadfacelogo-hd.png";
 import { Modal, Box, IconButton } from "@mui/material";
 import Profile from "../assets/img/profile.png";
@@ -13,7 +13,7 @@ import ApplyLeave from "./ApplyLeave";
 import Sidebar from "./Sidebar";
 import ProfilePage from "./ProfilePage";
 import useToast from "./useToast";
-import EmployeeDashboard from "./ManagerDashboard";
+import ManagerDashboard from "./ManagerDashboard";
 
 import {
   AiFillFilePdf,
@@ -25,49 +25,82 @@ import { formatDate } from "../utils/dateUtlis";
 import LeaveRequestsTable from "./LeaveRequestsTable";
 import dayjs from "dayjs";
 
+import { useManagerContext } from "../context/ManagerContext";
+
 
 function LeaveRequests() {
-  const [modalOpen, setModalOpen] = useState(false);
-  const [leaveHistory, setLeaveHistory] = useState([]);
-  const [selectedLeave, setSelectedLeave] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState("leaverequests");
-  const [leaveData, setLeaveData] = useState([]);
-  const [managerEmail, setmanagerEmail] = useState("");
-  const [email, setEmail] = useState("");
-  const [gender, setGender] = useState("");
-  const [empid, setEmpid] = useState("");
-  const [username, setUsername] = useState("");
-  const [project, setProject] = useState("");
-  const [designation, setDesignation] = useState("");
-  const [leavehistory, setLeavehistory] = useState([]);
-  const [holidays, setHolidays] = useState([]);
-  const [profileImage, setProfileImage] = useState(Profile);
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [userData, setUserData] = useState(null);
-  const [file, setFile] = useState(null);
-  const [selectedFilter, setSelectedFilter] = useState("All");
-  const [error, setError] = useState("");
-  const navigate = useNavigate();
-  const [leavePolicyRef, setLeavePolicyRef] = useState([]);
-  const year = new Date().getFullYear();
-  const showToast = useToast();
+  // const [modalOpen, setModalOpen] = useState(false);
+  // const [leaveHistory, setLeaveHistory] = useState([]);
+  // const [selectedLeave, setSelectedLeave] = useState(null);
+  // const [selectedCategory, setSelectedCategory] = useState("leaverequests");
+  // const [leaveData, setLeaveData] = useState([]);
+  // const [managerEmail, setmanagerEmail] = useState("");
+  // const [email, setEmail] = useState("");
+  // const [gender, setGender] = useState("");
+  // const [empid, setEmpid] = useState("");
+  // const [username, setUsername] = useState("");
+  // const [project, setProject] = useState("");
+  // const [designation, setDesignation] = useState("");
+  // const [leavehistory, setLeavehistory] = useState([]);
+  // const [holidays, setHolidays] = useState([]);
+  // const [profileImage, setProfileImage] = useState(Profile);
+  // const [newPassword, setNewPassword] = useState("");
+  // const [confirmPassword, setConfirmPassword] = useState("");
+  // const [userData, setUserData] = useState(null);
+  // const [file, setFile] = useState(null);
+  // const [selectedFilter, setSelectedFilter] = useState("All");
+  // const [error, setError] = useState("");
+  // const navigate = useNavigate();
+  // const [leavePolicyRef, setLeavePolicyRef] = useState([]);
+  // const year = new Date().getFullYear();
+  // const showToast = useToast();
 
-  const [errors, setErrors] = useState({
-    leaveType: "",
-    from: "",
-    to: "",
-    reason: "",
-    mismatch: "",
-  });
-  const [formData, setFormData] = useState({
-    leaveType: "",
-    applyDate: "",
-    startDate: "",
-    endDate: "",
-    reason: "",
-  });
-  const [mergedLeaveData, setMergedLeaveData] = useState([]);
+  // const [errors, setErrors] = useState({
+  //   leaveType: "",
+  //   from: "",
+  //   to: "",
+  //   reason: "",
+  //   mismatch: "",
+  // });
+  // const [formData, setFormData] = useState({
+  //   leaveType: "",
+  //   applyDate: "",
+  //   startDate: "",
+  //   endDate: "",
+  //   reason: "",
+  // });
+  // const [mergedLeaveData, setMergedLeaveData] = useState([]);
+
+  const {
+    modalOpen, setModalOpen,
+    leaveRequests, setLeaveRequests,
+        selectedLeave, setSelectedLeave,
+        selectedCategory, setSelectedCategory,
+        leaveData, setLeaveData,
+        managerEmail, setManagerEmail,
+        email, setEmail,
+        gender, setGender,
+        empid, setEmpid,
+        username, setUsername,
+        project, setProject,
+        designation, setDesignation,
+        leaveHistory, setLeaveHistory,
+        holidays, setHolidays,
+        profileImage, setProfileImage,
+        newPassword, setNewPassword,
+        confirmPassword, setConfirmPassword,
+        userData, setUserData,
+        file, setFile,
+        selectedFilter, setSelectedFilter,
+        error, setError,
+        leavePolicyRef, setLeavePolicyRef,
+        mergedLeaveData, setMergedLeaveData,
+        errors, setErrors,
+        formData, setFormData,
+        leavePolicies,setLeavePolicies,
+        navigate,
+        showToast
+  } = useManagerContext();
 
   useEffect(() => {
     const fetchLeavePolicies = async () => {
@@ -106,14 +139,14 @@ function LeaveRequests() {
 
     fetchLeavePolicies();
   }, [leaveData]);
-  const [leavePolicies, setLeavePolicies] = useState([]);
+
   useEffect(() => {
-    const fetchLeavePolicies = async () => {
+    const fetchLeavePoliciesData = async () => {
       try {
         const response = await axios.get(
           "http://localhost:5001/api/leave-policies"
         );
-        console.log("API Response:", response.data);
+        console.log("leave policy Response:", response.data);
 
         // Check if response.data is an array
         if (Array.isArray(response.data)) {
@@ -140,8 +173,9 @@ function LeaveRequests() {
       }
     };
 
-    fetchLeavePolicies();
+    fetchLeavePoliciesData();
   }, []);
+
   const sortHolidaysByMonthAndCustomDay = (holidayList) => {
     const monthNames = [
       "Jan",
@@ -197,14 +231,14 @@ function LeaveRequests() {
     fetchHolidays();
   }, []);
 
-  const fetchLeavehistory = async () => {
+  const fetchLeaveHistory = async () => {
     try {
       const response = await fetch(
         `http://localhost:5001/leave-history?email=${email}`
       );
       if (response.ok) {
         const data = await response.json();
-        setLeavehistory(data);
+        setLeaveHistory(data);
       } else {
         console.error("Failed to fetch leave history");
       }
@@ -214,12 +248,10 @@ function LeaveRequests() {
   };
 
   useEffect(() => {
-    if (selectedCategory === "history") {
-      fetchLeavehistory();
-    }
-  }, [selectedCategory]);
+      fetchLeaveHistory();
+  }, [email]);
 
-  const fetchLeaveHistory = async () => {
+  const fetchLeaveRequests = async () => {
     try {
       const response = await fetch(`http://localhost:5001/leaverequests?userRole=${userData.role}&userEmail=${userData.email}`);
       // console.log("user-role: ",userData.role);
@@ -227,7 +259,7 @@ function LeaveRequests() {
         const data = await response.json();
         const sortedData = data.sort((a, b) => new Date(b.applyDate) - new Date(a.applyDate));
 
-        setLeaveHistory(sortedData); // Directly set the filtered data from backend
+        setLeaveRequests(sortedData); // Directly set the filtered data from backend
       } else {
         console.error("Failed to fetch leave history");
       }
@@ -237,8 +269,8 @@ function LeaveRequests() {
   };
 
   useEffect(() => {
-    fetchLeaveHistory();
-  }, [email]);
+    fetchLeaveRequests();
+  }, []);
 
   useEffect(() => {
     const storedUserData = localStorage.getItem("userData");
@@ -250,7 +282,7 @@ function LeaveRequests() {
           setUserData(parsedUserData);
           setUsername(parsedUserData.empname || "");
           setEmpid(parsedUserData.empid || "");
-          setmanagerEmail(parsedUserData.managerEmail || "")
+          setManagerEmail(parsedUserData.managerEmail || "")
           setEmail(parsedUserData.email || "");
           setGender(parsedUserData.gender || "");
           setProject(parsedUserData.project || "");
@@ -535,7 +567,7 @@ function LeaveRequests() {
   
         if (response.ok) {
           const updatedLeaveFromServer = await response.json();
-          setLeaveHistory((prevHistory) =>
+          setLeaveRequests((prevHistory) =>
             prevHistory.map((item) =>
               item._id === updatedLeaveFromServer._id ? updatedLeaveFromServer : item
             )
@@ -604,7 +636,7 @@ function LeaveRequests() {
   
         if (response.ok) {
           const updatedLeaveFromServer = await response.json();
-          setLeaveHistory((prevHistory) =>
+          setLeaveRequests((prevHistory) =>
             prevHistory.map((item) =>
               item._id === updatedLeaveFromServer._id ? updatedLeaveFromServer : item
             )
@@ -635,13 +667,14 @@ function LeaveRequests() {
   };
 
   // Filter the leave history based on the selected filter
-  const filteredLeaveHistory = leaveHistory.filter((leave) =>
+  const filteredLeaveRequests = leaveRequests.filter((leave) =>
     selectedFilter === "All"
       ? true
       : leave.status.some(
           (status) => status.toLowerCase() === selectedFilter.toLowerCase()
         )
   );
+
   const handleDelete = async (id, startDate) => {
     if (!id || !startDate) {
       console.error("Error: ID or startDate is undefined");
@@ -663,7 +696,7 @@ function LeaveRequests() {
   
       showToast("Leave deleted successfully!", "success");
       // Remove the deleted leave from the state
- fetchLeavehistory()
+ fetchLeaveHistory()
     } catch (error) {
       console.error("Error deleting leave:", error);
     }
@@ -676,7 +709,7 @@ function LeaveRequests() {
     switch (selectedCategory) {
       case "dashboard":
         return(
-        <EmployeeDashboard email={email} /> );
+        <ManagerDashboard email={email} /> );
       case "profile":
         return (
           <div>
@@ -732,7 +765,7 @@ function LeaveRequests() {
             getTodayDate={getTodayDate}
             leavePolicies={leavePolicies} // Pass leave policies here
             leavePolicyRef={leavePolicyRef}
-            leaveHistory={leavehistory}
+            leaveHistory={leaveHistory}
             leaveData={leaveData}
             gender={gender}
           />
@@ -840,7 +873,8 @@ function LeaveRequests() {
         );
 
       case "history":
-        return <LeaveHistory leaveHistory={leavehistory} handleDelete={handleDelete}/>;
+        return <LeaveHistory leaveHistory={leaveHistory} handleDelete={handleDelete}/>;
+        
       default:
         return null;
     }
@@ -865,7 +899,10 @@ function LeaveRequests() {
           logo={logo}
           Profile={Profile}
         />
-        <main className="main-content">{renderContent()}</main>
+        {/* <main className="main-content">{renderContent()}</main> */}
+        <div className="main-content">
+        <Outlet />
+      </div>
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ const PrivateRoute = ({ children, allowedRoles }) => {
     const [admin, setAdmin] = useState(null);
 
     useEffect(() => {
+        
         const storedUserData = localStorage.getItem("userData");
         const adminData = localStorage.getItem("admin");
 
@@ -30,7 +31,7 @@ const PrivateRoute = ({ children, allowedRoles }) => {
             setRole("guest");
         }
     }, []);
-    console.log("admin :",admin);
+    console.log("role :",role);
 
     // Show loading spinner
     if (role === null && admin == null) {

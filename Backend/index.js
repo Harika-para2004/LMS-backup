@@ -431,9 +431,9 @@ app.get("/reports", async (req, res) => {
           leave.startDate
             .map((start, index) => ({
               leaveType: leave.leaveType,
-              startDate: new Date(start).toLocaleDateString("en-GB"),
+              startDate: new Date(start).toLocaleDateString(""),
               endDate: leave.endDate[index]
-                ? new Date(leave.endDate[index]).toLocaleDateString("en-GB")
+                ? new Date(leave.endDate[index]).toLocaleDateString("")
                 : "N/A",
               status: leave.status[index] || "Pending",
               reason: leave.reason[index] || "No reason provided",

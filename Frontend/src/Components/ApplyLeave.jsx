@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { DatePicker, PickersDay } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -20,6 +20,8 @@ import {
   Tooltip,
   IconButton,
 } from "@mui/material";
+import { useManagerContext } from "../context/ManagerContext";
+import axios from "axios";
 
 const style = {
   position: "absolute",
@@ -32,31 +34,260 @@ const style = {
   p: 4,
 };
 
-const ApplyLeave = ({
-  formData,
-  errors,
-  handleInputChange,
-  handleBlur,
-  handleSubmit,
-  handleFileChange,
-  holidays,
-  getTodayDate,
-  leavePolicies,
-  leavePolicyRef,
-  leaveHistory,
-  leaveData,
-  gender,
-}) => {
+const ApplyLeave = (
+//   {
+//   formData,
+//   errors,
+//   handleInputChange,
+//   handleBlur,
+//   handleSubmit,
+//   handleFileChange,
+//   holidays,
+//   getTodayDate,
+//   leavePolicies,
+//   leavePolicyRef,
+//   leaveHistory,
+//   leaveData,
+//   gender,
+// }
+) => {
   const [showHolidays, setShowHolidays] = useState(false);
   const [showLeavePolicies, setShowLeavePolicies] = useState(false);
   const [openDescription, setOpenDescription] = useState(false);
   const [currentDescription, setCurrentDescription] = useState("");
   const [fileName, setFileName] = useState("");
   const year = new Date().getFullYear();
+  const {
+    modalOpen, setModalOpen,
+        leaveHistory, setLeaveHistory,
+        selectedLeave, setSelectedLeave,
+        selectedCategory, setSelectedCategory,
+        leaveData, setLeaveData,
+        managerEmail, setManagerEmail,
+        email, setEmail,
+        gender, setGender,
+        empid, setEmpid,
+        username, setUsername,
+        project, setProject,
+        designation, setDesignation,
+        leavehistory, setLeavehistory,
+        holidays, setHolidays,
+        profileImage, setProfileImage,
+        newPassword, setNewPassword,
+        confirmPassword, setConfirmPassword,
+        userData, setUserData,
+        file, setFile,
+        selectedFilter, setSelectedFilter,
+        error, setError,
+        leavePolicyRef, setLeavePolicyRef,
+        mergedLeaveData, setMergedLeaveData,
+        errors, setErrors,
+        formData, setFormData,
+        leavePolicies, setLeavePolicies,
+        navigate,
+        showToast
+  } = useManagerContext();
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    const { leaveType, startDate, endDate, reason } = formData;
+    const today = dayjs().format("YYYY-MM-DD");
+    const formattedStartDate = dayjs(startDate, "DD/MM/YYYY").format(
+      "YYYY-MM-DD"
+    );
+    const formattedEndDate = dayjs(endDate, "DD/MM/YYYY").format("YYYY-MM-DD");
+
+    // **✅ Required Fields Check**
+    if (!leaveType || !startDate || !endDate) {
+      showToast("All fields are required.", "warning");
+      return;
+    }
+
+    // **✅ Valid Date Range Check**
+    if (new Date(formattedEndDate) < new Date(formattedStartDate)) {
+      showToast("End Date cannot be before Start Date.", "error");
+      return;
+    }
+
+    // **✅ No Holidays or Weekends**
+    const isHoliday = holidays.some(
+      (holiday) =>
+        holiday.type === "Mandatory" &&
+        dayjs(holiday.date).isSame(formattedStartDate, "day")
+    );
+    if (isHoliday) {
+      showToast("You cannot apply leave on company holidays.", "warning");
+      return;
+    }
+
+    const isWeekend =
+      dayjs(formattedStartDate).day() === 0 ||
+      dayjs(formattedStartDate).day() === 6;
+    if (isWeekend) {
+      showToast("Weekends are not allowed for leave.", "warning");
+      return;
+    }
+
+    // **✅ Cannot Apply for Same Leave Twice**
+    const alreadyApplied = leaveHistory.some(
+      (leave) =>
+        leave.leaveType === leaveType &&
+        dayjs(leave.startDate).isSame(formattedStartDate, "day") &&
+        dayjs(leave.endDate).isSame(formattedEndDate, "day")
+    );
+    if (alreadyApplied) {
+      showToast(`You have already applied for ${leaveType}.`, "info");
+      return;
+    }
+
+    // **✅ Leave Balance Check**
+    const appliedLeave = leaveData.find(
+      (leave) => formatCase(leave.leaveType) === formatCase(leaveType)
+    );
+    const leaveBalance =
+      appliedLeave?.availableLeaves ??
+      leavePolicyRef.find(
+        (policy) => formatCase(policy.leaveType) === formatCase(leaveType)
+      )?.maxAllowedLeaves ??
+      0;
+
+    const requestedDays =
+      dayjs(formattedEndDate).diff(dayjs(formattedStartDate), "day") + 1;
+
+    if (requestedDays > leaveBalance && leaveType !== "LOP") {
+      showToast(
+        `Only ${leaveBalance} ${leaveType} leaves are available.`,
+        "error"
+      );
+      return;
+    }
+
+    // **✅ Gender-Based Leave Restrictions**
+    if (leaveType.includes("Maternity") && gender !== "Female") {
+      showToast("Maternity Leave is only for female employees.", "error");
+      return;
+    }
+    if (leaveType.includes("Paternity") && gender !== "Male") {
+      showToast("Paternity Leave is only for male employees.", "error");
+      return;
+    }
+
+    // **✅ Sick Leave Past or Current Dates Only**
+    if (
+      leaveType === "Sick Leave" &&
+      dayjs(formattedStartDate).isAfter(today)
+    ) {
+      showToast(
+        "Sick Leave can only be applied for past or current dates.",
+        "warning"
+      );
+      return;
+    }
+
+    // **✅ No Overlapping Leaves**
+    const hasOverlap = leaveHistory.some(
+      (leave) =>
+        dayjs(leave.startDate, "DD/MM/YYYY").isBefore(
+          dayjs(formattedEndDate, "YYYY-MM-DD")
+        ) &&
+        dayjs(leave.endDate, "DD/MM/YYYY").isAfter(
+          dayjs(formattedStartDate, "YYYY-MM-DD")
+        )
+    );
+    if (hasOverlap) {
+      showToast(
+        "Your selected leave dates overlap with an existing leave.",
+        "error"
+      );
+      return;
+    }
+
+    // **✅ LOP (Unpaid Leave) only when Casual Leaves are exhausted**
+    if (
+      leaveType === "LOP" &&
+      leaveData.find((leave) => leave.leaveType === "Casual Leave")
+        ?.availableLeaves > 0
+    ) {
+      showToast(
+        "LOP can only be applied when Casual Leaves are exhausted.",
+        "info"
+      );
+      return;
+    }
+
+    // **Proceed with submission**
+    const formDataToSend = new FormData();
+    formDataToSend.append("email", email);
+    formDataToSend.append("empname", username);
+    formDataToSend.append("empid", empid);
+    formDataToSend.append("managerEmail", managerEmail);
+    formDataToSend.append("leaveType", leaveType);
+    formDataToSend.append("applyDate", today);
+    formDataToSend.append("startDate", formattedStartDate);
+    formDataToSend.append("endDate", formattedEndDate);
+    if (file) formDataToSend.append("attachment", file);
+    formDataToSend.append("reason", reason || "N/A");
+
+    try {
+      const response = await fetch(
+        `http://localhost:5001/apply-leave?email=${encodeURIComponent(email)}`,
+        { method: "POST", body: formDataToSend }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to submit form.");
+      }
+
+      showToast("Leave application submitted successfully!", "success");
+      setFormData({ leaveType: "", startDate: "", endDate: "", reason: "" });
+      setFile(null);
+      setErrors({});
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      showToast(error.message, "error");
+    }
+  };
+
+  const handleFileChange = (event) => {
+    const selectedFile = event.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+    }
+  };
+
+  const getTodayDate = () => {
+    const today = new Date();
+    return today.toISOString().split("T")[0];
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    if (!value || value == "Select Leave Type") {
+      setErrors({
+        ...errors,
+        [name]: "Required field",
+      });
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    if (value) {
+      setErrors({
+        ...errors,
+        [name]: "",
+      });
+    }
+  };
+
 
   const formatCase = (text) => {
     return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
   };
+
 
   const handleToggleDescription = (policy) => {
     // Check if the description exists and then set the current description
@@ -69,6 +300,44 @@ const ApplyLeave = ({
       setOpenDescription(policy._id);
     }
   };
+
+  useEffect(() => {
+    const fetchLeavePolicies = async () => {
+      try {
+        // Fetch leave policies (default leave types)
+        const policyResponse = await axios.get(
+          "http://localhost:5001/api/leave-policies"
+        );
+        setLeavePolicyRef(policyResponse.data.data);
+        const leavePolicies = policyResponse.data.data;
+
+        // Convert applied leave data (leaveData) into a map for easy lookup
+        const appliedLeavesMap = {};
+        leaveData.forEach((leave) => {
+          appliedLeavesMap[leave.leaveType] = leave;
+        });
+
+        // Merge applied leaves with policies
+        const finalLeaveData = leavePolicies.map((policy) => {
+          if (appliedLeavesMap[policy.leaveType]) {
+            return appliedLeavesMap[policy.leaveType]; // Use applied leave data
+          } else {
+            return {
+              leaveType: policy.leaveType,
+              totalLeaves: policy.maxAllowedLeaves,
+              availableLeaves: policy.maxAllowedLeaves, // Default available = maxAllowed
+            };
+          }
+        });
+
+        setMergedLeaveData(finalLeaveData);
+      } catch (error) {
+        console.error("Error fetching leave policies:", error);
+      }
+    };
+
+    fetchLeavePolicies();
+  }, [leaveData]);
 
   const handleFileChangeWithState = (event) => {
     const file = event.target.files[0];
@@ -105,7 +374,7 @@ const ApplyLeave = ({
                 variant="outlined"
               >
           
-                {leavePolicies.length > 0 ? (
+                {leavePolicies?.length > 0 ? (
                   leavePolicies.map((leaveType, index) => (
                     <MenuItem
                       key={index}

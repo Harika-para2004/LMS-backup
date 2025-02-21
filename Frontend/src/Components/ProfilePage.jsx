@@ -9,8 +9,35 @@ import {
   Typography,
   Modal,
 } from "@mui/material";
+import { useManagerContext } from "../context/ManagerContext";
 
-const ProfilePage = ({ Profile, username, empid, email, project, leaveData,userData,gender }) => {
+const ProfilePage = () => {
+  const {
+    modalOpen, setModalOpen,
+    leaveRequests, setLeaveRequests,
+    selectedLeave, setSelectedLeave,
+        selectedCategory, setSelectedCategory,
+        leaveData, setLeaveData,
+        managerEmail, setManagerEmail,
+        email, setEmail,
+        gender, setGender,
+        empid, setEmpid,
+        username, setUsername,
+        project, setProject,
+        designation, setDesignation,
+        leavehistory, setLeavehistory,
+        holidays, setHolidays,
+        profileImage, setProfileImage,
+        newPassword, setNewPassword,
+        confirmPassword, setConfirmPassword,
+        userData, setUserData,
+        file, setFile,
+        selectedFilter, setSelectedFilter,
+        error, setError,
+        leavePolicyRef, setLeavePolicyRef,
+        navigate,
+        showToast
+  } = useManagerContext();
   const [mergedLeaveData, setMergedLeaveData] = useState([]);
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
