@@ -60,7 +60,7 @@ const LeaveRequestsTable = (
   };
 
   useEffect(() => {
-    if (userData && userData.email && userData.role) {  
+    if (userData) {  
       console.log("Fetching leave requests for:", userData.email);
       fetchLeaveRequests();
     }

@@ -373,6 +373,8 @@ const App = () => {
   useEffect(() => {
     const fetchLeaveData = async () => {
       try {
+        console.log("email in emp",email);
+        console.log("user email",userData.email)
         const response = await fetch(
           `http://localhost:5001/leavesummary?email=${email}`
         );
@@ -389,7 +391,7 @@ const App = () => {
     };
 
     fetchLeaveData();
-  }, [email]);
+  }, [leaveData,email]);
 
   useEffect(() => {
     const fetchHolidays = async () => {

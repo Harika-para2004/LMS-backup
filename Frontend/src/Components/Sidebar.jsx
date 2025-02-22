@@ -137,8 +137,21 @@ const Sidebar = ({
         <img src={logo} alt="Quadface Logo" className="logo_das" />
       </div>
       <div className="sidebar-comps">
-        {(isEmployee || isManager) && (
-          <Link to="/profile" className={selectedCategory === "profile" ? "active-tab" : ""}>
+        {(isEmployee) && (
+          <Link to="/employee/profile" className={selectedCategory === "profile" ? "active-tab" : ""}>
+            <div className="profile-section">
+              <div className="profile-pic" style={{ marginTop: "10%" }}>
+                <img src={Profile} alt="Profile" />
+              </div>
+              <div className="profile-details">
+                <p className="emp-name" data-fullname={username}>{username}</p>
+                <p className="emp-id">Emp ID: {empid}</p>
+              </div>
+            </div>
+          </Link>
+        )}
+        {(isManager) && (
+          <Link to="/manager/profile" className={selectedCategory === "profile" ? "active-tab" : ""}>
             <div className="profile-section">
               <div className="profile-pic" style={{ marginTop: "10%" }}>
                 <img src={Profile} alt="Profile" />

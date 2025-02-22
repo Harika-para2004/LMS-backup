@@ -35,9 +35,7 @@ const EmployeeDashboard = () => {
       setEmail(contextEmail);
     }
     // CASE 3: If no email found (e.g., direct URL access without login), redirect to login
-    else {
-      navigate("/login");
-    }
+
   }, [contextEmail, paramEmail, navigate]);
 
   console.log("location", location);

@@ -404,10 +404,14 @@ app.delete("/employee-del/:id", async (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
+
 app.get("/reports", async (req, res) => {
   try {
     const { project, search, email } = req.query;
     let query = { managerEmail: email }; // Filter by manager's email
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" }); // 🔴 Error if email missing
+    }
 
     if (project) query.project = project;
     if (search) {
@@ -431,9 +435,9 @@ app.get("/reports", async (req, res) => {
           leave.startDate
             .map((start, index) => ({
               leaveType: leave.leaveType,
-              startDate: new Date(start).toLocaleDateString(""),
+              startDate: new Date(start).toLocaleDateString(),
               endDate: leave.endDate[index]
-                ? new Date(leave.endDate[index]).toLocaleDateString("")
+                ? new Date(leave.endDate[index]).toLocaleDateString()
                 : "N/A",
               status: leave.status[index] || "Pending",
               reason: leave.reason[index] || "No reason provided",
@@ -469,6 +473,7 @@ app.get("/reports", async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 });
+
 app.get("/reports-admin", async (req, res) => {
   try {
     const { project, search } = req.query;

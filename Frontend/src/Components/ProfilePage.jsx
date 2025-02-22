@@ -36,9 +36,10 @@ const ProfilePage = () => {
         error, setError,
         leavePolicyRef, setLeavePolicyRef,
         navigate,
-        showToast
+        showToast,
+        mergedLeaveData, setMergedLeaveData
   } = useManagerContext();
-  const [mergedLeaveData, setMergedLeaveData] = useState([]);
+  // const [mergedLeaveData, setMergedLeaveData] = useState([]);
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     newPassword: "",
@@ -57,7 +58,7 @@ const ProfilePage = () => {
         const leavePolicies = policyResponse.data.data;
 
         const appliedLeavesMap = {};
-        leaveData.forEach((leave) => {
+        leaveData?.forEach((leave) => {
           appliedLeavesMap[leave.leaveType] = leave;
         });
 
@@ -76,7 +77,7 @@ const ProfilePage = () => {
         console.error("Error fetching leave policies:", error);
       }
     };
-
+    console.log("1st email",email);
     fetchLeavePolicies();
   }, [leaveData]);
 
@@ -125,7 +126,7 @@ const ProfilePage = () => {
     <div className="profile-page">
       <div className="profile-container">
         <div className="profile-header">
-          <img src={Profile} alt="Profile" width={"100px"} />
+          <img src={profileImage} alt="Profile" width={"100px"} />
           <div className="profile-details">
             <h2 className="employee-name">{username}</h2>
             <p className="employee-id"><span>Employee ID:</span> {empid}</p>
@@ -143,8 +144,7 @@ const ProfilePage = () => {
       <div className="leave-types-container">
         <h2 className="content-heading">Leave Balances</h2>
         <div className="leave-cards">
-          {mergedLeaveData
-          .filter(
+          {mergedLeaveData?.filter(
             (leave) => !((gender === "Male" && leave.leaveType.toLowerCase() === "maternity leave")|| (gender==="Female" && leave.leaveType.toLowerCase()==="paternity leave"))
           )
           .map((leave, index) => (

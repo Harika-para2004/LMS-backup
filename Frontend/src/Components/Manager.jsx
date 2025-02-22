@@ -104,44 +104,6 @@ function LeaveRequests() {
   } = useManagerContext();
 
   useEffect(() => {
-    const fetchLeavePolicies = async () => {
-      try {
-        // Fetch leave policies (default leave types)
-        const policyResponse = await axios.get(
-          "http://localhost:5001/api/leave-policies"
-        );
-        setLeavePolicyRef(policyResponse.data.data);
-        const leavePolicies = policyResponse.data.data;
-
-        // Convert applied leave data (leaveData) into a map for easy lookup
-        const appliedLeavesMap = {};
-        leaveData.forEach((leave) => {
-          appliedLeavesMap[leave.leaveType] = leave;
-        });
-
-        // Merge applied leaves with policies
-        const finalLeaveData = leavePolicies.map((policy) => {
-          if (appliedLeavesMap[policy.leaveType]) {
-            return appliedLeavesMap[policy.leaveType]; // Use applied leave data
-          } else {
-            return {
-              leaveType: policy.leaveType,
-              totalLeaves: policy.maxAllowedLeaves,
-              availableLeaves: policy.maxAllowedLeaves, // Default available = maxAllowed
-            };
-          }
-        });
-
-        setMergedLeaveData(finalLeaveData);
-      } catch (error) {
-        console.error("Error fetching leave policies:", error);
-      }
-    };
-
-    fetchLeavePolicies();
-  }, [leaveData]);
-
-  useEffect(() => {
     const fetchLeavePoliciesData = async () => {
       try {
         const response = await axios.get(
@@ -298,26 +260,48 @@ function LeaveRequests() {
   }, []);
 
   useEffect(() => {
-    if (email) {
-      const fetchLeaveData = async () => {
-        try {
-          const response = await fetch(
-            `http://localhost:5001/leavesummary?email=${email}`
-          );
-          if (response.ok) {
-            const data = await response.json();
-            console.log(data);
-            setLeaveData(data);
-          } else {
-            console.error("Failed to fetch leave data");
-          }
-        } catch (error) {
-          console.error("Error fetching leave data:", error);
+    const fetchLeaveData = async () => {
+      try {
+        console.log("email in emp",email);
+        console.log("user email",userData.email)
+        const response = await fetch(
+          `http://localhost:5001/leavesummary?email=${email}`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Fetched Data:", data);
+          setLeaveData(data);
+        } else {
+          console.error("Failed to fetch leave data");
         }
-      };
-      fetchLeaveData();
-    }
-  }, [email]);
+      } catch (error) {
+        console.error("Error fetching leave data:", error);
+      }
+    };
+
+    fetchLeaveData();
+  }, [leaveData,email]); 
+  
+  //   // if (email) {
+  //     const fetchLeaveData = async () => {
+  //       try {
+  //         const response = await fetch(
+  //           `http://localhost:5001/leavesummary?email=${email}`
+  //         );
+  //         if (response.ok) {
+  //           const data = await response.json();
+  //           console.log(data);
+  //           setLeaveData(data);
+  //         } else {
+  //           console.error("Failed to fetch leave data");
+  //         }
+  //       } catch (error) {
+  //         console.error("Error fetching leave data:", error);
+  //       }
+  //     };
+  //     fetchLeaveData();
+  //   // }
+  // }, [leaveData]);
   
   const handleInputChange = (e) => {
     const { name, value } = e.target;

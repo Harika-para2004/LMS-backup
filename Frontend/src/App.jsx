@@ -100,7 +100,7 @@ function App() {
             <Route
               path="/employee"
               element={
-                <PrivateRoute allowedRoles={["employee", "manager"]}>
+                <PrivateRoute allowedRoles={["employee"]}>
                   <Employee />
                 </PrivateRoute>
               }
@@ -109,7 +109,7 @@ function App() {
               <Route path="apply-leave" element={<ApplyLeave />} />
               <Route path="history" element={<LeaveHistory />} />
               <Route path="profile" element={<ProfilePage />} />
-              <Route path="dashboard/:email" element={<EmployeeDashboard />} />
+              <Route path="dashboard" element={<EmployeeDashboard />} />
             </Route>
 
             {/* Manager Routes */}
@@ -117,7 +117,7 @@ function App() {
             <Route
               path="/manager"
               element={
-                <PrivateRoute allowedRoles={["manager", "guest"]}>
+                <PrivateRoute allowedRoles={["manager"]}>
                   <LeaveRequests />
                 </PrivateRoute>
               }

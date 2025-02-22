@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import logo from "./../assets/img/quadfacelogo-hd.png";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { BASE_URL } from "../Config";
+// import { BASE_URL } from "../Config";
+const BASE_URL = "http://localhost:5001/";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import axios from "axios";
 import { FaEdit, FaTrash } from "react-icons/fa";

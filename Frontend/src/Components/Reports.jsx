@@ -42,8 +42,10 @@ const Reports = () => {
   const [showAnalytics, setShowAnalytics] = useState(false);
 
   useEffect(() => {
-    fetchReports();
-  }, [project, search]);
+    if (email) {
+      fetchReports();
+    }
+  }, [ email,project, search]); 
 
   const fetchReports = async () => {
     try {
@@ -52,6 +54,7 @@ const Reports = () => {
       );
       if (!response.ok) throw new Error("Failed to fetch reports");
       const data = await response.json();
+      console.log("reports",data);
       setReports(data);
     } catch (error) {
       console.error("Error fetching reports:", error);
@@ -142,7 +145,7 @@ const Reports = () => {
             </tr> 
           </thead>
           <tbody>
-            {sortedReports.length > 0 ? (
+            {sortedReports?.length > 0 ? (
               sortedReports
                 .filter((report) => report.email !== "admin@gmail.com")
                 .map((report, index) => (
