@@ -80,6 +80,10 @@ import LeavePolicyPage from "./Components/LeavePolicyPage";
 import AdminTrends from "./Components/AdminTrends";
 import HolidayCalendar from "./Components/HolidayCalendar";
 import TotalEmployees from "./Components/TotalEmployees";
+import ReportsAdmin from "./Components/ReportsAdmin";
+import ManagersList from "./Components/ManagersList";
+import AdminToManager from "./Components/AdminToManager";
+import EmployeesUnderManagerinAdmin from "./Components/EmployeesUnderManagerinAdmin";
 
 function App() {
   return (
@@ -96,7 +100,7 @@ function App() {
             <Route
               path="/employee"
               element={
-                <PrivateRoute allowedRoles={["employee"]}>
+                <PrivateRoute allowedRoles={["employee", "manager"]}>
                   <Employee />
                 </PrivateRoute>
               }
@@ -105,7 +109,7 @@ function App() {
               <Route path="apply-leave" element={<ApplyLeave />} />
               <Route path="history" element={<LeaveHistory />} />
               <Route path="profile" element={<ProfilePage />} />
-              <Route path="dashboard" element={<EmployeeDashboard />} />
+              <Route path="dashboard/:email" element={<EmployeeDashboard />} />
             </Route>
 
             {/* Manager Routes */}
@@ -113,15 +117,19 @@ function App() {
             <Route
               path="/manager"
               element={
-                <PrivateRoute allowedRoles={["manager","guest"]}>
+                <PrivateRoute allowedRoles={["manager", "guest"]}>
                   <LeaveRequests />
                 </PrivateRoute>
               }
             >
               <Route index element={<LeaveRequestsTable />} />
-              <Route path="analytics/:email" element={<ManagerDashboard />} />
-              <Route path="reports" element={<Reports />} />
-              <Route path="employees" element={<EmployeesUnderManager />} />
+              <Route path="analytics" element={<ManagerDashboard />}>
+                <Route index element={<EmployeeDashboard />} />
+                <Route path="self" element={<EmployeeDashboard />} />
+                <Route path="reports" element={<Reports />} />
+                <Route path="employees" element={<EmployeesUnderManager />} />
+              </Route>
+              <Route path="dashboard/:email?" element={<EmployeeDashboard />} />
               <Route path="apply-leave" element={<ApplyLeave />} />
               <Route path="history" element={<LeaveHistory />} />
               <Route path="profile" element={<ProfilePage />} />
@@ -130,21 +138,35 @@ function App() {
             {/* </Route> */}
 
             {/* Admin Routes */}
-              <Route
-                path="/admin"
-                element={
-                  <PrivateRoute allowedRoles={["admin"]}>
-                    <AdminDashboard />
-                  </PrivateRoute>
-                }
-              >
-                <Route index element={<HolidayCalendar />} />
-                <Route path="all-employees" element={<TotalEmployees />} />
-                <Route path="all-reports" element={<AdminTrends />} />
-                <Route path="leave-requests" element={<LeaveRequestsTable />} />
-                <Route path="leave-policies" element={<LeavePolicyPage/> } />
-                <Route path="calendar" element={<HolidayCalendar />} />
+            <Route
+              path="/admin"
+              element={
+                <PrivateRoute allowedRoles={["admin"]}>
+                  <AdminDashboard />
+                </PrivateRoute>
+              }
+            >
+              <Route index element={<HolidayCalendar />} />
+              <Route path="all-employees" element={<TotalEmployees />} />
+              {/* <Route path="all-reports" element={<AdminTrends />} /> */}
+              <Route path="analytics/:email" element={<AdminToManager />}>
+                <Route index element={<EmployeeDashboard />} />
+                <Route path="self" element={<EmployeeDashboard />} />
+                <Route path="reports" element={<Reports />} />
+                <Route path="employees" element={<EmployeesUnderManagerinAdmin />} />
               </Route>
+
+              <Route path="all-reports" element={<AdminTrends />}>
+                <Route index element={<ManagersList />} />
+                <Route path="managers" element={<ManagersList />} />
+                <Route path="reports" element={<ReportsAdmin />} />
+              </Route>
+
+              <Route path="dashboard/:email?" element={<EmployeeDashboard />} />
+              <Route path="leave-requests" element={<LeaveRequestsTable />} />
+              <Route path="leave-policies" element={<LeavePolicyPage />} />
+              <Route path="calendar" element={<HolidayCalendar />} />
+            </Route>
           </Routes>
         </ManagerProvider>
       </SnackbarProvider>

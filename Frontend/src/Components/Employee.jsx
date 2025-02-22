@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "../App.css";
 import Profile from "../assets/img/profile.png";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "./../assets/img/quadfacelogo-hd.png";
 import Grid from "@mui/material/Grid";
 import axios from "axios";
@@ -430,12 +430,15 @@ const App = () => {
     }
   };
   useEffect(() => {
+    if (userData && userData.email && userData.role) {  
+      console.log("Fetching leave requests for:", userData.email);
       fetchLeaveHistory();
-  }, []);
+    }
+  }, [userData]);
 
-  useEffect(() => {
-    fetchLeaveHistory();
-  }, []);
+  // useEffect(() => {
+  //   fetchLeaveHistory();
+  // }, []);
   const handleDelete = async (id, startDate) => {
     if (!id || !startDate) {
       console.error("Error: ID or startDate is undefined");

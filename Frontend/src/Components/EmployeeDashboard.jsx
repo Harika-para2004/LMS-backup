@@ -16,15 +16,32 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useManagerContext } from "../context/ManagerContext";
 
 const EmployeeDashboard = () => {
-  const {
-    email, 
-    userData, setUserData,
-    navigate,
-    showToast
-} = useManagerContext();
+  const { email: contextEmail, role } = useManagerContext(); // Role helps differentiate
+  const { email: paramEmail } = useParams(); // Email from URL (if manager clicks)
+  const navigate = useNavigate();
 
-  // const location = useLocation();
-  // const navigate = useNavigate();
+  const location = useLocation();
+  const [userData, setUserData] = useState(location.state?.userData || {});
+
+  const [email, setEmail] = useState(userData?.email);
+
+  useEffect(() => {
+    // CASE 1: If manager navigates, use paramEmail
+    if (paramEmail) {
+      setEmail(paramEmail);
+    }
+    // CASE 2: If employee logs in, use contextEmail
+    else if (contextEmail) {
+      setEmail(contextEmail);
+    }
+    // CASE 3: If no email found (e.g., direct URL access without login), redirect to login
+    else {
+      navigate("/login");
+    }
+  }, [contextEmail, paramEmail, navigate]);
+
+  console.log("location", location);
+  console.log("dash email", email);
 
   // Check if the user came from "Reports"
   const cameFromReports = location.state?.fromReports || false;
@@ -47,44 +64,6 @@ const EmployeeDashboard = () => {
     return Array.from({ length: 15 }, (_, i) => currentYear + 1 - i);
   }, []);
 
-  // 🔹 Fetch Leave Trends & Leave Types (On Mount)
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     setLoading(true);
-  //     setError(null);
-  //     try {
-  //       const [trendsRes, typesRes] = await Promise.all([
-  //         axios.get(`http://localhost:5001/leave-trends/${email}`),
-  //         axios.get(`http://localhost:5001/leavetype-status/${email}`),
-  //       ]);
-
-  //       setMonthlyTrends(trendsRes.data || []);
-  //       setLeaveTypes(typesRes.data || []);
-  //     } catch (err) {
-  //       console.error("Error fetching leave stats:", err);
-  //       setError("Failed to load leave data.");
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   fetchData();
-  // }, [email]);
-
-  // // 🔹 Fetch Leave Data for Selected Year
-  // useEffect(() => {
-  //   setLoading(true);
-  //   fetch(`http://localhost:5001/leave-types/${email}/${selectedYear}`)
-  //     .then((res) => res.json())
-  //     .then((data) => setLeaveData(data))
-  //     .catch((err) => {
-  //       console.error("Error fetching leave data:", err);
-  //       setError("Failed to load leave data.");
-  //     })
-  //     .finally(() => setLoading(false));
-  // }, [email, selectedYear]);
-
-  // 🟢 Monthly Leave Trends - Bar Chart
   const monthlyTrendsOptions = {
     title: { text: "Monthly Approved Leave Trends", left: "center" },
     tooltip: { trigger: "axis" },
@@ -122,63 +101,6 @@ const EmployeeDashboard = () => {
 
   // 🔹 Extract Unique Years for X-axis
   const uniqueYears = [...new Set(leaveData.map((item) => item._id.year))];
-
-  // 🟢 Leave Status Breakdown by Year - Bar Chart
-  // const leaveStatusChart = {
-  //   title: { text: "Leave Status Breakdown by Year", left: "center" },
-  //   tooltip: { trigger: "axis" },
-  //   legend: { bottom: 0 },
-  //   xAxis: { type: "category", data: uniqueYears },
-  //   yAxis: { type: "value" },
-  //   series: ["Pending", "Approved", "Rejected"].map((status) => ({
-  //     name: status,
-  //     type: "bar",
-  //     data: uniqueYears.map(
-  //       (year) =>
-  //         leaveData.find((item) => item._id.year === year && item._id.status === status)
-  //           ?.count || 0
-  //     ),
-  //   })),
-  // };
-
-  // const leaveTypesOptions = {
-  //   title: { text: "Leave Status Breakdown", left: "center" },
-  //   tooltip: { trigger: "axis" },
-  //   legend: { bottom: 0 },
-
-  //   xAxis: {
-  //     type: "category",
-  //     data: [...new Set(leaveTypes.map((item) => item._id.leaveType))], // Unique leave types
-  //   },
-  //   yAxis: { type: "value" },
-
-  //   series: [
-  //     {
-  //       name: "Pending",
-  //       type: "bar",
-  //       stack: "status",
-  //       data: leaveTypes
-  //         .filter((item) => item._id.status === "Pending")
-  //         .map((item) => item.count),
-  //     },
-  //     {
-  //       name: "Approved",
-  //       type: "bar",
-  //       stack: "status",
-  //       data: leaveTypes
-  //         .filter((item) => item._id.status === "Approved")
-  //         .map((item) => item.count),
-  //     },
-  //     {
-  //       name: "Rejected",
-  //       type: "bar",
-  //       stack: "status",
-  //       data: leaveTypes
-  //         .filter((item) => item._id.status === "Rejected")
-  //         .map((item) => item.count),
-  //     },
-  //   ],
-  // };
 
   return (
     <Grid container direction="column">

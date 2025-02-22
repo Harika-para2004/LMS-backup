@@ -2,8 +2,40 @@ import React, { useState, useEffect } from "react";
 import { formatDate } from "../utils/dateUtlis";
 import ManagerEmployeeDashboard from "./ManagerEmployeeDashboard";
 import { Button } from "@mui/material";
+import { useManagerContext } from "../context/ManagerContext";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
-const Reports = ({email}) => {
+const Reports = () => {
+
+  const { email: contextEmail, role } = useManagerContext(); // Role helps differentiate
+  const { email: paramEmail } = useParams(); // Email from URL (if manager clicks)
+  const navigate = useNavigate();
+
+  const location = useLocation();
+  const [userData, setUserData] = useState(location.state?.userData || {});
+
+  const [email, setEmail] = useState(userData?.email);
+
+  useEffect(() => {
+    // CASE 1: If manager navigates, use paramEmail
+    if (paramEmail) {
+      setEmail(paramEmail);
+    }
+    // CASE 2: If employee logs in, use contextEmail
+    else if (contextEmail) {
+      setEmail(contextEmail);
+    }
+    // CASE 3: If no email found (e.g., direct URL access without login), redirect to login
+    else {
+      navigate("/login");
+    }
+  }, [contextEmail, paramEmail, navigate]);
+
+  console.log("location", location);
+  console.log("dash email", email);
+
+  console.log("email in reports",email);
+
   const [reports, setReports] = useState([]);
   const [project, setProject] = useState("");
   const [search, setSearch] = useState("");

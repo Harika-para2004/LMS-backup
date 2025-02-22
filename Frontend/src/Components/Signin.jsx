@@ -33,7 +33,6 @@ const LoginForm = () => {
     e.preventDefault();
     if (formData.email === "admin@gmail.com" && formData.password === "1234") {
       localStorage.setItem("admin", JSON.stringify(formData.email));
-
       navigate(`/admin`);
     } else {
       try {
@@ -47,10 +46,11 @@ const LoginForm = () => {
           const userData = userDataResponse.data;
 
           localStorage.setItem("userData", JSON.stringify(userData));
+          
           if (
             userData.role === "Manager"
           ) {
-            navigate(`/manager`);
+            navigate(`/manager`, { state: { userData } });
           } else {
             navigate(`/employee`, { state: { userData } });
           }

@@ -1,79 +1,76 @@
-import { useState } from "react";
+import { useLocation, useNavigate, Outlet, useParams } from "react-router-dom";
 import { Box, Button, Stack } from "@mui/material";
-import ManagerAnalytics from "./EmployeeDashboard";
-import Reports from "./Reports";
-import EmployeeAnalytics from "./EmployeeDashboard";
-import EmployeesUnderManager from "./EmployeesUnderManager";
 import { useManagerContext } from "../context/ManagerContext";
+import { useEffect, useState } from "react";
 
 const ManagerDashboard = () => {
-  const {
-        email, 
-        userData, setUserData,
-        error, setError,
-        navigate,
-        showToast
-  } = useManagerContext();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const [selectedTab, setSelectedTab] = useState(1);
+  const { email: contextEmail, role } = useManagerContext(); // Role helps differentiate
+  const { email: paramEmail } = useParams(); // Email from URL (if manager clicks)
+  const [userData, setUserData] = useState(location.state?.userData || {});
+
+  const [email, setEmail] = useState(userData?.email);
+
+  useEffect(() => {
+    // CASE 1: If manager navigates, use paramEmail
+    if (paramEmail) {
+      setEmail(paramEmail);
+    }
+    // CASE 2: If employee logs in, use contextEmail
+    else if (contextEmail) {
+      setEmail(contextEmail);
+    }
+    // CASE 3: If no email found (e.g., direct URL access without login), redirect to login
+    else {
+      navigate("/login");
+    }
+  }, [contextEmail, paramEmail, navigate]);
+
+  const baseRoute = role.toLowerCase() === "manager" ? "/manager/analytics" : "/admin/analytics";
+
   return (
     <Box sx={{ width: "100%", typography: "body1", p: 2 }}>
-      {/* Tabs Navigation as Buttons */}
+      {/* Navigation Tabs as Buttons */}
       <Stack direction="row" spacing={2} justifyContent="center" sx={{ mb: 3 }}>
-      <Button
-          variant={selectedTab === 1 ? "contained" : "outlined"}
-          onClick={() => setSelectedTab(1)}
+        <Button
+          variant={location.pathname.includes(`${baseRoute}/self`) ? "contained" : "outlined"}
+          onClick={() => navigate(`${baseRoute}/self`)}
           sx={{
-            backgroundColor:
-              selectedTab === 1 ? "var(--deep-blue)" : "transparent",
-            color: selectedTab === 1 ? "white" : "var(--deep-blue)",
+            backgroundColor: location.pathname.includes(`${baseRoute}/self`) ? "var(--deep-blue)" : "transparent",
+            color: location.pathname.includes(`${baseRoute}/self`) ? "white" : "var(--deep-blue)",
             minWidth: "200px",
-            "&:hover": {
-              backgroundColor:
-                selectedTab === 1 ? "var(--deep-blue)" : "rgba(0, 0, 255, 0.1)", // Slight hover effect
-            },
           }}
         >
           Manager Analytics
         </Button>
         <Button
-          variant={selectedTab === 2 ? "contained" : "outlined"}
-          onClick={() => setSelectedTab(2)}
+          variant={location.pathname.includes(`${baseRoute}/reports`) ? "contained" : "outlined"}
+          onClick={() => navigate(`${baseRoute}/reports`)}
           sx={{
-            backgroundColor:
-              selectedTab === 2 ? "var(--deep-blue)" : "transparent",
-            color: selectedTab === 2 ? "white" : "var(--deep-blue)",
+            backgroundColor: location.pathname.includes(`${baseRoute}/reports`) ? "var(--deep-blue)" : "transparent",
+            color: location.pathname.includes(`${baseRoute}/reports`) ? "white" : "var(--deep-blue)",
             minWidth: "200px",
-            "&:hover": {
-              backgroundColor:
-                selectedTab === 2 ? "var(--deep-blue)" : "rgba(0, 0, 255, 0.1)", // Slight hover effect
-            },
           }}
         >
           Reports
         </Button>
         <Button
-          variant={selectedTab === 3 ? "contained" : "outlined"}
-          onClick={() => setSelectedTab(3)}
+          variant={location.pathname.includes(`${baseRoute}/employees`) ? "contained" : "outlined"}
+          onClick={() => navigate(`${baseRoute}/employees`)}
           sx={{
-            backgroundColor:
-              selectedTab === 3 ? "var(--deep-blue)" : "transparent",
-            color: selectedTab === 3 ? "white" : "var(--deep-blue)",
+            backgroundColor: location.pathname.includes(`${baseRoute}/employees`) ? "var(--deep-blue)" : "transparent",
+            color: location.pathname.includes(`${baseRoute}/employees`) ? "white" : "var(--deep-blue)",
             minWidth: "200px",
-            "&:hover": {
-              backgroundColor:
-                selectedTab === 3 ? "var(--deep-blue)" : "rgba(0, 0, 255, 0.1)", // Slight hover effect
-            },
           }}
         >
           Employee List
         </Button>
       </Stack>
 
-      {/* Tab Content */}
-      {selectedTab === 1 && <ManagerAnalytics email={email} />}
-      {selectedTab === 2 && <Reports email={email} />}
-      {selectedTab === 3 && <EmployeesUnderManager email={email} />}
+      {/* Render the nested route components */}
+      <Outlet />
     </Box>
   );
 };

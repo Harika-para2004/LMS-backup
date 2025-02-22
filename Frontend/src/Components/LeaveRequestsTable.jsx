@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FormGroup, FormControlLabel, Checkbox } from "@mui/material";
 import { MdCheckCircle, MdCancel, MdWatchLater } from "react-icons/md";
 import { useManagerContext } from "../context/ManagerContext";
@@ -8,6 +8,7 @@ import {
   AiOutlineClose,
   AiOutlineExclamationCircle,
 } from "react-icons/ai";
+import { useLocation } from "react-router-dom";
 
 const LeaveRequestsTable = (
 //   {
@@ -28,25 +29,42 @@ const LeaveRequestsTable = (
         email, setEmail,
         gender, setGender,
         empid, setEmpid,
+        // userData,
         username, setUsername,
+        role,setRole,
         project, setProject,
-        designation, setDesignation,
-        leavehistory, setLeavehistory,
-        holidays, setHolidays,
-        profileImage, setProfileImage,
-        newPassword, setNewPassword,
-        confirmPassword, setConfirmPassword,
-        userData, setUserData,
-        file, setFile,
         selectedFilter, setSelectedFilter,
-        error, setError,
-        leavePolicyRef, setLeavePolicyRef,
-        mergedLeaveData, setMergedLeaveData,
-        errors, setErrors,
-        formData, setFormData,
         navigate,
         showToast
   } = useManagerContext();
+
+  const location = useLocation();
+  const [userData, setUserData] = useState(location.state?.userData || {});
+
+  const fetchLeaveRequests = async () => {
+    try {
+      console.log(userData.email)
+      const response = await fetch(`http://localhost:5001/leaverequests?userRole=${userData.role}&userEmail=${userData.email}`);
+      // console.log("user-role: ",userData.role);
+      if (response.ok) {
+        const data = await response.json();
+        const sortedData = data.sort((a, b) => new Date(b.applyDate) - new Date(a.applyDate));
+
+        setLeaveRequests(sortedData); // Directly set the filtered data from backend
+      } else {
+        console.error("Failed to fetch leave history");
+      }
+    } catch (error) {
+      console.error("Error fetching leave history:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (userData && userData.email && userData.role) {  
+      console.log("Fetching leave requests for:", userData.email);
+      fetchLeaveRequests();
+    }
+  }, [userData]); // ✅ Runs whenever userData changes
 
   const handleFilterChange = (e) => {
     setSelectedFilter(e.target.value);
@@ -267,10 +285,10 @@ const LeaveRequestsTable = (
 
   const currentItems = sortedItems.slice(indexOfFirstItem, indexOfLastItem);
 
-  console.log(
-    "Sorted Items:",
-    currentItems.map((i) => i.startDate)
-  );
+  // console.log(
+  //   "Sorted Items:",
+  //   currentItems.map((i) => i.startDate)
+  // );
 
   const totalPages = Math.ceil(displayedData.length / itemsPerPage);
 

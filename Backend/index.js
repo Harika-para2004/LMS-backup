@@ -190,7 +190,7 @@ app.get("/leaverequests", async (req, res) => {
     const { userRole, userEmail } = req.query; // Get role & email from query params
 
     let query = {}; // Default query for admin (fetch all)
-
+    console.log("userEmail",userEmail);
     if (userRole === "Manager") {
       query.managerEmail = userEmail; // Filter requests for employees under this manager
     }

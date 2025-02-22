@@ -82,6 +82,7 @@ function LeaveRequests() {
         gender, setGender,
         empid, setEmpid,
         username, setUsername,
+        role,setRole,
         project, setProject,
         designation, setDesignation,
         leaveHistory, setLeaveHistory,
@@ -248,12 +249,13 @@ function LeaveRequests() {
   };
 
   useEffect(() => {
-      fetchLeaveHistory();
+    if(email){
+      fetchLeaveHistory();}
   }, [email]);
 
   const fetchLeaveRequests = async () => {
     try {
-      const response = await fetch(`http://localhost:5001/leaverequests?userRole=${userData.role}&userEmail=${userData.email}`);
+      const response = await fetch(`http://localhost:5001/leaverequests?userRole=${userData.role}&userEmail=${email}`);
       // console.log("user-role: ",userData.role);
       if (response.ok) {
         const data = await response.json();
@@ -269,12 +271,13 @@ function LeaveRequests() {
   };
 
   useEffect(() => {
-    fetchLeaveRequests();
-  }, []);
+    if(email){
+    fetchLeaveRequests();}
+  }, [email]);
 
   useEffect(() => {
     const storedUserData = localStorage.getItem("userData");
-    console.log(storedUserData);
+    console.log("storedUserData",storedUserData);
     if (storedUserData) {
       try {
         const parsedUserData = JSON.parse(storedUserData);
@@ -286,6 +289,7 @@ function LeaveRequests() {
           setEmail(parsedUserData.email || "");
           setGender(parsedUserData.gender || "");
           setProject(parsedUserData.project || "");
+          setRole(parsedUserData.role || "");
         }
       } catch (error) {
         console.error("Error parsing userData from localStorage:", error);
