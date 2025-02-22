@@ -13,6 +13,7 @@ export const ManagerProvider = ({ children }) => {
   const [leaveData, setLeaveData] = useState([]);
   const [managerEmail, setManagerEmail] = useState("");
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState("");
   const [gender, setGender] = useState("");
   const [empid, setEmpid] = useState("");
   const [username, setUsername] = useState("");
@@ -52,6 +53,28 @@ export const ManagerProvider = ({ children }) => {
 
   const year = new Date().getFullYear();
 
+  useEffect(() => {
+    const storedUserData = localStorage.getItem("userData");
+    console.log("storedUserData",storedUserData);
+    if (storedUserData) {
+      try {
+        const parsedUserData = JSON.parse(storedUserData);
+        if (parsedUserData) {
+          setUserData(parsedUserData);
+          setUsername(parsedUserData.empname || "");
+          setEmpid(parsedUserData.empid || "");
+          setManagerEmail(parsedUserData.managerEmail || "")
+          setEmail(parsedUserData.email || "");
+          setGender(parsedUserData.gender || "");
+          setProject(parsedUserData.project || "");
+          setRole(parsedUserData.role || "");
+        }
+      } catch (error) {
+        console.error("Error parsing userData from localStorage:", error);
+      }
+    }
+  }, []);
+
   return (
     <ManagerContext.Provider
       value={{
@@ -73,6 +96,7 @@ export const ManagerProvider = ({ children }) => {
         newPassword, setNewPassword,
         confirmPassword, setConfirmPassword,
         userData, setUserData,
+        role,setRole,
         file, setFile,
         selectedFilter, setSelectedFilter,
         error, setError,
