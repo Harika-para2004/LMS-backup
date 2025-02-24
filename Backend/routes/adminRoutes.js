@@ -78,60 +78,74 @@ router.get("/leaves/overlap-report", async (req, res) => {
   }
 });
 
-
+router.get("/projects", async (req, res) => {
+  try {
+    const projects = await User.distinct("project", { project: { $ne: null } });
+    if (!projects.length) {
+      return res.status(404).json({ message: "No projects found" });
+    }
+    res.json(projects.map((name) => ({ name })));
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+})
 router.get("/leave-trends/:year", async (req, res) => {
   try {
     const { year } = req.params;
+    const parsedYear = parseInt(year);
+
+    console.log(`Fetching leave trends for year: ${parsedYear}`);
 
     const leaves = await Leave.aggregate([
+      // Step 1: Filter documents to match the specified year
       {
         $match: {
-          year: { $in: [parseInt(year)] }, // ✅ Ensure correct year filtering
+          year: { $elemMatch: { $eq: parsedYear } }, // Ensure year array contains the target year
+          status: { $elemMatch: { $eq: "Approved" } } // Ensure at least one status is "Approved"
         }
       },
-      {
-        $project: {
-          month: 1,
-          duration: 1,
-          status: 1
-        }
-      },
-      {
-        $unwind: {
-          path: "$month",
-          includeArrayIndex: "index" // ✅ Get index to align with duration & status
-        }
-      },
-      {
-        $project: {
-          month: 1,
-          duration: { $arrayElemAt: ["$duration", "$index"] }, // ✅ Get correct duration using index
-          status: { $arrayElemAt: ["$status", "$index"] } // ✅ Get correct status using index
-        }
-      },
+
+      // Step 2: Unwind nested arrays
+      { $unwind: "$year" },
+      { $unwind: "$month" },
+      { $unwind: "$duration" },
+      { $unwind: "$status" },
+
+      // Step 3: Filter only the required year and approved status
       {
         $match: {
-          status: "Approved" // ✅ Only consider approved leaves
+          year: parsedYear,
+          status: "Approved"
         }
       },
+
+      // Step 4: Group by month and sum durations
       {
         $group: {
           _id: "$month",
-          totalLeaveDays: { $sum: "$duration" } // ✅ Sum durations correctly
+          totalLeaveDays: { $sum: "$duration" } // Sum all leave durations per month
         }
       },
+
+      // Step 5: Sort months in ascending order
       { $sort: { _id: 1 } }
     ]);
 
+    console.log("Aggregated Leave Data:", JSON.stringify(leaves, null, 2));
+
+    // Step 6: Send response with formatted data
     res.json({
       months: leaves.map(l => l._id),
       leaveCounts: leaves.map(l => l.totalLeaveDays)
     });
+
   } catch (err) {
-    console.error("Error fetching leave trends:", err);
+    console.error("❌ Error fetching leave trends:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
+
 
 router.get("/department-leave/:year", async (req, res) => {
   try {
@@ -139,12 +153,13 @@ router.get("/department-leave/:year", async (req, res) => {
     const reports = await getAdminReports();
 
     const departmentData = reports.reduce((acc, report) => {
-      const leaveCount = report.leaves.filter(
-        (leave) => new Date(leave.startDate).getFullYear() === parseInt(year)
-      ).length;
+      // Sum up total leave duration for the given year
+      const totalDuration = report.leaves
+        .filter((leave) => new Date(leave.startDate).getFullYear() === parseInt(year))
+        .reduce((sum, leave) => sum + leave.duration, 0); // ✅ Summing leave durations
 
-      if (leaveCount > 0) {
-        acc[report.project] = (acc[report.project] || 0) + leaveCount;
+      if (totalDuration > 0) {
+        acc[report.project] = (acc[report.project] || 0) + totalDuration;
       }
 
       return acc;
@@ -290,10 +305,10 @@ async function getAdminReports(project = "", search = "") {
                   : "N/A",
                 status: leave.status[index] || "Pending",
                 reason: leave.reason[index] || "No reason provided",
-                duration: leave.duration[index] || "N/A",
+                duration: (leave.duration[index] || []).reduce((sum, days) => sum + days, 0), // ✅ Summing up durations
                 attachments: leave.attachments[index] || [],
               }))
-              .filter((leave) => leave.status === "Approved") // ✅ Filter only approved requests
+              .filter((leave) => leave.status === "Approved") // ✅ Only approved requests
           ),
         };
       })
@@ -305,8 +320,6 @@ async function getAdminReports(project = "", search = "") {
     throw error;
   }
 }
-
-
 
 // router.get("/manager-leave-trends/:year/:managerEmail", async (req, res) => {
 //   try {

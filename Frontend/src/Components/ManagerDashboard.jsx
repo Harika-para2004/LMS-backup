@@ -43,7 +43,7 @@ const ManagerDashboard = () => {
             minWidth: "200px",
           }}
         >
-          Manager Analytics
+          Manager Dashboard
         </Button>
         <Button
           variant={location.pathname.includes(`${baseRoute}/reports`) ? "contained" : "outlined"}
@@ -65,7 +65,7 @@ const ManagerDashboard = () => {
             minWidth: "200px",
           }}
         >
-          Employee List
+          Employee Dashboards
         </Button>
       </Stack>
 

@@ -11,6 +11,8 @@ const bcrypt = require("bcrypt");
 const Holiday = require("./models/Holiday");
 const multer = require("multer");
 const path = require("path");
+const LeavePolicy = require("./models/LeavePolicy");
+
 const excelJS = require("exceljs");
 const pdfkit = require("pdfkit");
 const fs = require("fs");
@@ -38,7 +40,9 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/excel",exceluploads);
 app.use("/admin", adminRoutes);
 app.use("/api/employees", require("./routes/empUnderMang"));
-
+const formatCase = (text) => {
+  return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+};
 app.get("/managers-list", async (req, res) => {
   try {
     const managers = await User.find({ role: "Manager" }, { empname: 1, empid: 1, email: 1,project:1,gender:1, _id: 0 }); 
@@ -128,8 +132,6 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
   }
 });
 
-
-
 app.get("/leave-history", async (req, res) => {
   const { email } = req.query;
   if (!email) {
@@ -144,13 +146,17 @@ app.get("/leave-history", async (req, res) => {
         return leave.startDate.map((start, index) => ({
           _id: leave._id,
           leaveType: leave.leaveType,
-          applyDate: new Date(leave.applyDate).toLocaleDateString(), // Format and include apply date
+          applyDate: new Date(leave.applyDate[index]).toLocaleDateString(),
           startDate: new Date(start).toLocaleDateString(),
           endDate: new Date(leave.endDate[index]).toLocaleDateString(),
           reason: leave.reason[index],
           status: leave.status[index] || "Pending",
-          duration: leave.duration[index],
-          attachments: leave.attachments[index],
+          duration: Array.isArray(leave.duration[index])
+            ? leave.duration[index].reduce((sum, num) => sum + num, 0) // Sum up nested durations
+            : leave.duration[index] || 0, 
+          year: leave.year[index] || [],
+          month: leave.month[index] || [],
+          attachments: leave.attachments[index] || "",
         }));
       })
       .flat();
@@ -161,6 +167,7 @@ app.get("/leave-history", async (req, res) => {
     res.status(500).json({ message: "An error occurred" });
   }
 });
+
 app.get("/leavesummary", async (req, res) => {
   const { email } = req.query; // Get the email from the query parameters
   if (!email) {
@@ -182,29 +189,34 @@ app.get("/leavesummary", async (req, res) => {
     res.status(500).send("Server Error");
   }
 });
-
-
-
 app.get("/leaverequests", async (req, res) => {
   try {
     const { userRole, userEmail } = req.query; // Get role & email from query params
 
     let query = {}; // Default query for admin (fetch all)
-    console.log("userEmail",userEmail);
     if (userRole === "Manager") {
       query.managerEmail = userEmail; // Filter requests for employees under this manager
     }
 
-    console.log("Query:", query); // Debugging output
-
     const leaveRequests = await Leave.find(query);
-    console.log(leaveRequests);
-    res.json(leaveRequests);
+
+    // Process leave durations
+    const processedLeaves = leaveRequests.map((leave) => ({
+      ...leave._doc, // Spread existing leave request properties
+      duration: leave.duration.map((entry) => 
+        Array.isArray(entry) 
+          ? entry.reduce((sum, num) => sum + num, 0) // Sum up nested durations
+          : entry || 0 // Ensure a valid number
+      ),
+    }));
+
+    res.json(processedLeaves);
   } catch (error) {
     console.error("Error fetching leave requests:", error);
     res.status(500).send("Server error");
   }
 });
+
 
 app.put("/leaverequests/:id", async (req, res) => {
   try {
@@ -404,14 +416,10 @@ app.delete("/employee-del/:id", async (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
-
 app.get("/reports", async (req, res) => {
   try {
-    const { project, search, email } = req.query;
+    const { project, search, email, year } = req.query;
     let query = { managerEmail: email }; // Filter by manager's email
-    if (!email) {
-      return res.status(400).json({ message: "Email is required" }); // 🔴 Error if email missing
-    }
 
     if (project) query.project = project;
     if (search) {
@@ -425,12 +433,12 @@ app.get("/reports", async (req, res) => {
     // Fetch employees based on manager's email, project & search
     const employees = await User.find(query);
 
-    // Fetch leave data for each employee (only approved leaves)
+    // Fetch leave data for each employee (only approved leaves in selected year)
     const reports = await Promise.all(
       employees.map(async (employee) => {
         const leaves = await Leave.find({ email: employee.email });
 
-        // Filter only approved leaves
+        // Filter only approved leaves within the selected year
         const approvedLeaves = leaves.flatMap((leave) =>
           leave.startDate
             .map((start, index) => ({
@@ -444,10 +452,14 @@ app.get("/reports", async (req, res) => {
               duration: leave.duration[index] || "N/A",
               attachments: leave.attachments[index] || [],
             }))
-            .filter((leave) => leave.status === "Approved") // ✅ Only approved leaves
+            .filter(
+              (leave) =>
+                leave.status === "Approved" &&
+                new Date(leave.startDate).getFullYear() === parseInt(year) // ✅ Filter by year
+            )
         );
 
-        // Only return employees who have at least one approved leave
+        // Only return employees who have at least one approved leave in the selected year
         if (approvedLeaves.length > 0) {
           return {
             empid: employee.empid,
@@ -460,7 +472,7 @@ app.get("/reports", async (req, res) => {
           };
         }
 
-        return null; // Ignore employees with no approved leaves
+        return null; // Ignore employees with no approved leaves in the selected year
       })
     );
 
@@ -539,12 +551,27 @@ app.get("/reports-admin", async (req, res) => {
 });
 
 
+
+// Helper function to format names like in frontend
+const formatName = (str) =>
+  str
+    ? str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
+    : "N/A";
+
+// Helper function to format dates properly
+const formatDate = (date) =>
+  date ? new Date(date).toLocaleDateString("en-GB") : "N/A";
+
+const formatLeaveDate = (date) => {
+  if (!date || date === "N/A" || date === "Invalid date") return "N/A";
+  return moment(date).isValid() ? moment(date).format("DD/MM/YYYY") : "N/A";
+};
 app.get("/reports/export-excel", async (req, res) => {
   try {
     let { project, reports } = req.query;
     let query = {};
     if (project) query.project = project;
-    // console.log("reports:", reports);
+
     if (typeof reports === "string") {
       try {
         reports = JSON.parse(reports);
@@ -554,7 +581,6 @@ app.get("/reports/export-excel", async (req, res) => {
       }
     }
 
-    // const employees = await User.find(query);
     const employees = Array.isArray(reports)
       ? reports
           .filter((report) => report.email !== "admin@gmail.com")
@@ -578,55 +604,43 @@ app.get("/reports/export-excel", async (req, res) => {
     let allReports = [];
 
     for (const empemail of employees) {
-      const empl = await User.find({ email: empemail });
-      for (const emp of empl) {
-        const leaves = await Leave.find({ email: empemail });
-        console.log(emp);
-        if (leaves.length > 0) {
-          leaves.forEach((leave, index) => {
-            leave.startDate.forEach((start, i) => {
-              allReports.push({
-                empid: emp.empid,
-                empname: formatName(emp.empname),
-                email: emp.email || "N/A",
-                project: formatName(emp.project),
-                leaveType: formatName(leave.leaveType),
-                startDate: new Date(start), // Convert to Date for sorting
-                endDate: formatDate(leave.endDate[i]),
-                status: formatName(leave.status[i] || "Pending"),
-              });
-            });
-          });
-        } else {
-          allReports.push({
-            empid: emp.empid,
-            empname: formatName(emp.empname),
-            email: emp.email || "N/A",
-            project: formatName(emp.project),
-            leaveType: "N/A",
-            startDate: new Date(0), // Default earliest date for sorting
-            endDate: "N/A",
-            status: "No Leaves",
-          });
-        }
+      const empl = await User.findOne({ email: empemail }); // Fetch user details once
+      if (!empl) continue; // Skip if employee not found
+
+      const leaves = await Leave.find({ email: empemail });
+
+      let approvedLeaves = leaves.flatMap((leave) =>
+        leave.startDate
+          .map((start, i) => ({
+            empid: empl.empid,
+            empname: formatName(empl.empname),
+            email: empl.email || "N/A",
+            project: formatName(empl.project),
+            leaveType: formatName(leave.leaveType),
+            startDate: new Date(start),
+            endDate: formatDate(leave.endDate[i]),
+            status: formatName(leave.status[i] || "Pending"),
+          }))
+          .filter((leave) => leave.status === "Approved") // ✅ Only approved leaves
+      );
+
+      if (approvedLeaves.length > 0) {
+        allReports.push(...approvedLeaves);
       }
     }
 
-    // **Sorting logic: First by name (A-Z), then by startDate (earliest first)**
+    // **Sorting: First by empname (A-Z), then by startDate (earliest first)**
     allReports.sort((a, b) => {
       if (a.empname < b.empname) return -1;
       if (a.empname > b.empname) return 1;
-      return a.startDate - b.startDate; // Sort by date if names are same
+      return a.startDate - b.startDate;
     });
 
-    // Add sorted data to the worksheet
+    // Add sorted approved data to the worksheet
     allReports.forEach((report) => {
       worksheet.addRow({
         ...report,
-        startDate:
-          report.startDate.getTime() === 0
-            ? "N/A"
-            : formatDate(report.startDate),
+        startDate: formatDate(report.startDate),
       });
     });
 
@@ -647,24 +661,9 @@ app.get("/reports/export-excel", async (req, res) => {
   }
 });
 
-// Helper function to format names like in frontend
-const formatName = (str) =>
-  str
-    ? str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
-    : "N/A";
-
-// Helper function to format dates properly
-const formatDate = (date) =>
-  date ? new Date(date).toLocaleDateString("en-GB") : "N/A";
-
-const formatLeaveDate = (date) => {
-  if (!date || date === "N/A" || date === "Invalid date") return "N/A";
-  return moment(date).isValid() ? moment(date).format("DD/MM/YYYY") : "N/A";
-};
-
-
 const PDFDocument = require("pdfkit");
 const moment = require("moment");
+const { appendFile } = require("fs/promises");
 
 app.get("/reports/export-pdf", async (req, res) => {
   try {
@@ -780,41 +779,47 @@ app.get("/admin-leave-trends/:year", async (req, res) => {
 //Employee
 app.get("/leave-trends/:email/:year", async (req, res) => {
   try {
-      const { email, year } = req.params;
-      const numericYear = parseInt(year);
+    const { email, year } = req.params;
+    const numericYear = parseInt(year);
 
-      // Fetch leave records for the given email and year
-      const leaves = await Leave.find({ email, year: numericYear });
+    // Fetch only relevant leave records for the given email
+    const leaves = await Leave.find({ email });
 
-      // Initialize monthly leave data
-      const leaveData = Array(12).fill(null).map(() => ({}));
+    if (!leaves.length) {
+      return res.status(404).json({ message: "No leave records found." });
+    }
 
-      leaves.forEach(leave => {
-          leave.month.forEach((month, index) => {
-              if (leave.status[index] === "Approved") {
-                  const leaveType = leave.leaveType;
-                  const duration = leave.duration[index] || 0;
+    // Initialize monthly leave data
+    const leaveTrends = Array(12).fill(null).map((_, idx) => ({ month: idx + 1 }));
 
-                  if (!leaveData[month - 1][leaveType]) {
-                      leaveData[month - 1][leaveType] = 0;
-                  }
-                  leaveData[month - 1][leaveType] += duration;
+    leaves.forEach((leave) => {
+      leave.year.forEach((yearArray, index) => {
+        yearArray.forEach((y, i) => {
+          if (y === numericYear && leave.status[index] === "Approved") {  // Check if status is Approved
+            const monthIndex = leave.month[index][i] - 1;
+            if (monthIndex >= 0 && monthIndex < 12) {
+              const leaveType = leave.leaveType;
+
+              if (!leaveTrends[monthIndex][leaveType]) {
+                leaveTrends[monthIndex][leaveType] = 0;
               }
-          });
+
+              leaveTrends[monthIndex][leaveType] += leave.duration[index][i] || 0;
+            }
+          }
+        });
       });
+    });
 
-      // Format the response
-      const response = leaveData.map((data, index) => ({
-          month: index + 1,
-          ...data
-      }));
-
-      res.json(response);
+    console.log("Leave Trends Data:", JSON.stringify(leaveTrends, null, 2)); // Log data before sending
+    res.json(leaveTrends);
   } catch (error) {
-      console.error("Error fetching leave trends:", error);
-      res.status(500).json({ message: "Internal Server Error" });
+    console.error("Error fetching leave trends:", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
+
+
 
 
 
@@ -994,56 +999,31 @@ app.get('/leavetype-status/:email', async (req, res) => {
 // });
 
 //charts.js
+// Fetch Leave Type Status
+// Fetch Leave Type Status
+// Fetch Leave Type Status
 app.get('/leave-type-status/:email/:year', async (req, res) => {
   const { email, year } = req.params;
 
   try {
-    const matchStage = { email };
-    if (year) {
-      matchStage.year = parseInt(year);
-    }
+    const leaveStats = await Leave.find({ email });
 
-    const leaveStats = await Leave.aggregate([
-      { $match: matchStage },
+    const formattedResponse = {};
 
-      // Unwind status array to treat each status separately
-      { $unwind: "$status" },
+    leaveStats.forEach(({ leaveType, status, year: leaveYears }) => {
+      if (!formattedResponse[leaveType]) {
+        formattedResponse[leaveType] = { Pending: 0, Approved: 0, Rejected: 0 };
+      }
 
-      // Group by leaveType and status, count occurrences
-      {
-        $group: {
-          _id: { leaveType: "$leaveType", status: "$status" },
-          count: { $sum: 1 }
+      // Iterate through each set of years and statuses
+      leaveYears.forEach((yearGroup, i) => {
+        if (Array.isArray(yearGroup) && yearGroup.includes(parseInt(year))) {
+          formattedResponse[leaveType][status[i]] = (formattedResponse[leaveType][status[i]] || 0) + 1;
         }
-      },
+      });
+    });
 
-      // Format response
-      {
-        $group: {
-          _id: "$_id.leaveType",
-          statuses: {
-            $push: {
-              status: "$_id.status",
-              count: "$count"
-            }
-          }
-        }
-      },
-
-      // Sort by leave type
-      { $sort: { "_id": 1 } }
-    ]);
-
-    // Format response for frontend
-    const formattedResponse = leaveStats.map(item => ({
-      leaveType: item._id,
-      statuses: item.statuses.reduce((acc, curr) => {
-        acc[curr.status] = curr.count;
-        return acc;
-      }, { Pending: 0, Approved: 0, Rejected: 0 })
-    }));
-
-    res.json(formattedResponse);
+    res.json(Object.entries(formattedResponse).map(([leaveType, statuses]) => ({ leaveType, statuses })));
   } catch (err) {
     console.error("❌ Error in API:", err);
     res.status(500).json({ error: err.message });
@@ -1051,40 +1031,44 @@ app.get('/leave-type-status/:email/:year', async (req, res) => {
 });
 app.get("/leave-trends/:email/:year", async (req, res) => {
   const { email, year } = req.params;
+
   try {
-    const data = await Leave.aggregate([
-      { $match: { email, year: parseInt(year) } },
-      { $unwind: "$leaves" }, 
-      {
-        $group: {
-          _id: { month: "$leaves.month", leaveType: "$leaves.leaveType" },
-          totalDuration: { $sum: "$leaves.duration" }
-        }
-      },
-      {
-        $group: {
-          _id: "$_id.month",
-          leaveTypes: {
-            $push: {
-              type: "$_id.leaveType",
-              duration: "$totalDuration"
+    const leaves = await Leave.find({ email });
+
+    if (!leaves.length) {
+      return res.status(404).json({ message: "No leave records found." });
+    }
+
+    const leaveTrends = Array(12).fill(null).map((_, idx) => ({ month: idx + 1 }));
+
+    leaves.forEach((leave) => {
+      leave.year.forEach((yearArray, index) => {
+        yearArray.forEach((y, i) => {
+          if (y == year) {
+            const monthIndex = leave.month[index][i] - 1;
+            const leaveType = leave.leaveType;
+            
+            if (!leaveTrends[monthIndex][leaveType]) {
+              leaveTrends[monthIndex][leaveType] = 0;
             }
+            
+            leaveTrends[monthIndex][leaveType] += leave.duration[index][i];
           }
-        }
-      }
-    ]);
+        });
+      });
+    });
 
-    // Convert to a fixed array of 12 months with default values
-    const formattedData = new Array(12).fill(null).map((_, index) => ({
-      month: index + 1,
-      ...Object.fromEntries(data.find(d => d._id === index + 1)?.leaveTypes.map(l => [l.type, l.duration]) || [])
-    }));
-
-    res.json(formattedData);
-  } catch (err) {
-    res.status(500).json({ error: "Error fetching leave trends" });
+    console.log("Leave Trends Data:", JSON.stringify(leaveTrends, null, 2)); // Logging the data
+    res.json(leaveTrends);
+  } catch (error) {
+    console.error("Error fetching leave trends:", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
+
+
+
+
 
 
 // Get leave balance
@@ -1122,31 +1106,62 @@ app.get("/leave-trends/:email/:year", async (req, res) => {
 //     res.status(500).json({ error: "Error fetching leave balance" });
 //   }
 // });
-
 app.get("/leave-balance/:email/:year", async (req, res) => {
   const { email, year } = req.params;
-  
+  const numericYear = Number(year);
+
   try {
-    const leaves = await Leave.find({ email, year: Number(year) });
+    // Fetch leave requests where the given year exists in the nested 'year' array
+    const leaves = await Leave.find({
+      email,
+      year: { $elemMatch: { $elemMatch: { $eq: numericYear } } } // ✅ Match any year inside the nested array
+    });
 
     if (!leaves.length) {
       return res.json({});
     }
 
-    const leaveBalance = leaves.reduce((acc, leave) => {
-      if (!acc[leave.leaveType]) {
-        acc[leave.leaveType] = {
-          totalLeaves: leave.totalLeaves,
-          usedLeaves: leave.usedLeaves,
-          availableLeaves: leave.availableLeaves
+    // Initialize leave balance storage
+    const leaveBalance = {};
+
+    for (const leave of leaves) {
+      const { leaveType, totalLeaves, duration, year } = leave;
+
+      // Ensure leave type exists in balance
+      if (!leaveBalance[leaveType]) {
+        leaveBalance[leaveType] = {
+          totalLeaves: 0,
+          usedLeaves: 0,
+          availableLeaves: 0
         };
-      } else {
-        acc[leave.leaveType].totalLeaves += leave.totalLeaves;
-        acc[leave.leaveType].usedLeaves += leave.usedLeaves;
-        acc[leave.leaveType].availableLeaves += leave.availableLeaves;
       }
-      return acc;
-    }, {});
+
+      // ✅ Fetch the correct leave policy from the database
+      const policy = await LeavePolicy.findOne({ leaveType });
+      const maxLeaves = policy ? policy.maxAllowedLeaves : totalLeaves;
+
+      leaveBalance[leaveType].totalLeaves = maxLeaves;
+
+      // ✅ Calculate used leaves only for the requested year
+      let usedLeavesInYear = 0;
+
+      for (let i = 0; i < year.length; i++) {
+        for (let j = 0; j < year[i].length; j++) {
+          if (year[i][j] === numericYear) {
+            usedLeavesInYear += duration[i][j]; // ✅ Sum only the duration for that specific year
+          }
+        }
+      }
+      
+
+      leaveBalance[leaveType].usedLeaves += usedLeavesInYear;
+
+      // ✅ Compute available leaves correctly
+      leaveBalance[leaveType].availableLeaves = Math.max(
+        0,
+        leaveBalance[leaveType].totalLeaves - leaveBalance[leaveType].usedLeaves
+      );
+    }
 
     res.json(leaveBalance);
   } catch (err) {
@@ -1155,11 +1170,6 @@ app.get("/leave-balance/:email/:year", async (req, res) => {
   }
 });
 
-
-
-
-
-//Manager
 
 // Get Pending/Approved/Rejected Requests
 app.get('/leave-status/:managerEmail', async (req, res) => {
@@ -1236,141 +1246,130 @@ app.get('/leave-holidays-impact', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-app.get("/leave-approval-rate", async (req, res) => {
+// Backend Updates
+app.get('/leave-approval-rate', async (req, res) => {
+  const { userEmail, year } = req.query;
   try {
-    const { userRole, userEmail } = req.query;
+    const leaves = await Leave.find({
+      managerEmail: userEmail,
+      year: { $elemMatch: { $elemMatch: { $eq: parseInt(year) } } } // ✅ Match any year inside the nested array
+  });
+  
 
-    if (!userEmail) {
-      return res.status(400).json({ error: "Manager email is required" });
-    }
+      const stats = { approved: 0, pending: 0, rejected: 0 };
 
-    let query = {};
-      query.managerEmail = userEmail;
-    
-
-    const leaveRequests = await Leave.find(query);
-    console.log(`Fetched ${leaveRequests.length} leave requests for manager: ${userEmail}`);
-
-    let pending = 0, approved = 0, rejected = 0;
-
-    leaveRequests.forEach((leave) => {
-      // ✅ Count each status separately
-      leave.status.forEach((status) => {
-        const lowerStatus = status.toLowerCase();
-        if (lowerStatus === "pending") pending++;
-        else if (lowerStatus === "approved") approved++;
-        else if (lowerStatus === "rejected") rejected++;
+      leaves.forEach(leave => {
+          if (leave.status && Array.isArray(leave.status)) {  
+              leave.status.forEach(status => {
+                  const formattedStatus = status.toLowerCase();
+                  if (stats[formattedStatus] !== undefined) {
+                      stats[formattedStatus]++;
+                  }
+              });
+          }
       });
-    });
 
-    console.log("Final Data Sent:", { pending, approved, rejected });
-    res.json({ pending, approved, rejected });
-
+      console.log("Leave Approval Rate Data:", stats);
+      res.json(stats);
   } catch (error) {
-    console.error("Error fetching leave approval rate:", error);
-    res.status(500).json({ error: "Server error" });
+      console.error("Error fetching approval rate:", error);
+      res.status(500).json({ message: 'Error fetching approval rate', error });
   }
 });
-app.get("/leave-types", async (req, res) => {
+app.get('/leave-types', async (req, res) => {
+  const { userEmail, year } = req.query;
   try {
-    const { userRole, userEmail } = req.query;
+      const leaves = await Leave.find({ 
+          managerEmail: userEmail, 
+          year: { $elemMatch: { $elemMatch: { $eq: parseInt(year) } } } } 
+      );
 
-    if (!userEmail) {
-      return res.status(400).json({ error: "Manager email is required" });
-    }
-
-    let query = {};
-      query.managerEmail = userEmail;
-    
-
-    const leaveRequests = await Leave.find(query);
-    console.log(`Fetched ${leaveRequests.length} leave requests for manager: ${userEmail}`);
-
-    let leaveTypeSummary = {};
-
-    leaveRequests.forEach((leave) => {
-      const { leaveType, status } = leave;
-      
-      if (!leaveTypeSummary[leaveType]) {
-        leaveTypeSummary[leaveType] = { pending: 0, approved: 0, rejected: 0 };
-      }
-      
-      status.forEach((s) => {
-        const lowerStatus = s.toLowerCase();
-        if (lowerStatus === "pending") leaveTypeSummary[leaveType].pending++;
-        else if (lowerStatus === "approved") leaveTypeSummary[leaveType].approved++;
-        else if (lowerStatus === "rejected") leaveTypeSummary[leaveType].rejected++;
+      const types = {};
+      leaves.forEach(({ leaveType, status }) => {
+          if (!types[leaveType]) {
+              types[leaveType] = { approved: 0, pending: 0, rejected: 0 };
+          }
+          status.forEach(s => { // ✅ Correctly count statuses
+              const formattedStatus = s.toLowerCase();
+              if (types[leaveType][formattedStatus] !== undefined) {
+                  types[leaveType][formattedStatus]++;
+              }
+          });
       });
-    });
 
-    console.log("Final Data Sent:", leaveTypeSummary);
-    res.json(leaveTypeSummary);
-  } catch (error) {
-    console.error("Error fetching leave types summary:", error);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-app.get("/employee-monthly-leaves", async (req, res) => {
+      console.log("Leave Types Data:", types); // ✅ Debugging log
+      res.json(Object.entries(types).map(([leaveType, counts]) => ({ leaveType, ...counts })));
+    } catch (error) {
+      console.error("Error fetching leave types:", error);
+      res.status(500).json({ message: 'Error fetching leave types', error });
+  }})// Fetch Employee Monthly Leaves (Handles Multiple Years)
+// Fetch Employee Monthly Leaves (Handles Leaves Spanning Multiple Years)
+// Fetch Employee Monthly Leaves (Fix for Multi-Year Leave)
+app.get('/employee-monthly-leaves', async (req, res) => {
+  const { userEmail, year } = req.query;
   try {
-    const { userEmail } = req.query; // Manager's email
+      const selectedYear = parseInt(year);
+      const leaves = await Leave.find({ managerEmail: userEmail });
 
-    // ✅ Fetch only APPROVED leaves under this manager
-    const approvedLeaves = await Leave.find({ managerEmail: userEmail, status: "Approved" });
+      const monthlyData = {};
 
-    const monthlyLeaveData = {};
+      leaves.forEach(({ empname, month, duration, status, year: leaveYears }) => {
+          if (!monthlyData[empname]) monthlyData[empname] = {};
 
-    approvedLeaves.forEach((leave) => {
-      const employee = leave.empname;
-      leave.month.forEach((month, index) => {
-        if (leave.status[index] !== "Approved") return; // ✅ Ignore non-approved leaves
+          leaveYears.forEach((yearGroup, i) => {
+              yearGroup.forEach((leaveYear, index) => {
+                  const leaveMonth = month[i][index]; // Correct month for this leave
+                  const leaveDuration = duration[i][index]; // Correct leave duration
 
-        if (!monthlyLeaveData[employee]) {
-          monthlyLeaveData[employee] = {};
-        }
-
-        monthlyLeaveData[employee][month] =
-          (monthlyLeaveData[employee][month] || 0) + leave.duration[index];
+                  // Only count "Approved" leaves in the selected year
+                  if (leaveYear === selectedYear && status[i] === "Approved") {
+                      monthlyData[empname][leaveMonth] = (monthlyData[empname][leaveMonth] || 0) + leaveDuration;
+                  }
+              });
+          });
       });
-    });
 
-    res.json(monthlyLeaveData);
+      res.json(monthlyData);
   } catch (error) {
-    console.error("Error fetching employee monthly leave data:", error);
-    res.status(500).json({ error: "Server error" });
+      res.status(500).json({ message: 'Error fetching monthly leaves', error });
   }
 });
 
 
-app.get("/employee-yearly-leaves", async (req, res) => {
+// Fetch Employee Yearly Leaves (Fix for Multi-Year Leave)
+app.get('/employee-yearly-leaves', async (req, res) => {
+  const { userEmail, year } = req.query;
   try {
-    const { userEmail } = req.query; // Manager's email
+      const selectedYear = parseInt(year);
+      const leaves = await Leave.find({ managerEmail: userEmail });
 
-    // ✅ Fetch only APPROVED leaves under this manager
-    const approvedLeaves = await Leave.find({ managerEmail: userEmail, status: "Approved" });
+      const yearlyData = {};
 
-    const yearlyLeaveData = {};
+      leaves.forEach(({ empname, duration, year: leaveYears, status }) => {
+          let yearlyLeaveCount = 0;
 
-    approvedLeaves.forEach((leave) => {
-      const employee = leave.empname;
-      leave.year.forEach((year, index) => {
-        if (leave.status[index] !== "Approved") return; // ✅ Ignore non-approved leaves
+          // Iterate through each leave entry
+          leaveYears.forEach((yearGroup, i) => {
+              yearGroup.forEach((leaveYear, index) => {
+                  const leaveDuration = duration[i][index]; // Correct leave duration for that year
 
-        if (!yearlyLeaveData[employee]) {
-          yearlyLeaveData[employee] = {};
-        }
+                  // Only count leaves that are in the selected year & "Approved"
+                  if (leaveYear === selectedYear && status[i] === "Approved") {
+                      yearlyLeaveCount += leaveDuration;
+                  }
+              });
+          });
 
-        yearlyLeaveData[employee][year] =
-          (yearlyLeaveData[employee][year] || 0) + leave.duration[index];
+          yearlyData[empname] = (yearlyData[empname] || 0) + yearlyLeaveCount;
       });
-    });
 
-    res.json(yearlyLeaveData);
+      res.json(yearlyData);
   } catch (error) {
-    console.error("Error fetching employee yearly leave data:", error);
-    res.status(500).json({ error: "Server error" });
+      res.status(500).json({ message: 'Error fetching yearly leaves', error });
   }
 });
+
+
 app.delete("/leaves/:id", async (req, res) => {
   const { id } = req.params;
   const { startDate } = req.body; // Assume the startDate is passed in the request body for matching

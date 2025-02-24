@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { formatDate } from "../utils/dateUtlis";
-import { Button } from "@mui/material";
+import { Button, FormControl, Select, MenuItem, InputLabel } from "@mui/material";
 import AdminAnalytics from "./AdminAnalytics";
 
 const ReportsAdmin = () => {
@@ -8,15 +8,22 @@ const ReportsAdmin = () => {
   const [project, setProject] = useState("");
   const [search, setSearch] = useState("");
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+
+  // Generate a list of the last 15 years
+  const yearsRange = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return Array.from({ length: 15 }, (_, i) => currentYear - i);
+  }, []);
 
   useEffect(() => {
     fetchReports();
-  }, [project, search]);
+  }, [project, search, selectedYear]); // Added selectedYear
 
   const fetchReports = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5001/reports-admin?project=${project}&search=${search}`
+        `http://localhost:5001/reports-admin?project=${project}&search=${search}&year=${selectedYear}`
       );
       if (!response.ok) throw new Error("Failed to fetch reports");
       const data = await response.json();
@@ -43,9 +50,7 @@ const ReportsAdmin = () => {
   };
 
   const formatName = (str) =>
-    str
-      ? str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
-      : "N/A";
+    str ? str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase()) : "N/A";
 
   const sortedReports = reports
     .flatMap((report) =>
@@ -73,9 +78,7 @@ const ReportsAdmin = () => {
             },
           ]
     )
-    .sort(
-      (a, b) => a.empname.localeCompare(b.empname) || a.startDate - b.startDate
-    );
+    .sort((a, b) => a.empname.localeCompare(b.empname) || a.startDate - b.startDate);
 
   return (
     <div className="reports-container">
@@ -88,74 +91,99 @@ const ReportsAdmin = () => {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+
+        {/* ✅ Year Selection Dropdown */}
+        <FormControl>
+          <InputLabel id="select-year-label">Select Year</InputLabel>
+          <Select
+            labelId="select-year-label"
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
+            label="Select Year"
+          >
+            {yearsRange.map((yr) => (
+              <MenuItem key={yr} value={yr}>
+                {yr}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
         <div className="export-buttons">
-          <Button
-            onClick={() =>
-              exportFile(
-                `http://localhost:5001/reports/export-excel`,
-                "leave_reports.xlsx"
-              )
-            }
-            sx={{ textTransform: "none" }}
-            className="btn-excel"
-          >
-            Export Excel
-          </Button>
-          
+          {!showAnalytics && (
+            <Button
+              onClick={() =>
+                exportFile(
+                  `http://localhost:5001/reports/export-excel`,
+                  "leave_reports.xlsx"
+                )
+              }
+              sx={{ textTransform: "none" }}
+              className="btn-excel"
+            >
+              Export Excel
+            </Button>
+          )}
         </div>
+
+        {/* ✅ Toggle Reports Table & Analytics View */}
         <Button
-            onClick={() => setShowAnalytics(!showAnalytics)}
-            sx={{ textTransform: "none" }}
-            className="btn-analytics"
-          >
-            {showAnalytics ? "Hide Analytics" : "Show Analytics"}
-          </Button>
+          onClick={() => setShowAnalytics((prev) => !prev)}
+          sx={{ textTransform: "none" }}
+          className="btn-analytics"
+        >
+          {showAnalytics ? "Show Reports" : "Show Analytics"}
+        </Button>
       </div>
-      {showAnalytics && <AdminAnalytics />}
 
+      {/* ✅ Show AdminAnalytics and pass selectedYear as prop */}
+      {showAnalytics ? <AdminAnalytics year={selectedYear} /> : null}
 
-      <div className="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Employee</th>
-              <th>Employee ID</th>
-              <th>Project</th>
-              <th>Leave Type</th>
-              <th>Start Date</th>
-              <th>End Date</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedReports.length > 0 ? (
-              sortedReports
-                .filter((report) => report.email !== "admin@gmail.com")
-                .map((report, index) => (
-                  <tr key={index}>
-                    <td>{report.empname}</td>
-                    <td>{report.empid}</td>
-                    <td>{report.project}</td>
-                    <td>{report.leaveType}</td>
-                    <td>
-                      {report.startDate.getTime() === 0
-                        ? "N/A"
-                        : formatDate(report.startDate)}
-                    </td>
-                    <td>{report.endDate}</td>
-                    <td>{report.status}</td>
-                  </tr>
-                ))
-            ) : (
+      {/* ✅ Show Reports Table only if showAnalytics is false */}
+      {!showAnalytics && (
+        <div className="table-container">
+          <table>
+            <thead>
               <tr>
-                <td className="no-reports" colSpan="8">
-                  No reports found.
-                </td>
+                <th>Employee</th>
+                <th>Employee ID</th>
+                <th>Project</th>
+                <th>Leave Type</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Status</th>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {sortedReports.length > 0 ? (
+                sortedReports
+                  .filter((report) => report.email !== "admin@gmail.com")
+                  .map((report, index) => (
+                    <tr key={index}>
+                      <td>{report.empname}</td>
+                      <td>{report.empid}</td>
+                      <td>{report.project}</td>
+                      <td>{report.leaveType}</td>
+                      <td>
+                        {report.startDate.getTime() === 0
+                          ? "N/A"
+                          : formatDate(report.startDate)}
+                      </td>
+                      <td>{report.endDate}</td>
+                      <td>{report.status}</td>
+                    </tr>
+                  ))
+              ) : (
+                <tr>
+                  <td className="no-reports" colSpan="8">
+                    No reports found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };

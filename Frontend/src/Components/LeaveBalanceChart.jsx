@@ -3,17 +3,12 @@ import axios from "axios";
 import { Card, CardContent, Typography, Grid, MenuItem, Select, CircularProgress, Box, Divider, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, FormControl } from "@mui/material";
 import ReactECharts from "echarts-for-react";
 
-const LeaveBalanceChart = ({ email }) => {
+const LeaveBalanceChart = ({ email,year }) => {
   const currentYear = new Date().getFullYear();
-  const [year, setYear] = useState(currentYear);
   const [leaveBalance, setLeaveBalance] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const yearsRange = useMemo(() => {
-    const currentYear = new Date().getFullYear();
-    return Array.from({ length: 15 }, (_, i) => currentYear + 1 - i);
-  }, []);
 
   useEffect(() => {
     if (!email || !year) return;
@@ -90,13 +85,7 @@ const LeaveBalanceChart = ({ email }) => {
         {/* <Typography variant="h5" align="center" sx={{ fontWeight: "bold", mb: 2 }}>
           Leave Balance Overview
         </Typography> */}
-        <FormControl  sx={{ marginBottom: 2,marginTop:3 }} >
-          <Select value={year} onChange={(e) => setYear(e.target.value)}>
-            {yearsRange.map((yr) => (
-              <MenuItem key={yr} value={yr}>{yr}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+      
 
         <Typography variant="h6" align="center" sx={{ fontWeight: "bold", mb: 2 }}>
           Leave Summary

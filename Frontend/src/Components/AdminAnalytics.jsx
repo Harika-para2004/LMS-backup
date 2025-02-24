@@ -14,8 +14,7 @@ import ReactECharts from "echarts-for-react";
 import axios from "axios";
 import OverlapReport from "./OverlapReport";
 
-const AdminAnalytics = () => {
-  const [year, setYear] = useState(new Date().getFullYear());
+const AdminAnalytics = ({year}) => {
   const [leaveTrends, setLeaveTrends] = useState(null);
   const [leaveTypes, setLeaveTypes] = useState(null);
   const [departmentLeaves, setDepartmentLeaves] = useState(null);
@@ -44,10 +43,7 @@ const AdminAnalytics = () => {
     fetchManagers();
   }, []);
 
-  const yearsRange = useMemo(() => {
-    const currentYear = new Date().getFullYear();
-    return Array.from({ length: 15 }, (_, i) => currentYear + 1 - i);
-  }, []);
+
 
   const fetchAnalytics = async (year) => {
     setLoading(true);
@@ -328,21 +324,7 @@ const AdminAnalytics = () => {
   return (
     <Card sx={{ p: 2, width: "100%", mb: 2,overflowY:"auto" }}>
       <CardContent>
-        <FormControl>
-          <InputLabel id="select-label">Select Year</InputLabel>
-          <Select
-            labelId="select-label"
-            value={year}
-            onChange={(e) => setYear(e.target.value)}
-            label="Select Year"
-          >
-            {yearsRange.map((yr) => (
-              <MenuItem key={yr} value={yr}>
-                {yr}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+       
 
         {loading ? (
           <CircularProgress sx={{ display: "block", mx: "auto", mt: 2 }} />

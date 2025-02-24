@@ -3,19 +3,13 @@ import axios from "axios";
 import { Card, CardContent, Typography, Select, MenuItem, FormControl } from "@mui/material";
 import ReactECharts from "echarts-for-react";
 
-const LeaveStatusChart = ({ email }) => {
-  const [year, setYear] = useState(new Date().getFullYear());
+const LeaveStatusChart = ({ email,year }) => {
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const yearsRange = useMemo(() => {
-    const currentYear = new Date().getFullYear();
-    return Array.from({ length: 15 }, (_, i) => currentYear + 1 - i);
-  }, []);
-
   useEffect(() => {
-    if (!email || !year) return; // Ensure both email and year are available
+    if (!email || !year) return;
 
     const fetchData = async () => {
       setLoading(true);
@@ -40,39 +34,46 @@ const LeaveStatusChart = ({ email }) => {
 
     fetchData();
   }, [email, year]);
+
   const getOption = () => {
     const leaveTypes = chartData.map((item) => item.leaveType);
     const statuses = ["Pending", "Approved", "Rejected"];
     const barCount = leaveTypes.length;
     const barWidth = barCount < 4 ? 40 : "60%";
-  
+
     const statusColors = {
-      Pending: "#F4C542",  // Yellow for waiting
-      Approved: "#4CAF50", // Green for approved
-      Rejected: "#F44336", // Red for rejected
+      Pending: "#F4C542",
+      Approved: "#4CAF50",
+      Rejected: "#F44336",
     };
-  
+
     const seriesData = statuses.map((status) => ({
       name: status,
       type: "bar",
       stack: "total",
       barWidth,
       emphasis: { focus: "series" },
-      itemStyle: { color: statusColors[status] }, // Assign colors dynamically
+      itemStyle: { color: statusColors[status] },
       data: chartData.map((item) => item.statuses[status] || 0),
+      label: { show: false },
     }));
-  
+
     return {
-      tooltip: { trigger: "axis" },
-      legend: { 
-        data: statuses, 
+      animation: false, // ✅ Disable animation for instant bar display
+
+      tooltip: {
+        trigger: "item",
+        formatter: (params) => `<b>${params.seriesName}</b>: ${params.value}`,
+      },
+      legend: {
+        data: statuses,
         orient: "horizontal",
         bottom: "5%",
         left: "center",
       },
-      grid: { 
-        left: "5%", 
-        right: "5%", 
+      grid: {
+        left: "5%",
+        right: "5%",
         bottom: "15%",
         containLabel: true,
       },
@@ -80,34 +81,25 @@ const LeaveStatusChart = ({ email }) => {
         type: "category",
         data: leaveTypes,
         axisLabel: {
-          interval: 0, 
-          rotate: barCount > 3 ? 45 : 0, 
-          margin: 10, 
+          interval: 0,
+          rotate: barCount > 5 ? 45 : 0,
+          margin: 10,
         },
       },
-      yAxis: { 
+      yAxis: {
         type: "value",
-        minInterval: 1, // Ensures only whole numbers are displayed
-      },      series: seriesData,
+        minInterval: 1,
+      },
+      series: seriesData,
     };
   };
-  
-  
-  
+
   return (
     <Card sx={{ maxWidth: 700, margin: "auto", padding: 3, boxShadow: 3 }}>
       <CardContent>
-        <Typography variant="h6" align="center">Leave Status Overview ({year})</Typography>
-
-        {/* Year Selector */}
-        <FormControl  sx={{ marginBottom: 2,marginTop:3 }} >
-          <Select value={year} onChange={(e) => setYear(e.target.value)}>
-            {yearsRange.map((yr) => (
-              <MenuItem key={yr} value={yr}>{yr}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
+        <Typography variant="h6" align="center">
+          Leave Status Overview ({year})
+        </Typography>
         {loading ? (
           <Typography align="center">Loading...</Typography>
         ) : error ? (

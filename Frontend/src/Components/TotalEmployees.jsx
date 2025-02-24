@@ -8,7 +8,8 @@ import { FaEdit, FaTrash } from "react-icons/fa";
 import { Outlet, useNavigate } from "react-router-dom";
 import { AiOutlineClose } from "react-icons/ai";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
-
+import Pagination from "@mui/material/Pagination";
+import Stack from "@mui/material/Stack";
 import {
   Box,
   Button,
@@ -25,10 +26,11 @@ import {
   Typography,
   Modal,
   CircularProgress,
+  Tooltip,
 } from "@mui/material";
 
 const TotalEmployees = () => {
-    const [selectedCategory, setSelectedCategory] = useState("holiday-calendar")
+  const [selectedCategory, setSelectedCategory] = useState("holiday-calendar");
   const [editingRow, setEditingRow] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -56,9 +58,30 @@ const TotalEmployees = () => {
     managerEmail: "",
   });
 
-  const filteredEmployees = employeeList.filter((emp) =>
-    emp.empname.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredEmployees = employeeList
+    .slice() // Create a shallow copy to avoid mutating original data
+    .sort((a, b) =>
+      a.empid.localeCompare(b.empid, undefined, { numeric: true })
+    )
+    .filter((emp) =>
+      emp.empname.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const employeesPerPage = 10;
+
+  // Calculate the indexes for slicing the data
+  const indexOfLastEmployee = currentPage * employeesPerPage;
+  const indexOfFirstEmployee = indexOfLastEmployee - employeesPerPage;
+  const currentEmployees = filteredEmployees.slice(
+    indexOfFirstEmployee,
+    indexOfLastEmployee
   );
+
+  // Handle page change
+  const handlePageChange = (event, value) => {
+    setCurrentPage(value);
+  };
 
   useEffect(() => {
     fetchEmployees();
@@ -150,7 +173,6 @@ const TotalEmployees = () => {
       setError("Failed to update employee. Please try again later.");
     }
   };
-
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -346,45 +368,62 @@ const TotalEmployees = () => {
             ),
           }}
         />
-        <Button
-          variant="contained"
-          onClick={() => handleAddEmployeeClick()}
-          // onClick={() => setShowModal(true)}
-          sx={{
-            textTransform: "capitalize",
-            backgroundColor: "#006400", // Align the button absolutely
-            // marginTop: "-40px", // Push it to the right edge
-            // marginRight: "35px", // Optional: Add some spacing from the right edge
-            "&:focus": {
-              outline: "none",
-            },
-          }}
-        >
-          Add Employee
-        </Button>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }} >
+          <div>
+            <Tooltip title="Upload Employees" arrow>
+              <Button
+                component="label"
+                variant="contained"
+                color="primary"
+                startIcon={<CloudUploadIcon />}
+              >
+                Upload Excel
+                <input
+                  type="file"
+                  accept=".xlsx, .xls"
+                  onChange={handleFileChange}
+                  id="file-input"
+                  hidden
+                />
+              </Button>
+            </Tooltip>
+            {file && (
+              <Button
+                onClick={handleUpload}
+                variant="contained"
+                color="secondary"
+                disabled={loading}
+                startIcon={!loading && <CloudUploadIcon />}
+                sx={{ marginLeft: 2 }}
+              >
+                {loading ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : (
+                  "Upload"
+                )}
+              </Button>
+            )}
+          </div>
+          <Button
+            variant="contained"
+            onClick={() => handleAddEmployeeClick()}
+            // onClick={() => setShowModal(true)}
+            sx={{
+              textTransform: "capitalize",
+              backgroundColor: "#006400", // Align the button absolutely
+              // marginTop: "-40px", // Push it to the right edge
+              // marginRight: "35px", // Optional: Add some spacing from the right edge
+              "&:focus": {
+                outline: "none",
+              },
+            }}
+          >
+            Add Employee
+          </Button>
+        </div>
       </div>
-      <div>
-        <input
-          type="file"
-          accept=".xlsx, .xls"
-          onChange={handleFileChange}
-          id="file-input"
-        />
-        <Button
-          onClick={handleUpload}
-          variant="contained"
-          color="primary"
-          disabled={!file || loading}
-          startIcon={!loading && <CloudUploadIcon />}
-        >
-          {loading ? (
-            <CircularProgress size={24} color="inherit" />
-          ) : (
-            "Upload Employees"
-          )}
-        </Button>
-        {message && <p>{message}</p>}
-      </div>
+
+      {message && <p>{message}</p>}
 
       <table className="holiday-table">
         {/* <caption>Employee Details</caption> */}
@@ -399,11 +438,8 @@ const TotalEmployees = () => {
           </tr>
         </thead>
         <tbody>
-          {employeeList ? (
-            filteredEmployees
-            .slice() // Create a shallow copy to avoid mutating original data
-            .sort((a, b) => a.empid.localeCompare(b.empid, undefined, { numeric: true }))
-            .map((emp, index) => (
+          {currentEmployees.length > 0 ? (
+            currentEmployees.map((emp, index) => (
               <tr key={emp._id}>
                 {editingRow === index ? (
                   <>
@@ -507,6 +543,15 @@ const TotalEmployees = () => {
           )}
         </tbody>
       </table>
+
+      <Stack spacing={2} sx={{ mt: 2, display: "flex", alignItems: "center" }}>
+        <Pagination
+          count={Math.ceil(filteredEmployees.length / employeesPerPage)}
+          page={currentPage}
+          onChange={handlePageChange}
+          color="primary"
+        />
+      </Stack>
 
       <Modal
         open={showAddEmployeeModal}
