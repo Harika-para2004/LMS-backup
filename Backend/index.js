@@ -152,33 +152,25 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
       return res.status(400).json({ message: "End Date cannot be before Start Date." });
     }
 
-    // ✅ Fetch leave history for the user
-    let leaveHistory = await Leave.find({ email });
+  // Fetch all leave records for the user
+  let existingLeaves = await Leave.find({ email });
 
-    // ✅ No Duplicate Leave Requests
-    const alreadyApplied = leaveHistory.some(
-      (leave) =>
-        leave.leaveType === leaveType &&
-        new Date(leave.startDate).toDateString() === formattedStartDate.toDateString() &&
-        new Date(leave.endDate).toDateString() === formattedEndDate.toDateString()
-    );
-    if (alreadyApplied) {
-      return res.status(400).json({ message: `You have already applied for ${leaveType}.` });
-    }
+  for (let leave of existingLeaves) {
+    for (let i = 0; i < leave.startDate.length; i++) {
+      const existingStartDate = new Date(leave.startDate[i]);
+      const existingEndDate = new Date(leave.endDate[i]);
 
-    // ✅ No Overlapping Leaves
-    const hasOverlap = leaveHistory.some((leave) => {
-      const existingStartDate = new Date(leave.startDate);
-      const existingEndDate = new Date(leave.endDate);
-      return (
+      if (
         (formattedStartDate >= existingStartDate && formattedStartDate <= existingEndDate) ||
         (formattedEndDate >= existingStartDate && formattedEndDate <= existingEndDate) ||
         (formattedStartDate <= existingStartDate && formattedEndDate >= existingEndDate)
-      );
-    });
-    if (hasOverlap) {
-      return res.status(400).json({ message: "Your selected leave dates overlap with an existing leave." });
+      ) {
+        return res.status(400).json({
+          message: `You have already applied for leave from ${existingStartDate.toLocaleDateString("en-GB")} to ${existingEndDate.toLocaleDateString("en-GB")}.`
+        });
+      }
     }
+  }
 
     // ✅ Fetch Leave Balance and Policy
     // const appliedLeave = await Leave.findOne({ email, leaveType });
@@ -192,13 +184,7 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
     // }
 
     // ✅ Gender-Based Leave Restrictions
-    if (leaveType.includes("Maternity") && gender !== "Female") {
-      return res.status(400).json({ message: "Maternity Leave is only for female employees." });
-    }
-    if (leaveType.includes("Paternity") && gender !== "Male") {
-      return res.status(400).json({ message: "Paternity Leave is only for male employees." });
-    }
-
+ 
     // ✅ Sick Leave Past or Current Dates Only
     if (leaveType === "Sick Leave" && formattedStartDate > today) {
       return res.status(400).json({ message: "Sick Leave can only be applied for past or current dates." });

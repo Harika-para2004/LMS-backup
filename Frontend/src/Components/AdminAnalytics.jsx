@@ -90,7 +90,7 @@ const AdminAnalytics = ({year}) => {
       if (topEmployeesRes.data.length === 0) setNoTopEmployeesData(true);
       setTopLeaveTakers({
         employees: topEmployeesRes.data.map((emp) => emp.empname),
-        leaveCounts: topEmployeesRes.data.map((emp) => emp.leavesTaken),
+        leaveCounts: topEmployeesRes.data.map((emp) => emp.totalLeave),
       });
 
       if (Object.keys(leaveStatusRes.data).length === 0)
@@ -137,7 +137,7 @@ const AdminAnalytics = ({year}) => {
   ];
   
   const trendsOptions = {
-    title: { text: `Monthly Leave Trends - ${year}`, left: "center" },
+    title: { text: `Monthly Leave Trends `, left: "center" },
     tooltip: { trigger: "axis" },
     grid: { left: "5%", right: "5%", bottom: "10%", containLabel: true },
     xAxis: { 
@@ -184,43 +184,101 @@ const AdminAnalytics = ({year}) => {
       },
     ],
   };
-  
-  
-  
   const leaveTypesOptions = {
-    title: { text: `Leave Type Distribution - ${year}`, left: "center" },
-    tooltip: { trigger: "item" },
+    title: { 
+      text: `Leave Type Distribution`, 
+      left: "center" 
+    },
+    tooltip: { 
+      trigger: "axis",
+      axisPointer: {
+        type: "shadow", // Highlights the bar on hover
+      },
+      formatter: (params) => {
+        let tooltipText = "";
+        params.forEach((item) => {
+          tooltipText += `${item.axisValue}: ${item.value} leaves<br/>`; // Show full label in tooltip
+        });
+        return tooltipText;
+      },
+    },
+    grid: { 
+      left: "5%", 
+      right: "5%", 
+      bottom: "10%", 
+      containLabel: true 
+    },
+    xAxis: {
+      type: "category",
+      data: leaveTypes?.map(item => item.name) || [], // Extract leave type names for x-axis
+      axisLabel: {
+        interval: 0,
+        rotate: 0, // Rotate labels for better readability
+        margin: 10,
+        formatter: (value) => (value.length > 5 ? value.slice(0, 5) + "..." : value), // Truncate label
+      },
+      tooltip: {
+        show: true, // Show tooltip when hovering over X-axis labels
+        formatter: (params) => params.value, // Display the full project name
+      },
+    },
+    yAxis: { 
+      type: "value" 
+    },
     series: [
       {
         name: "Leave Types",
-        type: "pie",
-        radius: "60%",
-        data: leaveTypes || [],
-        emphasis: {
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: "rgba(0, 0, 0, 0.5)",
+        type: "bar",
+        barWidth: (leaveTypes?.length || 0) < 3 ? 50 : "60%", // Adjust bar width based on data count
+        data: leaveTypes?.map(item => item.value) || [], // Extract leave count values for y-axis
+        itemStyle: {
+          color: (params) => {
+            const total = leaveTypes?.length || 1;
+            const hue = (params.dataIndex * (360 / total)) % 360;
+            return {
+              type: "linear",
+              x: 0,
+              y: 0,
+              x2: 0,
+              y2: 1,
+              colorStops: [
+                { offset: 0, color: `hsl(${hue}, 80%, 60%)` }, // Gradient color
+                { offset: 1, color: `hsl(${hue}, 70%, 40%)` },
+              ],
+            };
           },
         },
       },
     ],
   };
-
+  
   const departmentLeavesOptions = {
     title: {
-      text: `Project-wise Leave Distribution - ${year}`,
+      text: `Project-wise Leave Distribution`,
       left: "center",
     },
-    tooltip: { trigger: "axis" },
+    tooltip: {
+      trigger: "axis",
+      axisPointer: { type: "shadow" },
+      formatter: (params) => {
+        return params
+          .map((item) => `<b>${item.axisValue}</b>: ${item.value} Leaves`)
+          .join("<br/>");
+      },
+    },
     grid: { left: "5%", right: "5%", bottom: "10%", containLabel: true },
     xAxis: {
       type: "category",
       data: departmentLeaves?.departments || [],
       axisLabel: {
         interval: 0,
-        rotate: 45,
+        rotate: 0,
         margin: 10,
+        formatter: (value) => (value.length > 10 ? value.slice(0, 10) + "..." : value), // Truncate if longer than 10 characters
+      },
+      tooltip: {
+        show: true, // Show tooltip when hovering over X-axis labels
+        formatter: (params) => params.value, // Display the full project name
       },
     },
     yAxis: { type: "value" },
@@ -233,7 +291,7 @@ const AdminAnalytics = ({year}) => {
         itemStyle: {
           color: (params) => {
             const total = departmentLeaves?.departments?.length || 1;
-            const hue = (params.dataIndex * (360 / total)) % 360; // Spread colors evenly
+            const hue = (params.dataIndex * (360 / total)) % 360;
             return {
               type: "linear",
               x: 0,
@@ -241,8 +299,8 @@ const AdminAnalytics = ({year}) => {
               x2: 0,
               y2: 1,
               colorStops: [
-                { offset: 0, color: `hsl(${hue}, 80%, 60%)` }, // Brighter top
-                { offset: 1, color: `hsl(${hue}, 70%, 40%)` }, // Darker bottom
+                { offset: 0, color: `hsl(${hue}, 80%, 60%)` },
+                { offset: 1, color: `hsl(${hue}, 70%, 40%)` },
               ],
             };
           },
@@ -250,46 +308,57 @@ const AdminAnalytics = ({year}) => {
       },
     ],
   };
-  
-
   const topLeaveTakersOptions = {
-    title: { text: `Top 10 Leave Takers - ${year}`, left: "center" },
-    tooltip: { trigger: "axis" },
-    grid: { left: "5%", right: "5%", bottom: "10%", containLabel: true },
-    xAxis: { type: "value" },
-
-    yAxis: { type: "category", data: topLeaveTakers?.employees || [] },
+    title: { text: `Top 10 Leave Takers`, left: "center" },
+    tooltip: { trigger: "item" },
+    legend: {
+      type: "scroll", // Enables scrolling if too many legends
+      orient: "horizontal", // Keeps legends in a single line
+      bottom: 0, // Positions at the bottom
+      itemWidth: 14, // Adjusts the size of legend icons
+      itemHeight: 10,
+      textStyle: {
+        fontSize: 12, // Makes legend text readable
+      },
+    },
     series: [
       {
         name: "Leaves Taken",
-        type: "bar",
-        data: topLeaveTakers?.leaveCounts || [],
-        barWidth: topLeaveTakers?.length < 4 ? 40 : "60%",
+        type: "pie",
+        radius: "50%", // Creates a donut chart with a fixed width
+        avoidLabelOverlap: false,
+        label: {
+          show: true,
+          formatter: "{b}: {c} ({d}%)", // Shows name, value, and percentage
+        },
+        labelLine: { show: true },
+        data: topLeaveTakers?.employees?.map((emp, index) => ({
+          name: emp,
+          value: topLeaveTakers?.leaveCounts[index] || 0,
+        })),
         itemStyle: {
           color: (params) => {
             const total = topLeaveTakers?.employees?.length || 1;
-            const hue = (params.dataIndex * (360 / total)) % 360; // Spread colors evenly
-            return {
-              type: "linear",
-              x: 0,
-              y: 0,
-              x2: 0,
-              y2: 1,
-              colorStops: [
-                { offset: 0, color: `hsl(${hue}, 80%, 60%)` }, // Brighter top
-                { offset: 1, color: `hsl(${hue}, 70%, 40%)` }, // Darker bottom
-              ],
-            };
+            const hue = (params.dataIndex * (360 / total)) % 360;
+            return `hsl(${hue}, 80%, 60%)`;
           },
         },
       },
     ],
   };
-
   const leaveStatusOptions = {
-    title: { text: `Leave Status Distribution - ${year}`, left: "center" },
+    title: { text: `Leave Status Distribution`, left: "center" },
     tooltip: { trigger: "item" },
-    legend: { orient: "vertical", left: "left" },
+    legend: {
+      type: "scroll", // Enables scrolling if too many legends
+      orient: "horizontal", // Places legend at the bottom
+      bottom: 0, // Positions legend at the bottom
+      itemWidth: 14,
+      itemHeight: 10,
+      textStyle: {
+        fontSize: 12, // Keeps text readable
+      },
+    },
     series: [
       {
         name: "Leave Status",
@@ -306,20 +375,32 @@ const AdminAnalytics = ({year}) => {
       },
     ],
   };
-
+  
   const managerLeaveTrendsOptions = {
     title: { text: "Leave Trends by Status", left: "center" },
     tooltip: {},
+    legend: {
+      type: "scroll",
+      orient: "horizontal",
+      bottom: 0,
+      itemWidth: 14,
+      itemHeight: 10,
+      textStyle: {
+        fontSize: 12,
+      },
+    },
     xAxis: { type: "category", data: Object.keys(managerLeaveTrends) },
     yAxis: { type: "value" },
     series: [
       {
+        name: "Leave Count", // Added name for legend reference
         data: Object.values(managerLeaveTrends),
         type: "bar",
         barWidth: Object.keys(managerLeaveTrends).length < 4 ? 50 : "60%",
       },
     ],
   };
+  
 
   return (
     <Card sx={{ p: 2, width: "100%", mb: 2,overflowY:"auto" }}>
@@ -330,11 +411,11 @@ const AdminAnalytics = ({year}) => {
           <CircularProgress sx={{ display: "block", mx: "auto", mt: 2 }} />
         ) : (
           <Grid container spacing={2} sx={{ mt: 2 }}>
-            <Grid item xs={12} md={6} style={{ height: 400, width: "100%" }}>
+            <Grid item xs={12} md={12} style={{ height: 400, width: "100%" }}>
               {noTrendsData ? (
                 <div>
                   <Typography>{`Leave Trends - ${year}`} </Typography>
-                  <p>No data available for leave trends.</p>
+                  <p>No leave data available</p>
                 </div>
               ) : (
                 <ReactECharts
@@ -343,14 +424,28 @@ const AdminAnalytics = ({year}) => {
                 />
               )}
             </Grid>
-
+            <Grid item xs={12} md={6} style={{ height: 400, width: "100%" }}>
+              {noDeptData ? (
+                <div>
+                  <Typography variant="h6" sx={{ mb: 3 }}>
+                    {`Project wise Leave Trends - ${year}`}{" "}
+                  </Typography>
+                  <p>No leave data  available .</p>
+                </div>
+              ) : (
+                <ReactECharts
+                  option={departmentLeavesOptions}
+                  style={{ height: 400, width: "100%" }}
+                />
+              )}
+            </Grid>
             <Grid item xs={12} md={6} style={{ height: 400, width: "100%" }}>
               {noTypesData ? (
                 <div>
                   <Typography variant="h6" sx={{ mb: 3 }}>
                     {`Leave Status Trends - ${year}`}{" "}
                   </Typography>
-                  <p>No data available </p>
+                  <p>No leave data  available </p>
                 </div>
               ) : (
                 <ReactECharts
@@ -360,21 +455,7 @@ const AdminAnalytics = ({year}) => {
               )}
             </Grid>
 
-            <Grid item xs={12} md={6} style={{ height: 400, width: "100%" }}>
-              {noDeptData ? (
-                <div>
-                  <Typography variant="h6" sx={{ mb: 3 }}>
-                    {`Project wise Leave Trends - ${year}`}{" "}
-                  </Typography>
-                  <p>No data available .</p>
-                </div>
-              ) : (
-                <ReactECharts
-                  option={departmentLeavesOptions}
-                  style={{ height: 400, width: "100%" }}
-                />
-              )}
-            </Grid>
+           
 
             <Grid item xs={12} md={6} style={{ height: 400, width: "100%" }}>
               {noTopEmployeesData ? (
@@ -382,7 +463,7 @@ const AdminAnalytics = ({year}) => {
                   <Typography variant="h6" sx={{ mb: 3 }}>
                     {`Top 10 leave takers - ${year}`}{" "}
                   </Typography>
-                  <p>No data available .</p>
+                  <p>No leave data available .</p>
                 </div>
               ) : (
                 <ReactECharts
@@ -396,9 +477,9 @@ const AdminAnalytics = ({year}) => {
               {noLeaveStatusData ? (
                 <div>
                   <Typography variant="h6" sx={{ mb: 3 }}>
-                    {`Leave Status Distribution - ${year}`}{" "}
+                    {`Leave Status Distribution `}{" "}
                   </Typography>
-                  <p>No data available .</p>
+                  <p>No leave data available .</p>
                 </div>
               ) : (
                 <ReactECharts

@@ -2,14 +2,17 @@ const express = require("express");
 const Leave = require("../models/Leave");
 const User = require("../models/User");
 const router = express.Router();
-
 router.get("/projects", async (req, res) => {
   try {
-    const projects = await User.distinct("project", { project: { $ne: null } }); // Fetch unique non-null projects
+    const projects = await User.distinct("project", { project: { $ne: null } });
+    console.log("Fetched Projects:", projects); // ✅ Log fetched projects
+
     if (!projects.length) {
+      console.log("No projects found"); // ✅ Log if no projects exist
       return res.status(404).json({ message: "No projects found" });
     }
-    res.json(projects.map((name) => ({ name }))); // Format as [{ name: "Project A" }]
+    
+    res.json(projects.map((name) => ({ name })));
   } catch (error) {
     console.error("Error fetching projects:", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -24,49 +27,72 @@ router.get("/leaves/overlap-report", async (req, res) => {
       return res.status(400).json({ error: "Project is required" });
     }
 
+    console.log(`Fetching leave overlap report for project: ${project}`);
+
     // ✅ Step 1: Get all employees in the project
-    const employees = await User.find({ project }, "empid empname email");
+    const employees = await User.find(
+      { project: { $regex: new RegExp(`^${project}$`, "i") } },
+      "empid empname email"
+    );
+
+    console.log("Employees in project:", employees);
+
     if (employees.length === 0) {
       return res.status(404).json({ message: "No employees found in this project" });
     }
 
-    // ✅ Step 2: Fetch leave records of employees
-    const employeeMap = new Map();
+    // ✅ Step 2: Fetch only "Approved" leave records
+    const employeeLeaves = [];
     for (const emp of employees) {
-      const leaves = await Leave.find({ email: emp.email });
-      employeeMap.set(emp.empid, { empname: emp.empname, leaves });
+      const leaves = await Leave.find(
+        { email: emp.email, status: "Approved" },
+        "startDate endDate leaveType"
+      );
+
+      if (leaves.length > 0) {
+        employeeLeaves.push({ empid: emp.empid, empname: emp.empname, leaves });
+      }
     }
 
-    // ✅ Step 3: Compare leave dates for overlaps
+    console.log("Employee leave data:", JSON.stringify(employeeLeaves, null, 2));
+
+    if (employeeLeaves.length < 2) {
+      return res.status(200).json({ message: "Not enough employees with approved leaves for overlap check." });
+    }
+
+    // ✅ Step 3: Compare leave dates for overlapping employees
     const overlapReport = [];
 
-    const empIds = Array.from(employeeMap.keys());
-    for (let i = 0; i < empIds.length; i++) {
-      for (let j = i + 1; j < empIds.length; j++) {
-        const emp1 = employeeMap.get(empIds[i]);
-        const emp2 = employeeMap.get(empIds[j]);
+    for (let i = 0; i < employeeLeaves.length; i++) {
+      for (let j = i + 1; j < employeeLeaves.length; j++) {
+        const emp1 = employeeLeaves[i];
+        const emp2 = employeeLeaves[j];
 
-        emp1.leaves.forEach((leave1) => {
-          emp2.leaves.forEach((leave2) => {
-            leave1.startDate.forEach((start1, idx1) => {
-              leave2.startDate.forEach((start2, idx2) => {
-                const end1 = new Date(leave1.endDate[idx1]);
-                const end2 = new Date(leave2.endDate[idx2]);
+        const overlappingPeriods = [];
 
-                // ✅ Check for overlap: start1 <= end2 && start2 <= end1
-                if (new Date(start1) <= end2 && new Date(start2) <= end1) {
-                  overlapReport.push({
-                    employee1: emp1.empname,
-                    employee2: emp2.empname,
-                    overlappedStart: new Date(Math.max(new Date(start1), new Date(start2))),
-                    overlappedEnd: new Date(Math.min(end1, end2)),
-                    leaveType: leave1.leaveType,
-                  });
-                }
-              });
-            });
+        emp1.leaves.forEach((leaveA) => {
+          emp2.leaves.forEach((leaveB) => {
+            const startA = new Date(leaveA.startDate);
+            const endA = new Date(leaveA.endDate);
+            const startB = new Date(leaveB.startDate);
+            const endB = new Date(leaveB.endDate);
+
+            // ✅ Corrected overlap logic (earliest start and latest end)
+            if (startA <= endB && startB <= endA) {
+              const overlappedStart = new Date(Math.max(startA, startB)); // Latest start date
+              const overlappedEnd = new Date(Math.min(endA, endB)); // Earliest end date
+
+              overlappingPeriods.push({ overlappedStart, overlappedEnd });
+            }
           });
         });
+
+        if (overlappingPeriods.length > 0) {
+          overlapReport.push({
+            employees: [emp1.empname, emp2.empname],
+            overlappingPeriods,
+          });
+        }
       }
     }
 
@@ -78,66 +104,45 @@ router.get("/leaves/overlap-report", async (req, res) => {
   }
 });
 
-router.get("/projects", async (req, res) => {
-  try {
-    const projects = await User.distinct("project", { project: { $ne: null } });
-    if (!projects.length) {
-      return res.status(404).json({ message: "No projects found" });
-    }
-    res.json(projects.map((name) => ({ name })));
-  } catch (error) {
-    console.error("Error fetching projects:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-})
+
+
 router.get("/leave-trends/:year", async (req, res) => {
   try {
     const { year } = req.params;
-    const parsedYear = parseInt(year);
+    const selectedYear = parseInt(year);
 
-    console.log(`Fetching leave trends for year: ${parsedYear}`);
+    console.log(`Fetching leave trends for year: ${selectedYear}`);
 
-    const leaves = await Leave.aggregate([
-      // Step 1: Filter documents to match the specified year
-      {
-        $match: {
-          year: { $elemMatch: { $eq: parsedYear } }, // Ensure year array contains the target year
-          status: { $elemMatch: { $eq: "Approved" } } // Ensure at least one status is "Approved"
-        }
-      },
+    const leaves = await Leave.find({
+      year: { $elemMatch: { $elemMatch: { $eq: selectedYear } } }, // Match the correct year
+      status: { $elemMatch: { $eq: "Approved" } } // Only approved leaves
+    });
 
-      // Step 2: Unwind nested arrays
-      { $unwind: "$year" },
-      { $unwind: "$month" },
-      { $unwind: "$duration" },
-      { $unwind: "$status" },
+    const monthlyData = {};
 
-      // Step 3: Filter only the required year and approved status
-      {
-        $match: {
-          year: parsedYear,
-          status: "Approved"
-        }
-      },
+    // Step 1: Process each leave entry correctly
+    leaves.forEach(({ year, month, duration, status }) => {
+      year.forEach((yearGroup, i) => {
+        yearGroup.forEach((leaveYear, index) => {
+          if (leaveYear === selectedYear && status[i] === "Approved") {
+            const leaveMonth = month[i][index]; // Correct month from the same index
+            const leaveDuration = duration[i][index]; // Correct duration from the same index
 
-      // Step 4: Group by month and sum durations
-      {
-        $group: {
-          _id: "$month",
-          totalLeaveDays: { $sum: "$duration" } // Sum all leave durations per month
-        }
-      },
+            // Sum up leave durations for each month
+            monthlyData[leaveMonth] = (monthlyData[leaveMonth] || 0) + leaveDuration;
+          }
+        });
+      });
+    });
 
-      // Step 5: Sort months in ascending order
-      { $sort: { _id: 1 } }
-    ]);
+    // Step 2: Convert monthlyData object into sorted arrays for frontend
+    const sortedMonths = Object.keys(monthlyData).map(Number).sort((a, b) => a - b);
+    const leaveCounts = sortedMonths.map(month => monthlyData[month]);
 
-    console.log("Aggregated Leave Data:", JSON.stringify(leaves, null, 2));
-
-    // Step 6: Send response with formatted data
+    // Step 3: Send response formatted for frontend charts
     res.json({
-      months: leaves.map(l => l._id),
-      leaveCounts: leaves.map(l => l.totalLeaveDays)
+      months: sortedMonths,
+      leaveCounts
     });
 
   } catch (err) {
@@ -146,133 +151,6 @@ router.get("/leave-trends/:year", async (req, res) => {
   }
 });
 
-
-router.get("/department-leave/:year", async (req, res) => {
-  try {
-    const { year } = req.params;
-    const reports = await getAdminReports();
-
-    const departmentData = reports.reduce((acc, report) => {
-      // Sum up total leave duration for the given year
-      const totalDuration = report.leaves
-        .filter((leave) => new Date(leave.startDate).getFullYear() === parseInt(year))
-        .reduce((sum, leave) => sum + leave.duration, 0); // ✅ Summing leave durations
-
-      if (totalDuration > 0) {
-        acc[report.project] = (acc[report.project] || 0) + totalDuration;
-      }
-
-      return acc;
-    }, {});
-
-    res.status(200).json(departmentData);
-  } catch (error) {
-    console.error("Error fetching department leave stats:", error);
-    res.status(500).json({ message: "Server Error" });
-  }
-});
-
-// ✅ 4. Top Employees Who Took Leaves
-router.get("/top-leave-takers/:year", async (req, res) => {
-  try {
-    const { year } = req.params;
-
-    const topEmployees = await Leave.aggregate([
-      {
-        $match: {
-          year: parseInt(year), // ✅ Ensure correct year filtering
-        },
-      },
-      {
-        $unwind: { path: "$status", includeArrayIndex: "index" }, // ✅ Get index to align with duration
-      },
-      {
-        $project: {
-          email: 1,
-          empname: 1,
-          duration: { $arrayElemAt: ["$duration", "$index"] }, // ✅ Get correct duration using index
-          status: 1,
-        },
-      },
-      {
-        $match: { status: "Approved" }, // ✅ Only include approved leaves
-      },
-      {
-        $group: {
-          _id: "$email",
-          empname: { $first: "$empname" },
-          leavesTaken: { $sum: "$duration" }, // ✅ Correctly sum only approved durations
-        },
-      },
-      {
-        $sort: { leavesTaken: -1 }, // ✅ Sort by total approved leave days
-      },
-      {
-        $limit: 10, // ✅ Get top 10 employees
-      },
-    ]);
-
-    res.status(200).json(topEmployees);
-  } catch (err) {
-    console.error("Error fetching top leave takers:", err);
-    res.status(500).json({ error: "Server Error" });
-  }
-});
-
-
-router.get("/leave-status/:year", async (req, res) => {
-  try {
-    const { year } = req.params;
-
-    // Fetch all leaves that have a start date in the given year
-    const leaves = await Leave.find();
-
-    // Filter leaves for the given year and extract statuses
-    const leaveStatuses = leaves.flatMap((leave) =>
-      leave.startDate
-        .map((start, index) => ({
-          status: leave.status[index],
-          year: new Date(start).getFullYear(),
-        }))
-        .filter((leave) => leave.year === parseInt(year))
-        .map((leave) => leave.status)
-    );
-
-    // Count occurrences of each status
-    const statusCounts = leaveStatuses.reduce((acc, status) => {
-      acc[status] = (acc[status] || 0) + 1;
-      return acc;
-    }, {});
-
-    res.status(200).json(statusCounts);
-  } catch (error) {
-    console.error("Error fetching leave status:", error);
-    res.status(500).json({ message: "Server Error" });
-  }
-});
-
-router.get("/leave-type-distribution/:year", async (req, res) => {
-  try {
-    const { year } = req.params;
-    const reports = await getAdminReports();
-
-    const leaveTypeCount = reports.flatMap((report) =>
-      report.leaves
-        .filter((leave) => new Date(leave.startDate).getFullYear() === parseInt(year))
-        .map((leave) => leave.leaveType)
-    );
-
-    const distribution = leaveTypeCount.reduce((acc, type) => {
-      acc[type] = (acc[type] || 0) + 1;
-      return acc;
-    }, {});
-
-    res.status(200).json(distribution);
-  } catch (error) {
-    console.error("Error fetching leave distribution:", error);
-    res.status(500).json({ message: "Server Error" });
-  }
-});
 async function getAdminReports(project = "", search = "") {
   try {
     let query = {};
@@ -305,10 +183,10 @@ async function getAdminReports(project = "", search = "") {
                   : "N/A",
                 status: leave.status[index] || "Pending",
                 reason: leave.reason[index] || "No reason provided",
-                duration: (leave.duration[index] || []).reduce((sum, days) => sum + days, 0), // ✅ Summing up durations
+                duration: (leave.duration[index] || []).reduce((sum, days) => sum + days, 0),
                 attachments: leave.attachments[index] || [],
               }))
-              .filter((leave) => leave.status === "Approved") // ✅ Only approved requests
+              .filter((leave) => leave.status === "Approved")
           ),
         };
       })
@@ -320,6 +198,173 @@ async function getAdminReports(project = "", search = "") {
     throw error;
   }
 }
+router.get("/department-leave/:year", async (req, res) => {
+  try {
+    const { year } = req.params;
+    const selectedYear = parseInt(year);
+
+    console.log(`Fetching department leave data for year: ${selectedYear}`);
+
+    // Fetch employee reports with project details
+    const adminReports = await getAdminReports();
+
+    // Create a mapping of email to project
+    const projectMapping = adminReports.reduce((acc, { email, project }) => {
+      acc[email] = project; // Assign project to each employee email
+      return acc;
+    }, {});
+
+    // Fetch leave records for the selected year
+    const leaves = await Leave.find({
+      year: { $elemMatch: { $elemMatch: { $eq: selectedYear } } },
+      status: { $elemMatch: { $eq: "Approved" } },
+    });
+
+    const departmentData = {};
+
+    leaves.forEach(({ year, month, duration, status, email }) => {
+      const project = projectMapping[email] || "Unknown"; // Assign project based on email mapping
+
+      year.forEach((yearGroup, i) => {
+        yearGroup.forEach((leaveYear, index) => {
+          if (leaveYear === selectedYear && status[i] === "Approved") {
+            const leaveDuration = duration[i][index];
+            departmentData[project] = (departmentData[project] || 0) + leaveDuration;
+          }
+        });
+      });
+    });
+
+    console.log("✅ Department Leave Data:", JSON.stringify(departmentData, null, 2));
+
+    res.status(200).json(departmentData);
+  } catch (error) {
+    console.error("❌ Error fetching department leave stats:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
+
+// ✅ 4. Top Employees Who Took Leaves
+router.get("/top-leave-takers/:year", async (req, res) => {
+  try {
+    const { year } = req.params;
+    const selectedYear = parseInt(year);
+
+    console.log(`Fetching employee leave data for year: ${selectedYear}`);
+
+    // Fetch employee reports to map email → empname
+    const adminReports = await getAdminReports();
+    const employeeMapping = adminReports.reduce((acc, { email, empname }) => {
+      acc[email] = empname; // Store empname by email
+      return acc;
+    }, {});
+
+    const leaves = await Leave.find({
+      year: { $elemMatch: { $elemMatch: { $eq: selectedYear } } },
+      status: { $elemMatch: { $eq: "Approved" } }
+    });
+
+    const employeeLeaveData = {};
+
+    leaves.forEach(({ email, year, status, duration }) => {
+      year.forEach((yearGroup, i) => {
+        yearGroup.forEach((leaveYear, index) => {
+          if (leaveYear === selectedYear && status[i] === "Approved") {
+            const leaveDuration = duration[i][index];
+
+            employeeLeaveData[email] = (employeeLeaveData[email] || 0) + leaveDuration;
+          }
+        });
+      });
+    });
+
+    // Convert to array and include employee names
+    const topEmployees = Object.entries(employeeLeaveData).map(([email, totalLeave]) => ({
+      email,
+      empname: employeeMapping[email] || "Unknown",
+      totalLeave,
+    }));
+
+    console.log("✅ Employee Leave Data:", JSON.stringify(topEmployees, null, 2));
+
+    res.status(200).json(topEmployees);
+  } catch (error) {
+    console.error("❌ Error fetching employee leave stats:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+router.get("/leave-status/:year", async (req, res) => {
+  try {
+    const { year } = req.params;
+
+    // Fetch all leave records
+    const leaves = await Leave.find({      year: { $elemMatch: { $elemMatch: { $eq: year } } },
+    });
+
+    // Extract and count statuses for the given year
+    const statusCounts = {};
+
+    leaves.forEach((leave) => {
+      leave.startDate.forEach((start, index) => {
+        const leaveYear = new Date(start).getFullYear();
+        if (leaveYear === parseInt(year)) {
+          const status = leave.status[index]; // Get corresponding status
+          statusCounts[status] = (statusCounts[status] || 0) + 1;
+        }
+      });
+    });
+
+    res.status(200).json(statusCounts);
+  } catch (error) {
+    console.error("Error fetching leave status:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
+router.get("/leave-type-distribution/:year", async (req, res) => {
+  try {
+    const { year } = req.params;
+    const selectedYear = parseInt(year);
+
+    console.log(`Fetching leave type distribution for year: ${selectedYear}`);
+
+    const reports = await getAdminReports();
+    if (!Array.isArray(reports)) {
+      console.error("❌ Error: reports is not an array.");
+      return res.status(500).json({ message: "Server Error: Data is invalid" });
+    }
+
+    const leaveTypeCount = {};
+
+    // Step 1: Iterate over reports safely
+    reports.forEach(({ leaves }) => {
+      if (!Array.isArray(leaves)) return;
+
+      leaves.forEach(({ leaveType, startDate, endDate, status }) => {
+        if (!startDate || !endDate || !status) return;
+
+        const startYear = new Date(startDate).getFullYear();
+        const endYear = new Date(endDate).getFullYear();
+
+        // Check if the selectedYear is in the start or end year
+        if ((startYear === selectedYear || endYear === selectedYear) && status === "Approved") {
+          leaveTypeCount[leaveType] = (leaveTypeCount[leaveType] || 0) + 1;
+        }
+      });
+    });
+
+    console.log("✅ Leave Type Distribution:", JSON.stringify(leaveTypeCount, null, 2));
+
+    // Step 2: Return structured response
+    res.status(200).json(leaveTypeCount);
+
+  } catch (error) {
+    console.error("❌ Error fetching leave type distribution:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
 
 // router.get("/manager-leave-trends/:year/:managerEmail", async (req, res) => {
 //   try {

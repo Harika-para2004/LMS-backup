@@ -201,14 +201,7 @@ const ApplyLeave = () =>
       
     
       // **✅ Gender-Based Leave Restrictions**
-      if (leaveType.includes("Maternity") && gender !== "Female") {
-        showToast("Maternity Leave is only for female employees.", "error");
-        return;
-      }
-      if (leaveType.includes("Paternity") && gender !== "Male") {
-        showToast("Paternity Leave is only for male employees.", "error");
-        return;
-      }
+
     
       // **✅ Sick Leave Past or Current Dates Only**
       if (leaveType === "Sick Leave" && startDayjs.isAfter(today)) {
