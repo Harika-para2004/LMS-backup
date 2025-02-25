@@ -481,6 +481,18 @@ function AdminDashboard() {
   
       const wasApproved = leave.status[selectedIndex]?.toLowerCase() === "approved"; // Add optional chaining
   
+      // const updatedLeave = {
+      //   ...leave,
+      //   status: leave.status.map((stat, index) =>
+      //     index === selectedIndex && (stat.toLowerCase() === "pending" || stat.toLowerCase() === "approved")
+      //       ? "Rejected"
+      //       : stat
+      //   ),
+      //   availableLeaves: wasApproved ? leave.availableLeaves + leaveDuration : leave.availableLeaves,
+      //   usedLeaves: wasApproved ? leave.usedLeaves - leaveDuration : leave.usedLeaves,
+      // };
+
+      //updated available leaves
       const updatedLeave = {
         ...leave,
         status: leave.status.map((stat, index) =>
@@ -488,9 +500,15 @@ function AdminDashboard() {
             ? "Rejected"
             : stat
         ),
-        availableLeaves: wasApproved ? leave.availableLeaves + leaveDuration : leave.availableLeaves,
-        usedLeaves: wasApproved ? leave.usedLeaves - leaveDuration : leave.usedLeaves,
+        ...(leave.totalLeaves !== null && leave.totalLeaves !== undefined
+          ? {
+              availableLeaves: wasApproved ? leave.availableLeaves + leaveDuration : leave.availableLeaves,
+              usedLeaves: wasApproved ? leave.usedLeaves - leaveDuration : leave.usedLeaves,
+            }
+          : {} // ✅ Do not update availableLeaves & usedLeaves if there's no totalLeaves
+        )
       };
+      
   
       try {
         const response = await fetch(
@@ -545,21 +563,30 @@ function AdminDashboard() {
         return;
       }
   
-      if (leave.availableLeaves < leaveDuration) {
+      if (
+        leave.totalLeaves !== null && // ✅ Only check if there's a totalLeaves limit
+        leave.totalLeaves !== undefined &&
+        leave.availableLeaves < leaveDuration
+      ) {
         console.log("Not enough available leaves.");
         return;
       }
   
       const updatedLeave = {
         ...leave,
-        availableLeaves: leave.availableLeaves - leaveDuration,
+        availableLeaves:
+          leave.totalLeaves !== null
+            ? Math.max(0, leave.availableLeaves - leaveDuration) // ✅ Prevent negative available leaves
+            : leave.availableLeaves, // ✅ Do not decrease if leave type is unlimited
         usedLeaves: leave.usedLeaves + leaveDuration,
         status: leave.status.map((stat, index) =>
-          index === selectedIndex && (stat.toLowerCase() === "pending" || stat.toLowerCase() === "rejected")
+          index === selectedIndex &&
+          (stat.toLowerCase() === "pending" || stat.toLowerCase() === "rejected")
             ? "Approved"
             : stat
         ),
       };
+      
   
       try {
         const response = await fetch(

@@ -52,43 +52,186 @@ app.get("/managers-list", async (req, res) => {
   }
 });
 
+// app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
+//   const { email } = req.query;
+//   const { empname, empid, leaveType, startDate, endDate, reason, managerEmail } = req.body;
+//   const filePath = req.file ? req.file.path : null;
+
+//   try {
+//     const formattedStartDate = new Date(startDate);
+//     const formattedEndDate = new Date(endDate);
+
+//     if (!leaveType || !startDate || !endDate) {
+//       return res.status(400).json({ message: "All fields (Leave Type, Start Date, End Date) are required." });
+//     }
+
+//     if (formattedEndDate < formattedStartDate) {
+//       return res.status(400).json({ message: "End Date cannot be before Start Date." });
+//     }
+
+//     // Fetch all leave records for the user
+//     let existingLeaves = await Leave.find({ email });
+
+//     for (let leave of existingLeaves) {
+//       for (let i = 0; i < leave.startDate.length; i++) {
+//         const existingStartDate = new Date(leave.startDate[i]);
+//         const existingEndDate = new Date(leave.endDate[i]);
+
+//         if (
+//           (formattedStartDate >= existingStartDate && formattedStartDate <= existingEndDate) ||
+//           (formattedEndDate >= existingStartDate && formattedEndDate <= existingEndDate) ||
+//           (formattedStartDate <= existingStartDate && formattedEndDate >= existingEndDate)
+//         ) {
+//           return res.status(400).json({
+//             message: `You have already applied for leave from ${existingStartDate.toLocaleDateString("en-GB")} to ${existingEndDate.toLocaleDateString("en-GB")}.`
+//           });
+//         }
+//       }
+//     }
+
+//     const startMonth = formattedStartDate.getMonth() + 1;
+//     const startYear = formattedStartDate.getFullYear();
+
+//     let leaveRecord = await Leave.findOne({ email, leaveType });
+
+//     if (leaveRecord) {
+//       leaveRecord.startDate.push(formattedStartDate);
+//       leaveRecord.endDate.push(formattedEndDate);
+//       leaveRecord.applyDate.push(new Date());
+//       leaveRecord.status.push("Pending");
+//       leaveRecord.attachments.push(filePath || "");
+//       leaveRecord.reason.push(reason || "");
+//       leaveRecord.month.push(startMonth);
+//       leaveRecord.year.push(startYear);
+
+//       await leaveRecord.save();
+//       return res.status(200).json({ message: "Leave application submitted successfully" });
+//     } else {
+//       const newLeave = new Leave({
+//         email,
+//         empname,
+//         empid,
+//         managerEmail,
+//         applyDate: [new Date()],
+//         leaveType,
+//         startDate: [formattedStartDate],
+//         endDate: [formattedEndDate],
+//         reason: reason ? [reason] : [],
+//         status: ["Pending"],
+//         attachments: [filePath || ""],
+//         month: [startMonth],
+//         year: [startYear],
+//       });
+
+//       await newLeave.save();
+//       return res.status(200).json({ message: "Leave application submitted successfully" });
+//     }
+//   } catch (error) {
+//     console.error("Error applying for leave:", error);
+//     res.status(500).json({ message: "Server error while applying leave." });
+//   }
+// });
+
 app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
   const { email } = req.query;
-  const { empname, empid, leaveType, startDate, endDate, reason, managerEmail } = req.body;
+  const { empname, empid, leaveType, startDate, endDate, reason, managerEmail, gender } = req.body;
   const filePath = req.file ? req.file.path : null;
 
   try {
     const formattedStartDate = new Date(startDate);
     const formattedEndDate = new Date(endDate);
+    const today = new Date();
 
+    // ✅ Required Fields Check
     if (!leaveType || !startDate || !endDate) {
       return res.status(400).json({ message: "All fields (Leave Type, Start Date, End Date) are required." });
     }
 
+    // ✅ Valid Date Range Check
     if (formattedEndDate < formattedStartDate) {
       return res.status(400).json({ message: "End Date cannot be before Start Date." });
     }
 
-    // Fetch all leave records for the user
-    let existingLeaves = await Leave.find({ email });
+    // ✅ Fetch leave history for the user
+    let leaveHistory = await Leave.find({ email });
 
-    for (let leave of existingLeaves) {
-      for (let i = 0; i < leave.startDate.length; i++) {
-        const existingStartDate = new Date(leave.startDate[i]);
-        const existingEndDate = new Date(leave.endDate[i]);
+    // ✅ No Duplicate Leave Requests
+    const alreadyApplied = leaveHistory.some(
+      (leave) =>
+        leave.leaveType === leaveType &&
+        new Date(leave.startDate).toDateString() === formattedStartDate.toDateString() &&
+        new Date(leave.endDate).toDateString() === formattedEndDate.toDateString()
+    );
+    if (alreadyApplied) {
+      return res.status(400).json({ message: `You have already applied for ${leaveType}.` });
+    }
 
-        if (
-          (formattedStartDate >= existingStartDate && formattedStartDate <= existingEndDate) ||
-          (formattedEndDate >= existingStartDate && formattedEndDate <= existingEndDate) ||
-          (formattedStartDate <= existingStartDate && formattedEndDate >= existingEndDate)
-        ) {
-          return res.status(400).json({
-            message: `You have already applied for leave from ${existingStartDate.toLocaleDateString("en-GB")} to ${existingEndDate.toLocaleDateString("en-GB")}.`
-          });
-        }
+    // ✅ No Overlapping Leaves
+    const hasOverlap = leaveHistory.some((leave) => {
+      const existingStartDate = new Date(leave.startDate);
+      const existingEndDate = new Date(leave.endDate);
+      return (
+        (formattedStartDate >= existingStartDate && formattedStartDate <= existingEndDate) ||
+        (formattedEndDate >= existingStartDate && formattedEndDate <= existingEndDate) ||
+        (formattedStartDate <= existingStartDate && formattedEndDate >= existingEndDate)
+      );
+    });
+    if (hasOverlap) {
+      return res.status(400).json({ message: "Your selected leave dates overlap with an existing leave." });
+    }
+
+    // ✅ Fetch Leave Balance and Policy
+    // const appliedLeave = await Leave.findOne({ email, leaveType });
+    // const policy = leavePolicyRef.find((policy) => policy.leaveType.toLowerCase() === leaveType.toLowerCase());
+    // const leaveBalance = appliedLeave?.availableLeaves ?? policy?.maxAllowedLeaves ?? null;
+
+    // const requestedDays = (formattedEndDate - formattedStartDate) / (1000 * 60 * 60 * 24) + 1;
+
+    // if (requestedDays > leaveBalance && leaveType !== "LOP") {
+    //   return res.status(400).json({ message: `Only ${leaveBalance} ${leaveType} leaves are available.` });
+    // }
+
+    // ✅ Gender-Based Leave Restrictions
+    if (leaveType.includes("Maternity") && gender !== "Female") {
+      return res.status(400).json({ message: "Maternity Leave is only for female employees." });
+    }
+    if (leaveType.includes("Paternity") && gender !== "Male") {
+      return res.status(400).json({ message: "Paternity Leave is only for male employees." });
+    }
+
+    // ✅ Sick Leave Past or Current Dates Only
+    if (leaveType === "Sick Leave" && formattedStartDate > today) {
+      return res.status(400).json({ message: "Sick Leave can only be applied for past or current dates." });
+    }
+
+    // ✅ LOP (Unpaid Leave) only when Casual Leaves are exhausted
+    const casualLeave = await Leave.findOne({ 
+      email, 
+      leaveType: { $regex: /^casual leave$/i }  // Case-insensitive match
+    });
+    
+    if (leaveType.toLowerCase().includes("lop")) {
+      if (casualLeave && casualLeave.availableLeaves > 0) {
+        return res.status(400).json({ message: "LOP can only be applied when Casual Leaves are exhausted." });
+      } else if (!casualLeave) {
+        return res.status(400).json({ message: "You must first use Casual Leave before applying for LOP." });
+      }
+    }
+    
+
+    // ✅ File Validation
+    if (filePath) {
+      const allowedTypes = ["image/png", "image/jpeg", "application/pdf"];
+      const maxSize = 5 * 1024 * 1024; // 5MB limit
+      if (!allowedTypes.includes(req.file.mimetype)) {
+        return res.status(400).json({ message: "Only PNG, JPEG, or PDF files are allowed." });
+      }
+      if (req.file.size > maxSize) {
+        return res.status(400).json({ message: "File size should be less than 5MB." });
       }
     }
 
+    // ✅ Save Leave Request
     const startMonth = formattedStartDate.getMonth() + 1;
     const startYear = formattedStartDate.getFullYear();
 
@@ -103,9 +246,7 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
       leaveRecord.reason.push(reason || "");
       leaveRecord.month.push(startMonth);
       leaveRecord.year.push(startYear);
-
       await leaveRecord.save();
-      return res.status(200).json({ message: "Leave application submitted successfully" });
     } else {
       const newLeave = new Leave({
         email,
@@ -122,15 +263,17 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
         month: [startMonth],
         year: [startYear],
       });
-
       await newLeave.save();
-      return res.status(200).json({ message: "Leave application submitted successfully" });
     }
+
+    return res.status(200).json({ message: "Leave application submitted successfully" });
+
   } catch (error) {
     console.error("Error applying for leave:", error);
     res.status(500).json({ message: "Server error while applying leave." });
   }
 });
+
 
 app.get("/leave-history", async (req, res) => {
   const { email } = req.query;
@@ -1066,46 +1209,6 @@ app.get("/leave-trends/:email/:year", async (req, res) => {
   }
 });
 
-
-
-
-
-
-// Get leave balance
-// app.get("/leave-balance/:email", async (req, res) => {
-//   const { email } = req.params;
-//   try {
-//     const user = await Leave.findOne({ email });
-//     if (!user) return res.status(404).json({ error: "User not found" });
-
-//     res.json({ usedLeaves: user.usedLeaves, availableLeaves: user.availableLeaves });
-//   } catch (err) {
-//     res.status(500).json({ error: "Error fetching leave balance" });
-//   }
-// });
-
-// app.get("/leave-balance/:email/:year", async (req, res) => {
-//   const { email, year } = req.params;
-//   try {
-//     const leaves = await Leave.find({ email, year: Number(year) });
-
-//     // if (!leaves.length) return res.status(404).json({ error: "No leave data found for this year" });
-
-//     const leaveBalance = leaves.reduce((acc, leave) => {
-//       if (!acc[leave.leaveType]) {
-//         acc[leave.leaveType] = { availableLeaves: leave.availableLeaves, usedLeaves: leave.usedLeaves };
-//       } else {
-//         acc[leave.leaveType].availableLeaves += leave.availableLeaves;
-//         acc[leave.leaveType].usedLeaves += leave.usedLeaves;
-//       }
-//       return acc;
-//     }, {});
-
-//     res.json(leaveBalance);
-//   } catch (err) {
-//     res.status(500).json({ error: "Error fetching leave balance" });
-//   }
-// });
 app.get("/leave-balance/:email/:year", async (req, res) => {
   const { email, year } = req.params;
   const numericYear = Number(year);
@@ -1153,14 +1256,18 @@ app.get("/leave-balance/:email/:year", async (req, res) => {
         }
       }
       
-
       leaveBalance[leaveType].usedLeaves += usedLeavesInYear;
 
       // ✅ Compute available leaves correctly
-      leaveBalance[leaveType].availableLeaves = Math.max(
-        0,
-        leaveBalance[leaveType].totalLeaves - leaveBalance[leaveType].usedLeaves
-      );
+      //updated available leaves 
+      if (policy?.maxAllowedLeaves !== undefined) {
+        leaveBalance[leaveType].availableLeaves = Math.max(
+          0,
+          leaveBalance[leaveType].totalLeaves - leaveBalance[leaveType].usedLeaves
+        );
+      } else {
+        delete leaveBalance[leaveType].availableLeaves; // ✅ Remove availableLeaves if maxAllowedLeaves doesn't exist
+      }
     }
 
     res.json(leaveBalance);
@@ -1169,7 +1276,6 @@ app.get("/leave-balance/:email/:year", async (req, res) => {
     res.status(500).json({ error: "Error fetching leave balance" });
   }
 });
-
 
 // Get Pending/Approved/Rejected Requests
 app.get('/leave-status/:managerEmail', async (req, res) => {

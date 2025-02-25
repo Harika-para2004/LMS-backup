@@ -66,7 +66,7 @@ const Reports = () => {
             email: report.email || "N/A",
             project: formatName(report.project),
             leaveType: formatName(leave.leaveType),
-            startDate: new Date(leave.startDate),
+            startDate: formatDate(leave.startDate),
             endDate: formatDate(leave.endDate),
             status: formatName(leave.status),
           }))
@@ -77,7 +77,7 @@ const Reports = () => {
               email: report.email || "N/A",
               project: formatName(report.project),
               leaveType: "N/A",
-              startDate: new Date(0),
+              startDate: "N/A",
               endDate: "N/A",
               status: "No Leaves",
             },

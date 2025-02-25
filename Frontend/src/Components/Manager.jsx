@@ -280,7 +280,7 @@ function LeaveRequests() {
     };
 
     fetchLeaveData();
-  }, [leaveData,email]); 
+  }, []); 
   
   //   // if (email) {
   //     const fetchLeaveData = async () => {
@@ -348,176 +348,11 @@ function LeaveRequests() {
   const formatCase = (text) => {
     return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
   };
-
-  
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
-    const { leaveType, startDate, endDate, reason } = formData;
-    const today = dayjs().format("YYYY-MM-DD");
-    const formattedStartDate = dayjs(startDate, "DD/MM/YYYY").format(
-      "YYYY-MM-DD"
-    );
-    const formattedEndDate = dayjs(endDate, "DD/MM/YYYY").format("YYYY-MM-DD");
-
-    // **✅ Required Fields Check**
-    if (!leaveType || !startDate || !endDate) {
-      showToast("All fields are required.", "warning");
-      return;
-    }
-
-    // **✅ Valid Date Range Check**
-    if (new Date(formattedEndDate) < new Date(formattedStartDate)) {
-      showToast("End Date cannot be before Start Date.", "error");
-      return;
-    }
-
-    // **✅ No Holidays or Weekends**
-    const isHoliday = holidays.some(
-      (holiday) =>
-        holiday.type === "Mandatory" &&
-        dayjs(holiday.date).isSame(formattedStartDate, "day")
-    );
-    if (isHoliday) {
-      showToast("You cannot apply leave on company holidays.", "warning");
-      return;
-    }
-
-    const isWeekend =
-      dayjs(formattedStartDate).day() === 0 ||
-      dayjs(formattedStartDate).day() === 6;
-    if (isWeekend) {
-      showToast("Weekends are not allowed for leave.", "warning");
-      return;
-    }
-
-    // **✅ Cannot Apply for Same Leave Twice**
-    const alreadyApplied = leaveHistory.some(
-      (leave) =>
-        leave.leaveType === leaveType &&
-        dayjs(leave.startDate).isSame(formattedStartDate, "day") &&
-        dayjs(leave.endDate).isSame(formattedEndDate, "day")
-    );
-    if (alreadyApplied) {
-      showToast(`You have already applied for ${leaveType}.`, "info");
-      return;
-    }
-
-    // **✅ Leave Balance Check**
-    const appliedLeave = leaveData.find(
-      (leave) => formatCase(leave.leaveType) === formatCase(leaveType)
-    );
-    const leaveBalance =
-      appliedLeave?.availableLeaves ??
-      leavePolicyRef.find(
-        (policy) => formatCase(policy.leaveType) === formatCase(leaveType)
-      )?.maxAllowedLeaves ??
-      0;
-
-    const requestedDays =
-      dayjs(formattedEndDate).diff(dayjs(formattedStartDate), "day") + 1;
-
-    if (requestedDays > leaveBalance && leaveType !== "LOP") {
-      showToast(
-        `Only ${leaveBalance} ${leaveType} leaves are available.`,
-        "error"
-      );
-      return;
-    }
-
-    // **✅ Gender-Based Leave Restrictions**
-    if (leaveType.includes("Maternity") && gender !== "Female") {
-      showToast("Maternity Leave is only for female employees.", "error");
-      return;
-    }
-    if (leaveType.includes("Paternity") && gender !== "Male") {
-      showToast("Paternity Leave is only for male employees.", "error");
-      return;
-    }
-
-    // **✅ Sick Leave Past or Current Dates Only**
-    if (
-      leaveType === "Sick Leave" &&
-      dayjs(formattedStartDate).isAfter(today)
-    ) {
-      showToast(
-        "Sick Leave can only be applied for past or current dates.",
-        "warning"
-      );
-      return;
-    }
-
-    // **✅ No Overlapping Leaves**
-    const hasOverlap = leaveHistory.some(
-      (leave) =>
-        dayjs(leave.startDate, "DD/MM/YYYY").isBefore(
-          dayjs(formattedEndDate, "YYYY-MM-DD")
-        ) &&
-        dayjs(leave.endDate, "DD/MM/YYYY").isAfter(
-          dayjs(formattedStartDate, "YYYY-MM-DD")
-        )
-    );
-    if (hasOverlap) {
-      showToast(
-        "Your selected leave dates overlap with an existing leave.",
-        "error"
-      );
-      return;
-    }
-
-    // **✅ LOP (Unpaid Leave) only when Casual Leaves are exhausted**
-    if (
-      leaveType === "LOP" &&
-      leaveData.find((leave) => leave.leaveType === "Casual Leave")
-        ?.availableLeaves > 0
-    ) {
-      showToast(
-        "LOP can only be applied when Casual Leaves are exhausted.",
-        "info"
-      );
-      return;
-    }
-
-    // **Proceed with submission**
-    const formDataToSend = new FormData();
-    formDataToSend.append("email", email);
-    formDataToSend.append("empname", username);
-    formDataToSend.append("empid", empid);
-    formDataToSend.append("managerEmail", managerEmail);
-    formDataToSend.append("leaveType", leaveType);
-    formDataToSend.append("applyDate", today);
-    formDataToSend.append("startDate", formattedStartDate);
-    formDataToSend.append("endDate", formattedEndDate);
-    if (file) formDataToSend.append("attachment", file);
-    formDataToSend.append("reason", reason || "N/A");
-
-    try {
-      const response = await fetch(
-        `http://localhost:5001/apply-leave?email=${encodeURIComponent(email)}`,
-        { method: "POST", body: formDataToSend }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to submit form.");
-      }
-
-      showToast("Leave application submitted successfully!", "success");
-      setFormData({ leaveType: "", startDate: "", endDate: "", reason: "" });
-      setFile(null);
-      setErrors({});
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      showToast(error.message, "error");
-    }
-  };
-
   
   const handleReject = async () => {
     if (selectedLeave) {
       const { selectedIndex, ...leave } = selectedLeave;
   
-      // Ensure selectedIndex is valid
       if (
         selectedIndex === undefined ||
         !Array.isArray(leave.duration) ||
@@ -528,10 +363,17 @@ function LeaveRequests() {
         return;
       }
   
-      const leaveDuration = leave.duration[selectedIndex]; // Fix: Ensure valid duration
+      const leaveDuration = leave.duration[selectedIndex]; 
+      const wasApproved = leave.status[selectedIndex]?.toLowerCase() === "approved"; 
   
-      const wasApproved = leave.status[selectedIndex]?.toLowerCase() === "approved"; // Add optional chaining
+      // Fetch the policy to check maxAllowedLeaves
+      const policy = leavePolicyRef.find(
+        (policy) => formatCase(policy.leaveType) === formatCase(leave.leaveType)
+      );
   
+      const maxAllowedLeaves = policy?.maxAllowedLeaves ?? null; // Null means unlimited
+  
+      // Update availableLeaves only if leave type has a limit
       const updatedLeave = {
         ...leave,
         status: leave.status.map((stat, index) =>
@@ -539,8 +381,8 @@ function LeaveRequests() {
             ? "Rejected"
             : stat
         ),
-        availableLeaves: wasApproved ? leave.availableLeaves + leaveDuration : leave.availableLeaves,
-        usedLeaves: wasApproved ? leave.usedLeaves - leaveDuration : leave.usedLeaves,
+        availableLeaves: wasApproved && maxAllowedLeaves !== null ? leave.availableLeaves + leaveDuration : leave.availableLeaves,
+        usedLeaves: wasApproved && maxAllowedLeaves !== null ? leave.usedLeaves - leaveDuration : leave.usedLeaves,
       };
   
       try {
@@ -572,6 +414,7 @@ function LeaveRequests() {
     }
   };
   
+  
   const handleApprove = async () => {
     if (selectedLeave) {
       const { selectedIndex, ...leave } = selectedLeave;
@@ -587,59 +430,67 @@ function LeaveRequests() {
         return;
       }
   
-      const leaveDuration = leave.duration[selectedIndex]; // Fix: Use 'duration' (not 'durations')
-  
-      const currentStatus = leave.status[selectedIndex]?.toLowerCase(); // Add optional chaining
-  
+      const leaveDuration = leave.duration[selectedIndex]; 
+      const currentStatus = leave.status[selectedIndex]?.toLowerCase();
+      
+      // Check if leave is already approved
       if (!currentStatus || (currentStatus !== "pending" && currentStatus !== "rejected")) {
         console.log("This leave is already approved.");
         return;
       }
   
-      if (leave.availableLeaves < leaveDuration) {
-        console.log("Not enough available leaves.");
-        return;
-      }
+      // Fetch the policy to check maxAllowedLeaves
+      const policy = leavePolicyRef.find(
+        (policy) => formatCase(policy.leaveType) === formatCase(leave.leaveType)
+      );
   
-      const updatedLeave = {
-        ...leave,
-        availableLeaves: leave.availableLeaves - leaveDuration,
-        usedLeaves: leave.usedLeaves + leaveDuration,
-        status: leave.status.map((stat, index) =>
-          index === selectedIndex && (stat.toLowerCase() === "pending" || stat.toLowerCase() === "rejected")
-            ? "Approved"
-            : stat
-        ),
-      };
+      const maxAllowedLeaves = policy?.maxAllowedLeaves ?? null; // Null means unlimited
   
-      try {
-        const response = await fetch(
-          `http://localhost:5001/leaverequests/${leave._id}`,
-          {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(updatedLeave),
-          }
-        );
+      // Allow approval without checking availableLeaves if maxAllowedLeaves is null (unlimited leave)
+      if (maxAllowedLeaves === null || leave.availableLeaves >= leaveDuration) {
+        const updatedLeave = {
+          ...leave,
+          availableLeaves: maxAllowedLeaves !== null ? leave.availableLeaves - leaveDuration : leave.availableLeaves, 
+          usedLeaves: maxAllowedLeaves !== null ? leave.usedLeaves + leaveDuration : leave.usedLeaves,
+          status: leave.status.map((stat, index) =>
+            index === selectedIndex && (stat.toLowerCase() === "pending" || stat.toLowerCase() === "rejected")
+              ? "Approved"
+              : stat
+          ),
+        };
   
-        if (response.ok) {
-          const updatedLeaveFromServer = await response.json();
-          setLeaveRequests((prevHistory) =>
-            prevHistory.map((item) =>
-              item._id === updatedLeaveFromServer._id ? updatedLeaveFromServer : item
-            )
+        try {
+          const response = await fetch(
+            `http://localhost:5001/leaverequests/${leave._id}`,
+            {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(updatedLeave),
+            }
           );
-          setSelectedLeave(null);
-          setModalOpen(false);
-          console.log("Approved and updated in the database:", updatedLeaveFromServer);
-        } else {
-          console.error("Failed to update leave in the database");
+  
+          if (response.ok) {
+            const updatedLeaveFromServer = await response.json();
+            setLeaveRequests((prevHistory) =>
+              prevHistory.map((item) =>
+                item._id === updatedLeaveFromServer._id ? updatedLeaveFromServer : item
+              )
+            );
+            setSelectedLeave(null);
+            setModalOpen(false);
+            console.log("Approved and updated in the database:", updatedLeaveFromServer);
+          } else {
+            console.error("Failed to update leave in the database");
+          }
+        } catch (error) {
+          console.error("Error updating leave in the database:", error);
         }
-      } catch (error) {
-        console.error("Error updating leave in the database:", error);
+      } else {
+        console.log("Not enough available leaves.");
       }
     }
   };
+  
   
 
   const handleRowClick = (leave, index) => {

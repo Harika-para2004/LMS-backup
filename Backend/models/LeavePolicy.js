@@ -10,8 +10,7 @@ const LeavePolicySchema = new mongoose.Schema({
   },
   maxAllowedLeaves: {
     type: Number,
-    required: true,
-    min: 0,
+    default: null,
   },
   description: {
     type: String,

@@ -107,8 +107,8 @@ const LeaveBalanceChart = ({ email,year }) => {
               {Object.entries(leaveBalance).map(([type, data]) => (
                 <TableRow key={type}>
                   <TableCell>{type}</TableCell>
-                  <TableCell align="center">{data.totalLeaves}</TableCell>
-                  <TableCell align="center">{data.availableLeaves}</TableCell>
+                  <TableCell align="center">{data.totalLeaves === null ? "N/A" : data.totalLeaves}</TableCell>
+                  <TableCell align="center">{data.totalLeaves === null ? "N/A" : data.availableLeaves}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

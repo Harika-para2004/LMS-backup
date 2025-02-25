@@ -19,7 +19,7 @@ const PrivateRoute = ({ children, allowedRoles }) => {
                 const userRole = parsedUserData?.role ? String(parsedUserData.role).trim() : "";
                 const admin = parsedadmin ? String(parsedadmin).trim() : "";
 
-                setRole(userRole || "guest");
+                setRole(userRole || "admin");
 
                 setAdmin(admin || "");
 

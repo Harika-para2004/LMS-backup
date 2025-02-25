@@ -8,6 +8,7 @@ import {
   FaChevronUp,
 } from "react-icons/fa";
 import "./LeavePolicyPage.css";
+import useToast from "./useToast";
 
 function LeavePolicyPage() {
   const [formData, setFormData] = useState({
@@ -16,6 +17,7 @@ function LeavePolicyPage() {
     description: "",
     policyId: "",
   });
+  const showToast = useToast();
   const [showForm, setShowForm] = useState(false);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -51,7 +53,7 @@ function LeavePolicyPage() {
     e.preventDefault();
 
     if (isDuplicate(formData.leaveType) && !formData.policyId) {
-      return setMessage("Leave type already exists.");
+      return showToast("Leave type already exists.");
     }
 
     setIsLoading(true);
@@ -67,7 +69,7 @@ function LeavePolicyPage() {
           description: formData.description,
         }
       );
-      setMessage(
+      showToast(
         `Leave policy ${
           formData.policyId ? "updated" : "created"
         } successfully!`
@@ -77,7 +79,7 @@ function LeavePolicyPage() {
       );
       setShowForm(false);
     } catch (error) {
-      setMessage("Failed to process leave policy.");
+      showToast("Failed to process leave policy.");
     }
     setIsLoading(false);
   };
@@ -89,9 +91,9 @@ function LeavePolicyPage() {
         `http://localhost:5001/api/leave-policies/delete/${id}`
       );
       setPolicies(policies.filter((p) => p._id !== id));
-      setMessage("Leave policy deleted successfully!");
+      showToast("Leave policy deleted successfully!");
     } catch {
-      setMessage("Failed to delete leave policy.");
+      showToast("Failed to delete leave policy.");
     }
   };
 
@@ -150,7 +152,7 @@ function LeavePolicyPage() {
               name="maxLeaves"
               value={formData.maxLeaves}
               onChange={handleChange}
-              min="1"
+              // min="1"
               // required
               placeholder="Max Leaves"
               className="input-field"
@@ -201,13 +203,13 @@ function LeavePolicyPage() {
                   <h4>{formatCase(p.leaveType)}</h4>
                   
                   <div className="policy-actions">
-                  <p>Total Leaves: {p.maxAllowedLeaves || "N/A"}</p>
+                  <p>Total Leaves: {p.maxAllowedLeaves !== null ? p.maxAllowedLeaves : "N/A"}</p>
                     <button
                       onClick={() => {
                         setShowForm(true);
                         setFormData({
                           leaveType: p.leaveType,
-                          maxLeaves: p.maxAllowedLeaves || "N/A",
+                          maxLeaves: p.maxAllowedLeaves,
                           description: p.description,
                           policyId: p._id,
                         });
