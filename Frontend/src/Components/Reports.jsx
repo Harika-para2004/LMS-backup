@@ -140,7 +140,7 @@ const Reports = () => {
                       <td>{report.empid}</td>
                       <td>{report.project}</td>
                       <td>{report.leaveType}</td>
-                      <td>{report.startDate.getTime() === 0 ? "N/A" : formatDate(report.startDate)}</td>
+                      <td>{report.startDate}</td>
                       <td>{report.endDate}</td>
                       <td>{report.status}</td>
                     </tr>
