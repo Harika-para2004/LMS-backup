@@ -43,7 +43,7 @@ const ManagerDashboard = () => {
             minWidth: "200px",
           }}
         >
-          Manager Dashboard
+          Personal Dashboard
         </Button>
         <Button
           variant={location.pathname.includes(`${baseRoute}/reports`) ? "contained" : "outlined"}

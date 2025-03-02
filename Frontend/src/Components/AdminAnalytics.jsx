@@ -126,7 +126,10 @@ const AdminAnalytics = ({year}) => {
         .catch((err) => console.error(err));
     }
   }, [selectedManager, year]);
-
+  const getYAxisInterval = (data) => {
+    const maxValue = Math.max(...data, 1); // Ensure at least 1 to avoid division by zero
+    return Math.ceil(maxValue / 5); // Adjust interval dynamically
+  };
   const isSingleBar = leaveTrends?.months?.length === 3;
 
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -135,21 +138,22 @@ const AdminAnalytics = ({year}) => {
     "#DAF7A6", "#581845", "#900C3F", "#C70039", "#E74C3C", 
     "#8E44AD", "#1ABC9C"
   ];
-  
+  const yAxisInterval1 = getYAxisInterval(leaveTrends?.leaveCounts || []);
+
   const trendsOptions = {
-    title: { text: `Monthly Leave Trends `, left: "center" },
+    title: { text: `Monthly Leave Trends`, left: "center" },
     tooltip: { trigger: "axis" },
     grid: { left: "5%", right: "5%", bottom: "10%", containLabel: true },
     xAxis: { 
       type: "category", 
       data: leaveTrends?.months?.map(month => monthNames[month - 1]) || [] 
     },
-    yAxis: { type: "value" },
+    yAxis: { type: "value",interval:yAxisInterval1 },
     series: [
       {
         name: "Leaves",
         type: "bar",
-        barWidth: leaveTrends?.months?.length < 3 ? 40 : "60%",
+        barWidth: 30, // ✅ Fixed width for equal-sized bars
         data: leaveTrends?.leaveCounts || [],
         itemStyle: {
           color: (params) => {
@@ -184,6 +188,7 @@ const AdminAnalytics = ({year}) => {
       },
     ],
   };
+
   const leaveTypesOptions = {
     title: { 
       text: `Leave Type Distribution`, 
@@ -223,13 +228,14 @@ const AdminAnalytics = ({year}) => {
       },
     },
     yAxis: { 
-      type: "value" 
+      type: "value" ,
+      interval: getYAxisInterval(leaveTypes?.map(item => item.value) || [1]),
     },
     series: [
       {
         name: "Leave Types",
         type: "bar",
-        barWidth: (leaveTypes?.length || 0) < 3 ? 50 : "60%", // Adjust bar width based on data count
+        barWidth: 30, // ✅ Fixed width for equal-sized bars
         data: leaveTypes?.map(item => item.value) || [], // Extract leave count values for y-axis
         itemStyle: {
           color: (params) => {
@@ -281,12 +287,13 @@ const AdminAnalytics = ({year}) => {
         formatter: (params) => params.value, // Display the full project name
       },
     },
-    yAxis: { type: "value" },
+    yAxis: { type: "value",    interval: getYAxisInterval(departmentLeaves?.leaveCounts || [1]),
+    },
     series: [
       {
         name: "Leaves",
         type: "bar",
-        barWidth: (departmentLeaves?.departments?.length || 0) < 3 ? 50 : "60%",
+        barWidth: 30, // ✅ Fixed width for equal-sized bars
         data: departmentLeaves?.leaveCounts || [],
         itemStyle: {
           color: (params) => {
@@ -308,74 +315,91 @@ const AdminAnalytics = ({year}) => {
       },
     ],
   };
-  const topLeaveTakersOptions = {
-    title: { text: `Top 10 Leave Takers`, left: "center" },
-    tooltip: { trigger: "item" },
-    legend: {
-      type: "scroll", // Enables scrolling if too many legends
-      orient: "horizontal", // Keeps legends in a single line
-      bottom: 0, // Positions at the bottom
-      itemWidth: 14, // Adjusts the size of legend icons
-      itemHeight: 10,
-      textStyle: {
-        fontSize: 12, // Makes legend text readable
+ // Ensure we have valid data
+const employees = topLeaveTakers?.employees || [];
+const leaveCounts = topLeaveTakers?.leaveCounts || [];
+
+// Pair employees with their leave counts and sort them in descending order
+const sortedLeaveTakers = employees
+  .map((emp, index) => ({ name: emp, count: leaveCounts[index] || 0 }))
+  .sort((a, b) => b.count - a.count) // Sort by leave count (highest first)
+  .slice(0, 10); // Take only the top 10
+
+const topLeaveTakersOptions = {
+  title: { text: `Top 10 Leave Takers`, left: "center" },
+  tooltip: { trigger: "item" },
+  legend: {
+    type: "scroll",
+    orient: "horizontal",
+    bottom: 0,
+    itemWidth: 14,
+    itemHeight: 10,
+    textStyle: { fontSize: 12 },
+  },
+  series: [
+    {
+      name: "Leaves Taken",
+      type: "pie",
+      radius: "50%",
+      avoidLabelOverlap: false,
+      label: {
+        show: true,
+        formatter: "{b}: {c} ({d}%)",
+      },
+      labelLine: { show: true },
+      data: sortedLeaveTakers.map((emp, index) => ({
+        name: emp.name,
+        value: emp.count,
+      })),
+      itemStyle: {
+        color: (params) => {
+          const total = sortedLeaveTakers.length || 1;
+          const hue = (params.dataIndex * (360 / total)) % 360;
+          return `hsl(${hue}, 80%, 60%)`;
+        },
       },
     },
-    series: [
-      {
-        name: "Leaves Taken",
-        type: "pie",
-        radius: "50%", // Creates a donut chart with a fixed width
-        avoidLabelOverlap: false,
-        label: {
-          show: true,
-          formatter: "{b}: {c} ({d}%)", // Shows name, value, and percentage
-        },
-        labelLine: { show: true },
-        data: topLeaveTakers?.employees?.map((emp, index) => ({
-          name: emp,
-          value: topLeaveTakers?.leaveCounts[index] || 0,
-        })),
+  ],
+};
+const leaveStatusOptions = {
+  title: { text: `Leave Status Distribution`, left: "center" },
+  tooltip: { trigger: "item" },
+  legend: {
+    type: "scroll", // Enables scrolling if too many legends
+    orient: "horizontal", // Places legend at the bottom
+    bottom: 0, // Positions legend at the bottom
+    itemWidth: 14,
+    itemHeight: 10,
+    textStyle: {
+      fontSize: 12, // Keeps text readable
+    },
+  },
+  series: [
+    {
+      name: "Leave Status",
+      type: "pie",
+      radius: "50%",
+      data: (leaveStatus || []).map((item) => ({
+        name: item.name, 
+        value: item.value,
         itemStyle: {
-          color: (params) => {
-            const total = topLeaveTakers?.employees?.length || 1;
-            const hue = (params.dataIndex * (360 / total)) % 360;
-            return `hsl(${hue}, 80%, 60%)`;
-          },
+          color: item.name === "Approved" ? "green" 
+               : item.name === "Pending" ? "blue" 
+               : item.name === "Rejected" ? "red" 
+               : "gray", // Default color for unknown statuses
         },
-      },
-    ],
-  };
-  const leaveStatusOptions = {
-    title: { text: `Leave Status Distribution`, left: "center" },
-    tooltip: { trigger: "item" },
-    legend: {
-      type: "scroll", // Enables scrolling if too many legends
-      orient: "horizontal", // Places legend at the bottom
-      bottom: 0, // Positions legend at the bottom
-      itemWidth: 14,
-      itemHeight: 10,
-      textStyle: {
-        fontSize: 12, // Keeps text readable
+      })),
+      emphasis: {
+        itemStyle: {
+          shadowBlur: 10,
+          shadowOffsetX: 0,
+          shadowColor: "rgba(0, 0, 0, 0.5)",
+        },
       },
     },
-    series: [
-      {
-        name: "Leave Status",
-        type: "pie",
-        radius: "50%",
-        data: leaveStatus || [],
-        emphasis: {
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: "rgba(0, 0, 0, 0.5)",
-          },
-        },
-      },
-    ],
-  };
-  
+  ],
+};
+
   const managerLeaveTrendsOptions = {
     title: { text: "Leave Trends by Status", left: "center" },
     tooltip: {},
@@ -489,10 +513,7 @@ const AdminAnalytics = ({year}) => {
               )}
             </Grid>
 
-            <Grid item md={12} style={{ height: 400, width: "100%" }}>
-              <OverlapReport/>
-            </Grid>
-
+           
           
           </Grid>
         )}

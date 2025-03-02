@@ -82,10 +82,20 @@ const LeaveStatusChart = ({ email,year }) => {
         data: leaveTypes,
         axisLabel: {
           interval: 0,
-          rotate: barCount > 5 ? 45 : 0,
+          rotate: barCount > 2 ? 25 : 0,
           margin: 10,
+          formatter: (value) => (value.length > 10 ? value.slice(0, 5) + "..." : value), // Truncate if longer than 10 characters
+
+        },
+        
+        tooltip: {
+          show: true, // Show tooltip when hovering over X-axis labels
+          formatter: (params) => params.value, // Display the full project name
         },
       },
+      
+      
+      
       yAxis: {
         type: "value",
         minInterval: 1,
@@ -98,7 +108,7 @@ const LeaveStatusChart = ({ email,year }) => {
     <Card sx={{ maxWidth: 700, margin: "auto", padding: 3, boxShadow: 3 }}>
       <CardContent>
         <Typography variant="h6" align="center">
-          Leave Status Overview ({year})
+          Leave Status Overview
         </Typography>
         {loading ? (
           <Typography align="center">Loading...</Typography>

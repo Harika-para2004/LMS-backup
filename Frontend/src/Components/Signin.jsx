@@ -5,7 +5,7 @@ import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai"; // Importing eye
 import "./../assets/css/styles.css";
 import logo from "./../assets/img/logo.jpg";
 import authImage from "./../assets/img/authentication.svg";
-
+import { useManagerContext } from "../context/ManagerContext";
 const LoginForm = () => {
   const [formData, setFormData] = useState({
     email: "",
@@ -13,7 +13,9 @@ const LoginForm = () => {
   });
   const [passwordVisible, setPasswordVisible] = useState(false); // State for password visibility
   const navigate = useNavigate();
-
+  const {
+    showToast,
+  } = useManagerContext();
   useEffect( () => {
     localStorage.removeItem("userData");
     localStorage.removeItem("admin");
@@ -56,7 +58,7 @@ const LoginForm = () => {
           }
         }
       } catch (error) {
-        alert(error.response?.data?.message || "Something went wrong");
+        showToast(error.response?.data?.message || "Something went wrong","error");
       }
     }
   };

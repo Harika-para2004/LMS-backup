@@ -10,11 +10,11 @@ const ReportsAdmin = () => {
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
-  // Generate a list of the last 15 years
   const yearsRange = useMemo(() => {
     const currentYear = new Date().getFullYear();
-    return Array.from({ length: 15 }, (_, i) => currentYear - i);
+    return Array.from({ length: 16 }, (_, i) => currentYear - i + (i === 15 ? 1 : 0));
   }, []);
+  
 
   useEffect(() => {
     fetchReports();
@@ -82,7 +82,7 @@ const ReportsAdmin = () => {
 
   return (
     <div className="reports-container">
-      <h2 className="content-heading">Leave Reports</h2>
+<h2 className="content-heading">Annual Approved Leave Summary</h2>
 
       <div className="filters">
         <input
@@ -109,7 +109,7 @@ const ReportsAdmin = () => {
           </Select>
         </FormControl>
 
-        <div className="export-buttons">
+        <div className="export-buttons" id="export-buttons1">
           {!showAnalytics && (
             <Button
               onClick={() =>
@@ -142,6 +142,8 @@ const ReportsAdmin = () => {
       {/* ✅ Show Reports Table only if showAnalytics is false */}
       {!showAnalytics && (
         <div className="table-container">
+            <h2 className="table-heading">Export the Annual Approved Leave Data</h2>
+
           <table>
             <thead>
               <tr>

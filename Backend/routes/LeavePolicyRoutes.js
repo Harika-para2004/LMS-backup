@@ -92,12 +92,11 @@ const LeavePolicy = require('../models/LeavePolicy');
 
 const router = express.Router();
 
-// Create a new leave policy
 router.post('/create', async (req, res) => {
   try {
     const { leaveType, maxAllowedLeaves, description } = req.body;
 
-    if (!leaveType || !maxAllowedLeaves || !description) {
+    if (!leaveType || !description) {
       return res.status(400).json({ message: "All fields are required." });
     }
 
@@ -109,7 +108,6 @@ router.post('/create', async (req, res) => {
     res.status(500).json({ message: "Error creating leave policy", error: error.message });
   }
 });
-
 
 // Get all leave policies
 router.get('/', async (req, res) => {

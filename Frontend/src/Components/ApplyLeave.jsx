@@ -156,10 +156,7 @@ const ApplyLeave = () =>
             dayjs(holiday.date).isSame(currentDate, "day")
         );
     
-        if (isHoliday) {
-          showToast("You cannot apply leave on company holidays.", "warning");
-          return;
-        }
+     
     
         currentDate = currentDate.add(1, "day"); // Move to the next day
       }

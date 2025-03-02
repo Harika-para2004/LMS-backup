@@ -55,13 +55,9 @@ const LeaveTrendChart = ({ email, year }) => {
     fetchData();
   }, [email, year]);  
   const getYAxisInterval = (maxValue) => {
-    if (maxValue <= 5) return 1;
-    if (maxValue <= 10) return 2;
-    if (maxValue <= 20) return 5;
-    if (maxValue <= 50) return 10;
-    if (maxValue <= 100) return 20;
-    return 50; // For very large values
+    return maxValue <= 10 ? 1 : 1;
   };
+  
 
   const getOption = () => {
     const months = [
@@ -93,11 +89,13 @@ const LeaveTrendChart = ({ email, year }) => {
         trigger: "axis",
         axisPointer: { type: "shadow" },
         formatter: function (params) {
-          const hovered = params.find((p) => p.seriesName && p.value > 0);
-          return hovered ? `${hovered.seriesName}: ${hovered.value}` : "";
+          return params
+            .filter((p) => p.value > 0) // Show only non-zero values
+            .map((p) => `<strong style="color:${p.color}">${p.seriesName}:</strong> ${p.value}`)
+            .join("<br/>");
         },
       },
-
+      
       legend: {
         data: leaveTypes,
         bottom: 0,
@@ -110,13 +108,11 @@ const LeaveTrendChart = ({ email, year }) => {
       xAxis: {
         type: "category",
         data: months,
-        axisLabel: { rotate: 45, margin: 10 },
+        axisLabel: { rotate:0, margin: 10 },
       },
-
       yAxis: {
         type: "value",
-        interval: yAxisInterval, // 🔹 Dynamic interval
-        max: Math.ceil(maxValue / yAxisInterval) * yAxisInterval, // Ensure it fits in the interval
+        minInterval: 1,
       },
 
       series, 
@@ -127,7 +123,7 @@ const LeaveTrendChart = ({ email, year }) => {
     <Card sx={{ maxWidth: 700, margin: "auto", padding: 2, boxShadow: 3 }}>
       <CardContent>
         <Typography variant="h6" align="center">
-          Monthly Approved Leave Trends ({year})
+          Monthly Approved Leave Trends
         </Typography>
 
         {loading ? (

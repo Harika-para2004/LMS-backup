@@ -46,7 +46,7 @@ const Sidebar = ({
           </li>
           <li>
             <Link to="/employee/history" className={selectedCategory === "history" ? "active-tab" : ""}>
-              <FontAwesomeIcon icon={faHistory} /> History
+              <FontAwesomeIcon icon={faHistory} />Leave History
             </Link>
           </li>
         </>
@@ -54,6 +54,7 @@ const Sidebar = ({
     } else if (isAdmin) {
       return (
          <div className="sidebar-comps-admin">
+          <ul>
          <li>
            <Link
              to="/admin/calendar"
@@ -99,7 +100,7 @@ const Sidebar = ({
              <FontAwesomeIcon icon={faEnvelopeOpenText} /> Leave Requests
            </Link>
          </li>
-        
+         </ul>
        </div>
      );
     } else {
@@ -123,7 +124,7 @@ const Sidebar = ({
           </li>
           <li>
             <Link to="/manager/history" className={selectedCategory === "history" ? "active-tab" : ""}>
-              <FontAwesomeIcon icon={faHistory} /> History
+              <FontAwesomeIcon icon={faHistory} /> Leave History
             </Link>
           </li>
         </>

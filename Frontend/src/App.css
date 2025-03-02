@@ -91,8 +91,24 @@ body, html {
 
 }
 
+.table-heading {
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
 
-
+.year-filter {
+  position: relative;
+  top: -10px;
+  right: 0;
+}
 
 .dashboard-container .main-content {
   flex: 1;
@@ -334,11 +350,6 @@ body, html {
   padding-left: 5px;
 }
 
-.sidebar ul li .active-tab {
-  background-color:  white;
-  color: #384959;
-  /* padding: 0 20px; */
-}
 
 #side{
   background: linear-gradient(to bottom, white, #384959); 
@@ -1834,5 +1845,32 @@ td:hover{
   .table-container {
     overflow-x: auto;
   }
+}
+#table-container {
+  position: relative;
+}
+
+#export-buttons {
+  position: absolute;
+  top: -10px;
+  right: 0;
+  margin: 10px;
+}
+#export-buttons1 {
+  position: absolute;
+  margin-top: 130px;
+  right: 40px;
+}
+
+#btn-excel {
+  padding: 8px 10px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+#btn-excel:hover {
+  background-color: #45a049;
 }
 

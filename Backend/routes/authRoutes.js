@@ -4,11 +4,11 @@ const User = require('../models/User');
 const nodemailer = require('nodemailer');
 const router = express.Router();
 require('dotenv').config();
-
-
+const formatCase = (text) => {
+  return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+};
 router.post('/addEmployee', async (req, res) => {
   let { empname, empid, email, password, gender, project, role, managerEmail } = req.body;
-
   try {
     // Check if email already exists
     const userExists = await User.findOne({ email });

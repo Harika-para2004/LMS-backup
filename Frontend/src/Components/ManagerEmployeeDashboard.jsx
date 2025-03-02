@@ -88,93 +88,100 @@ const ManagerDashboard = ({ email,selectedYear }) => {
     };
   };
   
-
-const getLeaveTypeChart = () => {
-  const leaveTypeCount = leaveTypeData.length;
-  const barWidth = leaveTypeCount > 5 ? "auto" : 35; // Adjust width dynamically
-
-  return {
-    title: { 
-      text: `Leave  Breakdown By Type`, 
-      left: "center",
-      textStyle: {
-        fontSize: 14, // Reduce title font size
-        fontWeight: "bold"
-      }
-    },
-    tooltip: { 
-      trigger: "item",
-      formatter: (params) => {
-        const leaveType = params.name; 
-        return `<b>${leaveType}</b> <br/> ${params.seriesName}: ${params.value}`;
-      }
-    },
-    legend: { 
-      data: ["Pending", "Approved", "Rejected"], 
-      bottom: 0,
-      textStyle: {
-        fontSize: 12,
-        fontWeight: "bold"
-      }
-    },
-    grid: {
-      left: "10%",
-      right: "10%",
-      bottom: "15%",
-      containLabel: true
-    },
-    xAxis: { 
-      type: "category", 
-      data: (leaveTypeData || []).map((item) => item.leaveType || "Unknown"),
-      axisLabel: {
-        rotate: 15, // Try 0 first; increase if labels overlap
-        interval: 0, // Ensures every label is displayed
-        fontSize: 10,
-        fontWeight: "bold"
-      }
-      
-    },
-    yAxis: { 
-      type: "value", 
-      min: 0, 
-      max: "dataMax", // Adjusts based on the highest value dynamically
-      minInterval: 1, // Ensures only whole numbers appear
-      splitNumber: Math.min(10, Math.max(5, Math.ceil(Math.log10(Math.max(...leaveTypeData.map(i => (i.pending || 0) + (i.approved || 0) + (i.rejected || 0) + 1)))))), // Ensures optimal scaling
-      axisLabel: {
-        fontSize: 10,
-        fontWeight: "bold"
-      }
-    },
-    series: [
-      { 
-        name: "Pending", 
-        type: "bar", 
-        stack: "total", 
-        data: (leaveTypeData || []).map((item) => item.pending || 0), 
-        barWidth,
-        itemStyle: { color: "#313896" }
+  const getLeaveTypeChart = () => {
+    const leaveTypeCount = leaveTypeData.length;
+    const barWidth = 30; // Adjust width dynamically
+  
+    // Calculate max value dynamically
+    const maxValue = Math.max(
+      ...leaveTypeData.map(
+        (item) => (item.pending || 0) + (item.approved || 0) + (item.rejected || 0)
+      ),
+      1 // Ensure at least 1 to avoid issues
+    );
+  
+    // Function to determine suitable y-axis interval
+    const getYAxisInterval = (maxValue) => {
+      if (maxValue <= 5) return 1;
+      if (maxValue <= 10) return 2;
+      if (maxValue <= 20) return 5;
+      if (maxValue <= 50) return 10;
+      if (maxValue <= 100) return 20;
+      return Math.ceil(maxValue / 10); // Dynamic for large values
+    };
+  
+    const yAxisInterval = getYAxisInterval(maxValue);
+  
+    return {
+      title: { 
+        text: `Leave Breakdown By Type`, 
+        left: "center",
+        textStyle: { fontSize: 14, fontWeight: "bold" }
       },
-      { 
-        name: "Approved", 
-        type: "bar", 
-        stack: "total", 
-        data: (leaveTypeData || []).map((item) => item.approved || 0), 
-        barWidth,
-        itemStyle: { color: "#4CAF50" }
+      tooltip: { 
+        trigger: "item",
+        formatter: (params) => {
+          const leaveType = params.name; 
+          return `<b>${leaveType}</b> <br/> ${params.seriesName}: ${params.value}`;
+        }
       },
-      { 
-        name: "Rejected", 
-        type: "bar", 
-        stack: "total", 
-        data: (leaveTypeData || []).map((item) => item.rejected || 0), 
-        barWidth,
-        itemStyle: { color: "#FF5733" }
+      legend: { 
+        data: ["Pending", "Approved", "Rejected"], 
+        bottom: 0,
+        textStyle: { fontSize: 12, fontWeight: "bold" }
       },
-    ],
+      grid: {
+        left: "10%",
+        right: "10%",
+        bottom: "15%",
+        containLabel: true
+      },
+      xAxis: { 
+        type: "category", 
+        data: (leaveTypeData || []).map((item) => item.leaveType || "Unknown"),
+        axisLabel: {
+          rotate: 15, // Rotate labels if they overlap
+          interval: 0, // Ensures every label is displayed
+          fontSize: 10,
+          fontWeight: "bold"
+        }
+      },
+      yAxis: { 
+        type: "value", 
+        min: 0, 
+        max: Math.ceil(maxValue / yAxisInterval) * yAxisInterval, // Ensures full visibility
+        interval: yAxisInterval, // Uses dynamic interval
+        axisLabel: { fontSize: 10, fontWeight: "bold" }
+      },
+      series: [
+        { 
+          name: "Pending", 
+          type: "bar", 
+          stack: "total", 
+          data: (leaveTypeData || []).map((item) => item.pending || 0), 
+          barWidth,
+          itemStyle: { color: "#313896" }
+        },
+        { 
+          name: "Approved", 
+          type: "bar", 
+          stack: "total", 
+          data: (leaveTypeData || []).map((item) => item.approved || 0), 
+          barWidth,
+          itemStyle: { color: "#4CAF50" }
+        },
+        { 
+          name: "Rejected", 
+          type: "bar", 
+          stack: "total", 
+          data: (leaveTypeData || []).map((item) => item.rejected || 0), 
+          barWidth,
+          itemStyle: { color: "#FF5733" }
+        },
+      ],
+    };
   };
-};
-
-
+  
 
   const getMonthlyLeaveChart = () => {
     if (!monthlyLeaveData || Object.keys(monthlyLeaveData).length === 0) {
@@ -208,7 +215,7 @@ const getLeaveTypeChart = () => {
     let interval = maxValue <= 10 ? 5 : maxValue <= 50 ? 10 : maxValue <= 100 ? 20 : 50;
   
     return {
-      title: { text: `Employee Monthly Leaves`, left: "center" },
+      title: { text: `Monthly Leaves Taken Per Each Employee`, left: "center" },
       tooltip: {
         trigger: "axis", // ✅ Shows all employees' leave details for the hovered month
         axisPointer: {
@@ -227,7 +234,7 @@ const getLeaveTypeChart = () => {
       xAxis: {
         type: "category",
         data: monthNames,
-        axisLabel: { rotate: 20, interval: 0 }
+        axisLabel: { rotate: 0, interval: 0 }
       },
       yAxis: { 
         type: "value", 
@@ -245,64 +252,79 @@ const getLeaveTypeChart = () => {
   };
   const getHighestLeaveChart = () => {
     if (!yearlyLeaveData || Object.keys(yearlyLeaveData).length === 0) return {};
-  
-    // Extract employees and their total leave counts
-    const topEmployees = Object.entries(yearlyLeaveData)
-      .map(([emp, leaves]) => ({ name: emp, totalLeaves: leaves }))
-      .sort((a, b) => b.totalLeaves - a.totalLeaves) // Sort in descending order
-      .slice(0, 3); // Keep only the top 3
-  
-    const seriesData = topEmployees.map(emp => ({
-      name: emp.name,
-      value: emp.totalLeaves,
+
+    // Filter employees with leaves > 1
+    const filteredEmployees = Object.entries(yearlyLeaveData)
+        .filter(([_, leaves]) => leaves > 1)
+        .map(([emp, leaves]) => ({ name: emp, totalLeaves: leaves }))
+        .sort((a, b) => b.totalLeaves - a.totalLeaves) // Sort in descending order
+        .slice(0, 3); // Keep only the top 3
+
+    if (filteredEmployees.length === 0) return {}; // If no valid data, return empty
+
+    const seriesData = filteredEmployees.map(emp => ({
+        name: emp.name,
+        value: emp.totalLeaves,
     }));
-  
-    // ✅ Assign custom colors (Pink, Light Green, and a third distinct color)
-    const customColors = ["#FF69B4", "#90EE90", "#FFA500"]; // Pink, Light Green, Orange
-  
+
+    // ✅ Custom colors (Pink, Light Green, Orange)
+    const customColors = ["#FF69B4", "#90EE90", "#FFA500"];
+
     return {
-      title: { text: "Top 3 Leave Takers", left: "center" },
-      tooltip: { trigger: "item" },
-      legend: { show: false },
-      series: [
-        {
-          type: "pie",
-          radius: "50%",
-          data: seriesData,
-          label: { show: true, formatter: "{b}: {c} leaves" },
-          itemStyle: {
-            color: (params) => customColors[params.dataIndex], // Assign colors dynamically
-          },
-        },
-      ],
+        title: { text: "Top 3 Leave Takers", left: "center" },
+        tooltip: { trigger: "item" },
+        legend: { show: false },
+        series: [
+            {
+                type: "pie",
+                radius: "50%",
+                data: seriesData,
+                label: { show: true, formatter: "{b}: {c} leaves" },
+                itemStyle: {
+                    color: (params) => customColors[params.dataIndex], // Assign colors dynamically
+                },
+            },
+        ],
     };
-  };
-  const getYearlyLeaveChart = () => {
-    const employeeCount = Object.keys(yearlyLeaveData).length;
-    const barWidth = employeeCount > 5 ? "auto" : 20; // Fixed width for <= 5 employees, auto-adjust after
-  
+};
+
+const getYearlyLeaveChart = () => {
+    // Filter employees with leaves > 1
+    const filteredLeaveData = Object.entries(yearlyLeaveData)
+        .filter(([_, leaves]) => leaves > 1)
+        .reduce((acc, [emp, leaves]) => {
+            acc[emp] = leaves;
+            return acc;
+        }, {});
+
+    if (Object.keys(filteredLeaveData).length === 0) return {}; // If no valid data, return empty
+
+    const employeeCount = Object.keys(filteredLeaveData).length;
+    const barWidth = 30; // Fixed width for ≤ 5 employees, auto-adjust after
+
     return {
-      title: { text: `Total Leaves Taken By Each Employee`, left: "center" },
-      tooltip: { trigger: "axis" },
-      xAxis: { type: "category", data: Object.keys(yearlyLeaveData) },
-      yAxis: {
-        type: "value",
-        minInterval: 1, // ✅ Ensures whole number steps
-        axisLabel: {
-          formatter: (value) => Math.round(value), // ✅ Display only whole numbers
+        title: { text: `Total Leaves Taken By Each Employee`, left: "center" },
+        tooltip: { trigger: "axis" },
+        xAxis: { type: "category", data: Object.keys(filteredLeaveData) },
+        yAxis: {
+            type: "value",
+            minInterval: 1, // ✅ Ensures whole number steps
+            axisLabel: {
+                formatter: (value) => Math.round(value), // ✅ Display only whole numbers
+            },
         },
-      },
-      series: [
-        {
-          name: "Total Leaves",
-          type: "bar",
-          data: Object.values(yearlyLeaveData),
-          barWidth: barWidth, // Dynamically set bar width
-          itemStyle: { color: "#FF69B4" }, // ✅ Set bars to pink color
-        },
-      ],
+        series: [
+            {
+                name: "Total Leaves",
+                type: "bar",
+                data: Object.values(filteredLeaveData),
+                barWidth: barWidth, // Dynamically set bar width
+                itemStyle: { color: "#FF69B4" }, // ✅ Set bars to pink color
+            },
+        ],
     };
-  };
+};
+
   
 
   return (

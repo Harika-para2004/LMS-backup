@@ -41,6 +41,7 @@ const ProfilePage = () => {
   } = useManagerContext();
   // const [mergedLeaveData, setMergedLeaveData] = useState([]);
   const [open, setOpen] = useState(false);
+  const currentYear = new Date().getFullYear();
   const [formData, setFormData] = useState({
     newPassword: "",
     confirmPassword: "",
@@ -142,8 +143,8 @@ const ProfilePage = () => {
 
 
       <div className="leave-types-container">
-        <h2 className="content-heading">Leave Balances</h2>
-        <div className="leave-cards">
+      <h2 className="content-heading">Leave Balances - {currentYear}</h2>
+      <div className="leave-cards">
           {mergedLeaveData?.filter(
             (leave) => !((gender === "Male" && leave.leaveType.toLowerCase() === "maternity leave")|| (gender==="Female" && leave.leaveType.toLowerCase()==="paternity leave"))
           )

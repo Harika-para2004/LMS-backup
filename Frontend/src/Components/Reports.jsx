@@ -87,7 +87,7 @@ const Reports = () => {
 
   return (
     <div className="reports-container">
-<h2 className="content-heading">Annual Approved Leave Summary ({selectedYear})</h2>
+<h2 className="content-heading">Annual Approved Leave Summary</h2>
 <div className="filters">
         <input
           type="text"
@@ -102,14 +102,7 @@ const Reports = () => {
             </MenuItem>
           ))}
         </Select>
-        <div className="export-buttons">
-          <button
-            onClick={() => exportFile(`http://localhost:5001/reports/export-excel?year=${selectedYear}`, `leave_reports_${selectedYear}.xlsx`)}
-            className="btn-excel"
-          >
-            Export Excel
-          </button>
-        </div>
+      
         <Button onClick={() => setShowAnalytics(!showAnalytics)} sx={{ textTransform: "none" }} className="btn-analytics">
           {showAnalytics ? "Show Reports" : "Show Analytics"}
         </Button>
@@ -117,8 +110,20 @@ const Reports = () => {
       {showAnalytics ? (
         <ManagerEmployeeDashboard email={email} selectedYear={selectedYear} />
       ) : (
-        <div className="table-container">
+        <div className="table-container" id="table-container">
+                      <h2 className="table-heading">Export the Annual Approved Leave Data</h2>
+
+                      {!showAnalytics && (
+        <div className="export-buttons" id="export-buttons">
+          <button
+            onClick={() => exportFile(`http://localhost:5001/reports/export-excel?year=${selectedYear}`, `leave_reports_${selectedYear}.xlsx`)}
+            className="btn-excel" id="btn-excel"
+          >
+            Export Excel
+          </button>
+        </div>)}
           <table>
+            
             <thead>
               <tr>
                 <th>Employee</th>

@@ -131,125 +131,159 @@ app.get("/managers-list", async (req, res) => {
 //     res.status(500).json({ message: "Server error while applying leave." });
 //   }
 // });
-
 app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
   const { email } = req.query;
-  const { empname, empid, leaveType, startDate, endDate, reason, managerEmail, gender } = req.body;
+  const { empname, empid, leaveType, startDate, endDate, reason, managerEmail } = req.body;
   const filePath = req.file ? req.file.path : null;
-
   try {
-    const formattedStartDate = new Date(startDate);
-    const formattedEndDate = new Date(endDate);
-    const today = new Date();
+    let formattedStartDate = new Date(startDate);
+    let formattedEndDate = new Date(endDate);
 
-    // ✅ Required Fields Check
     if (!leaveType || !startDate || !endDate) {
       return res.status(400).json({ message: "All fields (Leave Type, Start Date, End Date) are required." });
     }
 
-    // ✅ Valid Date Range Check
     if (formattedEndDate < formattedStartDate) {
       return res.status(400).json({ message: "End Date cannot be before Start Date." });
     }
 
-  // Fetch all leave records for the user
-  let existingLeaves = await Leave.find({ email });
+    formattedStartDate = new Date(Date.UTC(
+      formattedStartDate.getFullYear(),
+      formattedStartDate.getMonth(),
+      formattedStartDate.getDate(),
+      0, 0, 0
+    ));
 
-  for (let leave of existingLeaves) {
-    for (let i = 0; i < leave.startDate.length; i++) {
-      const existingStartDate = new Date(leave.startDate[i]);
-      const existingEndDate = new Date(leave.endDate[i]);
+    formattedEndDate = new Date(Date.UTC(
+      formattedEndDate.getFullYear(),
+      formattedEndDate.getMonth(),
+      formattedEndDate.getDate(),
+      23, 59, 59
+    ));
 
-      if (
-        (formattedStartDate >= existingStartDate && formattedStartDate <= existingEndDate) ||
-        (formattedEndDate >= existingStartDate && formattedEndDate <= existingEndDate) ||
-        (formattedStartDate <= existingStartDate && formattedEndDate >= existingEndDate)
-      ) {
-        return res.status(400).json({
-          message: `You have already applied for leave from ${existingStartDate.toLocaleDateString("en-GB")} to ${existingEndDate.toLocaleDateString("en-GB")}.`
+    const startYear = formattedStartDate.getFullYear();
+    const endYear = formattedEndDate.getFullYear();
+    let existingLeaves = await Leave.find({ email });
+
+    for (let leave of existingLeaves) {
+      for (let i = 0; i < leave.startDate.length; i++) {
+        const existingStartDate = new Date(leave.startDate[i]);
+        const existingEndDate = new Date(leave.endDate[i]);
+    
+        // Convert to dd/mm/yyyy format
+        const formatDate = (date) => {
+          const day = date.getUTCDate().toString().padStart(2, "0");
+          const month = (date.getUTCMonth() + 1).toString().padStart(2, "0"); // Months are 0-based
+          const year = date.getUTCFullYear();
+          return `${day}/${month}/${year}`;
+        };
+    
+        const existingStartDateStr = formatDate(existingStartDate);
+        const existingEndDateStr = formatDate(existingEndDate);
+    
+        if (
+          (formattedStartDate >= existingStartDate && formattedStartDate <= existingEndDate) ||
+          (formattedEndDate >= existingStartDate && formattedEndDate <= existingEndDate) ||
+          (formattedStartDate <= existingStartDate && formattedEndDate >= existingEndDate)
+        ) {
+          return res.status(400).json({
+            message: `You have already applied for leave from ${existingStartDateStr} to ${existingEndDateStr}.`
+          });
+        }
+      }
+    }
+    
+    let defaultTotalLeaves = 12; // Adjust as per policy
+
+    if (startYear === endYear) {
+      let leaveRecord = await Leave.findOne({ email, leaveType, year: [startYear] });
+      let durationDays = Math.ceil((formattedEndDate - formattedStartDate) / (1000 * 60 * 60 * 24)) + 1;
+
+      if (!leaveRecord) {
+        leaveRecord = new Leave({
+          email,
+          empname,
+          empid,
+          managerEmail,
+          leaveType,
+          totalLeaves: defaultTotalLeaves,
+          usedLeaves: 0,  // ✅ Keep usedLeaves as 0 initially
+          availableLeaves: defaultTotalLeaves,
+          applyDate: [],
+          startDate: [],
+          endDate: [],
+          reason: [],
+          status: [],
+          attachments: [],
+          month: [],
+          year: [],
+          duration: []
         });
       }
-    }
-  }
 
-    // ✅ Fetch Leave Balance and Policy
-    // const appliedLeave = await Leave.findOne({ email, leaveType });
-    // const policy = leavePolicyRef.find((policy) => policy.leaveType.toLowerCase() === leaveType.toLowerCase());
-    // const leaveBalance = appliedLeave?.availableLeaves ?? policy?.maxAllowedLeaves ?? null;
-
-    // const requestedDays = (formattedEndDate - formattedStartDate) / (1000 * 60 * 60 * 24) + 1;
-
-    // if (requestedDays > leaveBalance && leaveType !== "LOP") {
-    //   return res.status(400).json({ message: `Only ${leaveBalance} ${leaveType} leaves are available.` });
-    // }
-
-    // ✅ Gender-Based Leave Restrictions
- 
-    // ✅ Sick Leave Past or Current Dates Only
-    if (leaveType === "Sick Leave" && formattedStartDate > today) {
-      return res.status(400).json({ message: "Sick Leave can only be applied for past or current dates." });
-    }
-
-    // ✅ LOP (Unpaid Leave) only when Casual Leaves are exhausted
-    const casualLeave = await Leave.findOne({ 
-      email, 
-      leaveType: { $regex: /^casual leave$/i }  // Case-insensitive match
-    });
-    
-    if (leaveType.toLowerCase().includes("lop")) {
-      if (casualLeave && casualLeave.availableLeaves > 0) {
-        return res.status(400).json({ message: "LOP can only be applied when Casual Leaves are exhausted." });
-      } else if (!casualLeave) {
-        return res.status(400).json({ message: "You must first use Casual Leave before applying for LOP." });
-      }
-    }
-    
-
-    // ✅ File Validation
-    if (filePath) {
-      const allowedTypes = ["image/png", "image/jpeg", "application/pdf"];
-      const maxSize = 5 * 1024 * 1024; // 5MB limit
-      if (!allowedTypes.includes(req.file.mimetype)) {
-        return res.status(400).json({ message: "Only PNG, JPEG, or PDF files are allowed." });
-      }
-      if (req.file.size > maxSize) {
-        return res.status(400).json({ message: "File size should be less than 5MB." });
-      }
-    }
-
-    // ✅ Save Leave Request
-    const startMonth = formattedStartDate.getMonth() + 1;
-    const startYear = formattedStartDate.getFullYear();
-
-    let leaveRecord = await Leave.findOne({ email, leaveType });
-
-    if (leaveRecord) {
       leaveRecord.startDate.push(formattedStartDate);
       leaveRecord.endDate.push(formattedEndDate);
       leaveRecord.applyDate.push(new Date());
-      leaveRecord.status.push("Pending");
+      leaveRecord.status.push("Pending");  // ✅ Initially Pending
       leaveRecord.attachments.push(filePath || "");
-      leaveRecord.reason.push(reason || "");
-      leaveRecord.month.push(startMonth);
-      leaveRecord.year.push(startYear);
+      leaveRecord.reason.push(reason || "N/A");
+      leaveRecord.month.push([formattedStartDate.getMonth() + 1]);
+      leaveRecord.year.push([startYear]);
+      leaveRecord.duration.push([durationDays]);
+
+      leaveRecord.availableLeaves = leaveRecord.totalLeaves; // ✅ Leave is still pending, don't deduct from available
+
       await leaveRecord.save();
     } else {
-      const newLeave = new Leave({
-        email,
-        empname,
-        empid,
-        managerEmail,
-        applyDate: [new Date()],
-        leaveType,
-        startDate: [formattedStartDate],
-        endDate: [formattedEndDate],
-        reason: reason ? [reason] : [],
-        status: ["Pending"],
-        attachments: [filePath || ""],
-        month: [startMonth],
-        year: [startYear],
-      });
-      await newLeave.save();
+      let currentStartDate = formattedStartDate;
+
+      for (let year = startYear; year <= endYear; year++) {
+        let yearStart = new Date(Date.UTC(year, 0, 1));
+        let yearEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59));
+
+        let leaveStart = year === startYear ? currentStartDate : yearStart;
+        let leaveEnd = year === endYear ? formattedEndDate : yearEnd;
+        let days = Math.ceil((leaveEnd - leaveStart) / (1000 * 60 * 60 * 24)) + 1;
+
+        let leaveRecord = await Leave.findOne({ email, leaveType, year: [year] });
+
+        if (!leaveRecord) {
+          leaveRecord = new Leave({
+            email,
+            empname,
+            empid,
+            managerEmail,
+            leaveType,
+            totalLeaves: defaultTotalLeaves,
+            usedLeaves: 0,  // ✅ Keep usedLeaves as 0 initially
+            availableLeaves: defaultTotalLeaves,
+            applyDate: [],
+            startDate: [],
+            endDate: [],
+            reason: [],
+            status: [],
+            attachments: [],
+            month: [],
+            year: [],
+            duration: []
+          });
+        }
+
+        leaveRecord.startDate.push(leaveStart);
+        leaveRecord.endDate.push(leaveEnd);
+        leaveRecord.applyDate.push(new Date());
+        leaveRecord.status.push("Pending");
+        leaveRecord.attachments.push(filePath || "");
+        leaveRecord.reason.push(reason || "N/A");
+        leaveRecord.month.push([leaveStart.getMonth() + 1]);
+        leaveRecord.year.push([year]);
+        leaveRecord.duration.push([days]);
+
+        leaveRecord.availableLeaves = leaveRecord.totalLeaves; // ✅ Do not deduct from available leaves initially
+
+        await leaveRecord.save();
+        currentStartDate = new Date(Date.UTC(year + 1, 0, 1));
+      }
     }
 
     return res.status(200).json({ message: "Leave application submitted successfully" });
@@ -259,36 +293,43 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
     res.status(500).json({ message: "Server error while applying leave." });
   }
 });
-
-
 app.get("/leave-history", async (req, res) => {
-  const { email } = req.query;
+  const { email, year } = req.query;
   if (!email) {
     return res.status(400).json({ message: "Email is required" });
   }
 
   try {
-    const leaveHistory = await Leave.find({ email });
+    let leaveHistory = await Leave.find({ email });
 
-    const formattedHistory = leaveHistory
-      .map((leave) => {
-        return leave.startDate.map((start, index) => ({
-          _id: leave._id,
-          leaveType: leave.leaveType,
-          applyDate: new Date(leave.applyDate[index]).toLocaleDateString(),
-          startDate: new Date(start).toLocaleDateString(),
-          endDate: new Date(leave.endDate[index]).toLocaleDateString(),
-          reason: leave.reason[index],
-          status: leave.status[index] || "Pending",
-          duration: Array.isArray(leave.duration[index])
-            ? leave.duration[index].reduce((sum, num) => sum + num, 0) // Sum up nested durations
-            : leave.duration[index] || 0, 
-          year: leave.year[index] || [],
-          month: leave.month[index] || [],
-          attachments: leave.attachments[index] || "",
-        }));
-      })
-      .flat();
+    let formattedHistory = leaveHistory.flatMap((leave) => {
+      return leave.startDate.map((start, index) => ({
+        _id: leave._id,
+        leaveType: leave.leaveType,
+        applyDate: leave.applyDate[index]
+          ? new Date(leave.applyDate[index]).toISOString().split("T")[0]
+          : null,
+        startDate: start
+          ? new Date(start).toISOString().split("T")[0]
+          : null,
+        endDate: leave.endDate[index]
+          ? new Date(leave.endDate[index]).toISOString().split("T")[0]
+          : null,
+        reason: leave.reason[index] || "N/A",
+        status: leave.status[index] || "Pending",
+        duration: Array.isArray(leave.duration[index])
+          ? leave.duration[index].reduce((sum, num) => sum + num, 0)
+          : leave.duration[index] || 0,
+        year: leave.year[index] ? leave.year[index][0] : null, // Extract the correct year
+        month: leave.month[index] ? leave.month[index][0] : null,
+        attachments: leave.attachments[index] || "",
+      }));
+    });
+
+    // Apply year filter correctly
+    if (year) {
+      formattedHistory = formattedHistory.filter((leave) => leave.year === Number(year));
+    }
 
     res.status(200).json(formattedHistory);
   } catch (error) {
@@ -320,24 +361,56 @@ app.get("/leavesummary", async (req, res) => {
 });
 app.get("/leaverequests", async (req, res) => {
   try {
-    const { userRole, userEmail } = req.query; // Get role & email from query params
+    const { userRole, userEmail, year } = req.query;
 
-    let query = {}; // Default query for admin (fetch all)
+    let query = {};
+    
+    // Filter based on manager role
     if (userRole === "Manager") {
-      query.managerEmail = userEmail; // Filter requests for employees under this manager
+      query.managerEmail = userEmail;
     }
 
+    // Correct filtering for an array of dates (startDate)
+    if (year) {
+      query.startDate = {
+        $elemMatch: {
+          $gte: new Date(`${year}-01-01T00:00:00.000Z`),
+          $lt: new Date(`${year}-12-31T23:59:59.999Z`)
+        }
+      };
+    }
+
+    // Fetch leave requests from MongoDB
     const leaveRequests = await Leave.find(query);
 
-    // Process leave durations
-    const processedLeaves = leaveRequests.map((leave) => ({
-      ...leave._doc, // Spread existing leave request properties
-      duration: leave.duration.map((entry) => 
-        Array.isArray(entry) 
-          ? entry.reduce((sum, num) => sum + num, 0) // Sum up nested durations
-          : entry || 0 // Ensure a valid number
-      ),
+    // Process the fetched data
+    let processedLeaves = leaveRequests.map((leave) => ({
+      ...leave._doc,
+      endDate: Array.isArray(leave.endDate)
+        ? leave.endDate.map((date) =>
+            new Date(date).toISOString().split("T")[0]
+          )
+        : [],
+      duration: Array.isArray(leave.duration)
+        ? leave.duration.map((entry) =>
+            Array.isArray(entry)
+              ? entry.reduce((sum, num) => sum + num, 0)
+              : entry || 0
+          )
+        : []
     }));
+
+    // Ensure the year filter is correctly applied if some records slip through
+    if (year) {
+      processedLeaves = processedLeaves.filter((leave) =>
+        Array.isArray(leave.startDate) &&
+        leave.startDate.some(
+          (date) => new Date(date).getFullYear() === Number(year)
+        )
+      );
+    }
+
+    console.log("Final Processed Data:", processedLeaves); // Debugging log
 
     res.json(processedLeaves);
   } catch (error) {
@@ -345,7 +418,6 @@ app.get("/leaverequests", async (req, res) => {
     res.status(500).send("Server error");
   }
 });
-
 
 app.put("/leaverequests/:id", async (req, res) => {
   try {
@@ -420,8 +492,7 @@ app.get("/employee-list", async (req, res) => {
 // Create a new holiday
 app.post("/holidays", async (req, res) => {
   const { date, name, type } = req.body;
-
-  if (!date || !name || !type) {
+    if (!date || !name || !type) {
     return res.status(400).json({ message: "All fields are required!" });
   }
 
@@ -453,7 +524,6 @@ app.post("/holidays", async (req, res) => {
 // Update a holiday
 app.put("/holidays/:id", async (req, res) => {
   const { date, name, type } = req.body;
-
   try {
     if (!date || !name || !type) {
       return res.status(400).json({ message: "All fields are required!" });
@@ -481,7 +551,6 @@ app.put("/holidays/:id", async (req, res) => {
 });
 app.put("/updateEmployeeList/:id", async (req, res) => {
   const { empid, empname, email, project } = req.body;
-
   try {
     if (!empid || !empname || !email || !project) {
       return res.status(400).json({ message: "All fields are required!" });
@@ -1214,7 +1283,7 @@ app.get("/leave-balance/:email/:year", async (req, res) => {
     const leaveBalance = {};
 
     for (const leave of leaves) {
-      const { leaveType, totalLeaves, duration, year } = leave;
+      const { leaveType, totalLeaves, duration, year,status } = leave;
 
       // Ensure leave type exists in balance
       if (!leaveBalance[leaveType]) {
@@ -1236,7 +1305,7 @@ app.get("/leave-balance/:email/:year", async (req, res) => {
 
       for (let i = 0; i < year.length; i++) {
         for (let j = 0; j < year[i].length; j++) {
-          if (year[i][j] === numericYear) {
+          if (year[i][j] === numericYear && status[i]=="Approved") {
             usedLeavesInYear += duration[i][j]; // ✅ Sum only the duration for that specific year
           }
         }
@@ -1461,45 +1530,39 @@ app.get('/employee-yearly-leaves', async (req, res) => {
   }
 });
 
-
 app.delete("/leaves/:id", async (req, res) => {
   const { id } = req.params;
-  const { startDate } = req.body; // Assume the startDate is passed in the request body for matching
+  const { startDate } = req.body;
 
   console.log("Received ID:", id);
-  console.log("Start Date to Match:", startDate); // Debugging line
+  console.log("Start Date to Match:", startDate);
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({ error: "Invalid MongoDB ID format" });
   }
 
-  // Function to convert DD/MM/YYYY to YYYY-MM-DD
   const parseDate = (dateString) => {
-    const [day, month, year] = dateString.split('/'); // Split the date string into day, month, and year
-    return new Date(`${year}-${month}-${day}`); // Create a new Date object in YYYY-MM-DD format
+    const [day, month, year] = dateString.split("/");
+    return new Date(`${year}-${month}-${day}T00:00:00.000Z`);
   };
 
   try {
-    // Find the leave by id
     const leave = await Leave.findById(id);
 
     if (!leave) {
       return res.status(404).json({ error: "Leave not found" });
     }
 
-    // Convert the frontend startDate (DD/MM/YYYY) to a Date object
     const parsedStartDate = parseDate(startDate);
 
-    // Find the index of the matched startDate by comparing the ISO string representations
     const indexToRemove = leave.startDate.findIndex(date => 
-      new Date(date).toISOString().slice(0, 10) === parsedStartDate.toISOString().slice(0, 10)
+      new Date(date).toISOString() === parsedStartDate.toISOString()
     );
 
     if (indexToRemove === -1) {
       return res.status(404).json({ error: "Start date not found" });
     }
 
-    // Remove the element from arrays based on the matched index
     leave.startDate.splice(indexToRemove, 1);
     leave.endDate.splice(indexToRemove, 1);
     leave.reason.splice(indexToRemove, 1);
@@ -1508,8 +1571,8 @@ app.delete("/leaves/:id", async (req, res) => {
     leave.year.splice(indexToRemove, 1);
     leave.month.splice(indexToRemove, 1);
     leave.attachments.splice(indexToRemove, 1);
-leave.applyDate.splice(indexToRemove, 1);
-    // Save the updated leave document
+    leave.applyDate.splice(indexToRemove, 1);
+
     await leave.save();
 
     res.status(200).json({ message: "Leave entry deleted successfully" });
