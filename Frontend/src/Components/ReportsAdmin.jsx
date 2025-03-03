@@ -61,7 +61,7 @@ const ReportsAdmin = () => {
             email: report.email || "N/A",
             project: formatName(report.project),
             leaveType: formatName(leave.leaveType),
-            startDate: new Date(leave.startDate),
+            startDate: formatDate(leave.startDate),
             endDate: formatDate(leave.endDate),
             status: formatName(leave.status),
           }))
@@ -167,9 +167,7 @@ const ReportsAdmin = () => {
                       <td>{report.project}</td>
                       <td>{report.leaveType}</td>
                       <td>
-                        {report.startDate.getTime() === 0
-                          ? "N/A"
-                          : formatDate(report.startDate)}
+                        {(report.startDate)}
                       </td>
                       <td>{report.endDate}</td>
                       <td>{report.status}</td>
