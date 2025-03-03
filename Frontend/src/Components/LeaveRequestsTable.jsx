@@ -23,13 +23,80 @@ const LeaveRequestsTable = (
   const location = useLocation();
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
+  const admincred = localStorage.getItem("admin");
+  // console.log("admincred",admincred);
   const [userData, setUserData] = useState(() => {
     const storedAdmin = localStorage.getItem("admin");
     return (
+      (storedAdmin ? { email: JSON.parse(storedAdmin), role: "Admin" } : {}) ||
       location.state?.userData ||
-      (storedAdmin ? { email: JSON.parse(storedAdmin), role: "Admin" } : {})
+      {}
     );
   });
+  
+
+  // Effect to update userData when location.state or localStorage changes
+  useEffect(() => {
+    const storedAdmin = localStorage.getItem("admin");
+  
+    if (storedAdmin) {
+      setUserData({ email: JSON.parse(storedAdmin), role: "Admin" });
+    } else if (location.state?.userData) {
+      setUserData(location.state.userData);
+    } else {
+      setUserData({});
+    }
+  }, [location.state?.userData, localStorage.getItem("admin")]);
+  
+  // const fetchLeaveRequests = async () => {
+  //   try {
+  //     const response = await fetch(
+  //       `http://localhost:5001/leaverequests?userRole=${userData.role}&userEmail=${userData.email}&year=${selectedYear}`
+  //     );
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       const sortedData = data.sort(
+  //         (a, b) => new Date(b.applyDate) - new Date(a.applyDate)
+  //       );
+  //       setLeaveRequests(sortedData);
+  //     } else {
+  //       console.error("Failed to fetch leave history");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching leave history:", error);
+  //   }
+  // };
+  
+
+  // useEffect(() => {
+  //   if (userData.role !== "Admin" && userData.email && selectedYear && userData.role === "Manager" ) {
+  //     console.log(`Fetching leave requests for ${userData.email} in ${selectedYear} role is ${userData.role}`);
+  //     fetchLeaveRequests();
+  //   }
+  // }, [userData.email, selectedYear,userData.role]); 
+  
+  const fetchLeaveRequestsAdmin = async () => {
+    const excludeEmail = "admin@gmail.com"; // Replace with the email to exclude
+    try {
+      const response = await fetch("http://localhost:5001/leaverequests");
+      if (response.ok) {
+        const data = await response.json();
+        const filteredData = data.filter((item) => item.email !== excludeEmail); // Filter out records with the given email
+        setLeaveRequests(filteredData); // Update state with filtered data
+      } else {
+        console.error("Failed to fetch leave history");
+      }
+    } catch (error) {
+      console.error("Error fetching leave history:", error);
+    }
+  };
+
+  useEffect(() => {
+    if(admincred)
+    fetchLeaveRequestsAdmin();
+  }, [admincred]);
+  
+
   const fetchLeaveRequests = async () => {
     try {
       const response = await fetch(
@@ -51,14 +118,12 @@ const LeaveRequestsTable = (
   
 
   useEffect(() => {
-    if (userData.email) {
+    if (userData.role !== "Admin" && userData.email && selectedYear && userData.role === "Manager" ) {
       console.log(`Fetching leave requests for ${userData.email} in ${selectedYear} role is ${userData.role}`);
       fetchLeaveRequests();
     }
-  }, [userData.email, selectedYear,userData.role]); // ✅ Runs when year changes
+  }, [userData.email, selectedYear,userData.role]); 
   
-  
-
   const handleFilterChange = (e) => {
     setSelectedFilter(e.target.value);
   };

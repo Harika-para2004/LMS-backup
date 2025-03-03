@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import logo from "./../assets/img/quadfacelogo-hd.png";
 import { Modal, Box, IconButton } from "@mui/material";
 import Profile from "../assets/img/profile.png";
@@ -90,7 +90,7 @@ function LeaveRequests() {
         profileImage, setProfileImage,
         newPassword, setNewPassword,
         confirmPassword, setConfirmPassword,
-        userData, setUserData,
+        // userData, setUserData,
         file, setFile,
         selectedFilter, setSelectedFilter,
         error, setError,
@@ -102,6 +102,24 @@ function LeaveRequests() {
         navigate,
         showToast
   } = useManagerContext();
+  const location = useLocation();
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [userData, setUserData] = useState(() => {
+    const storedAdmin = localStorage.getItem("admin");
+    return (
+      (storedAdmin ? { email: JSON.parse(storedAdmin), role: "Admin" } : {}) ||
+      location.state?.userData ||
+      {}
+    );
+  });
+
+
+  const yearsRange = useMemo(() => Array.from({ length: 18 }, (_, i) => currentYear + 1 - i), [currentYear]);
+  const filteredLeaves = leaveRequests.filter((leave) => {
+    const yearValues = leave.year.flat(2); // Flatten nested arrays
+    return yearValues.includes(Number(selectedYear)); // Check if selectedYear exists in the array
+  });
 
   useEffect(() => {
     const fetchLeavePoliciesData = async () => {
@@ -217,13 +235,15 @@ function LeaveRequests() {
 
   const fetchLeaveRequests = async () => {
     try {
-      const response = await fetch(`http://localhost:5001/leaverequests?userRole=${userData.role}&userEmail=${email}`);
-      // console.log("user-role: ",userData.role);
+      const response = await fetch(
+        `http://localhost:5001/leaverequests?userRole=${userData.role}&userEmail=${userData.email}&year=${selectedYear}`
+      );
       if (response.ok) {
         const data = await response.json();
-        const sortedData = data.sort((a, b) => new Date(b.applyDate) - new Date(a.applyDate));
-
-        setLeaveRequests(sortedData); // Directly set the filtered data from backend
+        const sortedData = data.sort(
+          (a, b) => new Date(b.applyDate) - new Date(a.applyDate)
+        );
+        setLeaveRequests(sortedData);
       } else {
         console.error("Failed to fetch leave history");
       }
@@ -231,12 +251,15 @@ function LeaveRequests() {
       console.error("Error fetching leave history:", error);
     }
   };
+  
 
   useEffect(() => {
-    if(email){
-    fetchLeaveRequests();}
-  }, [email]);
-
+    if (userData.role !== "Admin" && userData.email && selectedYear && userData.role === "Manager" ) {
+      console.log(`Fetching leave requests for ${userData.email} in ${selectedYear} role is ${userData.role}`);
+      fetchLeaveRequests();
+    }
+  }, [userData.email, selectedYear,userData.role]); 
+  
   useEffect(() => {
     const storedUserData = localStorage.getItem("userData");
     console.log("storedUserData",storedUserData);
@@ -444,14 +467,14 @@ function LeaveRequests() {
         (policy) => formatCase(policy.leaveType) === formatCase(leave.leaveType)
       );
   
-      const maxAllowedLeaves = policy?.maxAllowedLeaves ?? null; // Null means unlimited
+      const maxAllowedLeaves = policy?.maxAllowedLeaves ?? 0; // Null means unlimited
   
       // Allow approval without checking availableLeaves if maxAllowedLeaves is null (unlimited leave)
-      if (maxAllowedLeaves === null || leave.availableLeaves >= leaveDuration) {
+      if (maxAllowedLeaves === 0 || leave.availableLeaves >= leaveDuration) {
         const updatedLeave = {
           ...leave,
-          availableLeaves: maxAllowedLeaves !== null ? leave.availableLeaves - leaveDuration : leave.availableLeaves, 
-          usedLeaves: maxAllowedLeaves !== null ? leave.usedLeaves + leaveDuration : leave.usedLeaves,
+          availableLeaves: maxAllowedLeaves !== 0 ? leave.availableLeaves - leaveDuration : leave.availableLeaves, 
+          usedLeaves: maxAllowedLeaves !== 0 ? leave.usedLeaves + leaveDuration : leave.usedLeaves,
           status: leave.status.map((stat, index) =>
             index === selectedIndex && (stat.toLowerCase() === "pending" || stat.toLowerCase() === "rejected")
               ? "Approved"

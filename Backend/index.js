@@ -337,20 +337,24 @@ app.get("/leave-history", async (req, res) => {
     res.status(500).json({ message: "An error occurred" });
   }
 });
-
 app.get("/leavesummary", async (req, res) => {
   const { email } = req.query; // Get the email from the query parameters
   if (!email) {
     return res.status(400).json({ message: "Email is required" });
   }
 
+  const currentYear = new Date().getFullYear(); // Get the current year
+
   try {
-    const leaveData = await Leave.find({ email });
+    const leaveData = await Leave.find({
+      email,
+      year: { $in: [[currentYear]] } // Match the year field
+    });
 
     if (!leaveData || leaveData.length === 0) {
       return res
         .status(404)
-        .json({ message: "No leave records found for the specified email" });
+        .json({ message: "No leave records found for the specified email in the current year" });
     }
 
     res.json(leaveData);
@@ -359,6 +363,7 @@ app.get("/leavesummary", async (req, res) => {
     res.status(500).send("Server Error");
   }
 });
+
 app.get("/leaverequests", async (req, res) => {
   try {
     const { userRole, userEmail, year } = req.query;
@@ -764,6 +769,7 @@ const formatLeaveDate = (date) => {
   if (!date || date === "N/A" || date === "Invalid date") return "N/A";
   return moment(date).isValid() ? moment(date).format("DD/MM/YYYY") : "N/A";
 };
+
 app.get("/reports/export-excel", async (req, res) => {
   try {
     let { project, reports } = req.query;

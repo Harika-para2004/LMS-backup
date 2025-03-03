@@ -84,7 +84,21 @@ const Reports = () => {
           ]
     )
     .sort((a, b) => a.empname.localeCompare(b.empname) || a.startDate - b.startDate);
-
+    const exportFile = async (url, filename) => {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Failed to export file");
+        const blob = await response.blob();
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (error) {
+        console.error(`Error exporting ${filename}:`, error);
+      }
+    };
   return (
     <div className="reports-container">
 <h2 className="content-heading">Annual Approved Leave Summary</h2>
@@ -115,10 +129,7 @@ const Reports = () => {
 
                       {!showAnalytics && (
         <div className="export-buttons" id="export-buttons">
-          <button
-            onClick={() => exportFile(`http://localhost:5001/reports/export-excel?year=${selectedYear}`, `leave_reports_${selectedYear}.xlsx`)}
-            className="btn-excel" id="btn-excel"
-          >
+          <button onClick={() => exportFile(`http://localhost:5001/reports/export-excel`, "leave_reports.xlsx")} className="btn-excel">
             Export Excel
           </button>
         </div>)}

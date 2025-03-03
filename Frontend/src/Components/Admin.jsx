@@ -76,6 +76,18 @@ function AdminDashboard() {
     holidayName: "",
     holidayType: "Mandatory",
   });
+
+  // const location = useLocation();
+  // const currentYear = new Date().getFullYear();
+  // const [selectedYear, setSelectedYear] = useState(currentYear);
+  // const [userData, setUserData] = useState(() => {
+  //   const storedAdmin = localStorage.getItem("admin");
+  //   return (
+  //     (storedAdmin ? { email: JSON.parse(storedAdmin), role: "Admin" } : {}) ||
+  //     location.state?.userData ||
+  //     {}
+  //   );
+  // });
   
   const filteredEmployees = employeeList.filter((emp)=> emp.empname.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -413,25 +425,7 @@ function AdminDashboard() {
     setShowModal(false);
   };
 
-  const fetchLeaveRequests = async () => {
-    const excludeEmail = "admin@gmail.com"; // Replace with the email to exclude
-    try {
-      const response = await fetch("http://localhost:5001/leaverequests");
-      if (response.ok) {
-        const data = await response.json();
-        const filteredData = data.filter((item) => item.email !== excludeEmail); // Filter out records with the given email
-        setLeaveRequests(filteredData); // Update state with filtered data
-      } else {
-        console.error("Failed to fetch leave history");
-      }
-    } catch (error) {
-      console.error("Error fetching leave history:", error);
-    }
-  };
 
-  useEffect(() => {
-    fetchLeaveRequests();
-  }, []);
 
   useEffect(() => {
     fetchHolidays();
@@ -564,8 +558,7 @@ function AdminDashboard() {
       }
   
       if (
-        leave.totalLeaves !== null && // ✅ Only check if there's a totalLeaves limit
-        leave.totalLeaves !== undefined &&
+        leave.totalLeaves !== 0 && // ✅ Only check if there's a totalLeaves limit
         leave.availableLeaves < leaveDuration
       ) {
         console.log("Not enough available leaves.");
@@ -575,7 +568,7 @@ function AdminDashboard() {
       const updatedLeave = {
         ...leave,
         availableLeaves:
-          leave.totalLeaves !== null
+          leave.totalLeaves !== 0
             ? Math.max(0, leave.availableLeaves - leaveDuration) // ✅ Prevent negative available leaves
             : leave.availableLeaves, // ✅ Do not decrease if leave type is unlimited
         usedLeaves: leave.usedLeaves + leaveDuration,
