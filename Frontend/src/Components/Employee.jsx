@@ -158,6 +158,7 @@ const App = () => {
     e.preventDefault();
     localStorage.clear();
     navigate("/"); // Redirects user after logout
+    window.location.reload(); 
   };
 
   const formatCase = (text) => {

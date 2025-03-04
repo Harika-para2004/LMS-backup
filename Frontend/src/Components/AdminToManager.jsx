@@ -30,24 +30,34 @@ const AdminToManager = () => {
   return (
     <Box sx={{ width: "100%", typography: "body1", p: 2 }}>
       {/* Navigation Buttons */}
-      {    <Button
-          variant="contained"
-          color="primary"
-          startIcon={<ArrowBackIcon />}
-          onClick={handleBack}
-          sx={{
-            textTransform: "none",
-            fontSize: "1rem",
-            fontWeight: 500,
-            borderRadius: 2,
-            px: 3,
-            py: 1,
-            bgcolor: "#1976d2",
-            "&:hover": { bgcolor: "#1565c0" },
-          }}
-        >
-          Back
-        </Button>}
+      {    
+       <Button
+       variant="contained"
+       startIcon={
+         <ArrowBackIcon sx={{ fontSize: 18, color: "white" }} />
+       }
+       onClick={handleBack}
+       sx={{
+         textTransform: "none",
+         fontSize: "13px",
+         fontWeight: 500,
+         borderRadius: "8px",
+         height: 36,
+         minWidth: 100,
+         px: 2,
+        //  background: "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)", // Elegant gradient
+         color: "white",
+        //  "&:hover": {
+        //   //  background: "transparent",
+        //     //  "linear-gradient(135deg, #83289A 0%, #5A1780 100%)", // Slightly darker hover effect
+        //  },
+        //  boxShadow: "0px 3px 6px rgba(159, 50, 178, 0.3)", // Subtle glow effect
+         transition: "all 0.3s ease-in-out", // Smooth animation
+       }}
+     >
+       Back
+     </Button>
+        }
       <Stack direction="row" spacing={2} justifyContent="center" sx={{ mb: 3 }}>
         <Button
           variant={location.pathname.includes(`/admin/analytics/${email}/self`) ? "contained" : "outlined"}
@@ -56,6 +66,7 @@ const AdminToManager = () => {
             backgroundColor: location.pathname.includes(`/admin/analytics/${email}/self`) ? "var(--deep-blue)" : "transparent",
             color: location.pathname.includes(`/admin/analytics/${email}/self`) ? "white" : "var(--deep-blue)",
             minWidth: "200px",
+            textTransform:"none",
           }}
         >
           Personal Dashboard
@@ -67,6 +78,7 @@ const AdminToManager = () => {
             backgroundColor: location.pathname.includes(`/analytics/${email}/reports`) ? "var(--deep-blue)" : "transparent",
             color: location.pathname.includes(`/analytics/${email}/reports`) ? "white" : "var(--deep-blue)",
             minWidth: "200px",
+            textTransform:"none",
           }}
         >
           Reports
@@ -78,6 +90,7 @@ const AdminToManager = () => {
             backgroundColor: location.pathname.includes(`/admin/analytics/${email}/employees`) ? "var(--deep-blue)" : "transparent",
             color: location.pathname.includes(`/admin/analytics/${email}/employees`) ? "white" : "var(--deep-blue)",
             minWidth: "200px",
+            textTransform:"none",
           }}
         >
           Employee Dashboards

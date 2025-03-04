@@ -153,11 +153,13 @@ const LeaveRequestsTable = (
       if (!currentStatus || (currentStatus !== "pending" && currentStatus !== "rejected")) {
         console.log("This leave is already approved.");
         return; }
-      if (leave.availableLeaves < totalLeaveDays) {
+      if (leave.totalLeaves && leave.availableLeaves < totalLeaveDays ) {
         console.log("Not enough available leaves.");
         return;
-      }      const updatedLeave = {
-        availableLeaves: leave.availableLeaves - totalLeaveDays,
+      }      
+      // console.log("totalLeaves",leave.totalLeaves === 0);
+      const updatedLeave = {
+        availableLeaves: leave.totalLeaves === 0 ? 0 : leave.availableLeaves - totalLeaveDays,
         usedLeaves: leave.usedLeaves + totalLeaveDays,
         [`status.${selectedIndex}`]: "Approved", // Only update the status at selected index
       }; try {
@@ -211,7 +213,7 @@ const LeaveRequestsTable = (
               const wasApproved = currentStatus === "approved";
       
               const updatedLeave = {
-                  availableLeaves: wasApproved ? leave.availableLeaves + totalLeaveDays : leave.availableLeaves,
+                  availableLeaves: wasApproved && leave.totalLeaves ? leave.availableLeaves + totalLeaveDays : leave.availableLeaves,
                   usedLeaves: wasApproved ? leave.usedLeaves - totalLeaveDays : leave.usedLeaves,
                   [`status.${selectedIndex}`]: "Rejected", // ✅ Only update the status at selected index
               };
@@ -391,7 +393,7 @@ const LeaveRequestsTable = (
                 <td>{leave.duration}</td>
                 <td>{leave.startDate}</td>
                 <td>{leave.endDate}</td>
-                <td>{leave.availableLeaves}</td>
+                <td>{leave.availableLeaves ? leave.availableLeaves : "-" }</td>
                 <td>
                   {leave.document ? (
                     <a href={leave.document} download>

@@ -110,13 +110,15 @@ LeaveSchema.pre("save", async function (next) {
     const policy = await LeavePolicy.findOne({ leaveType: this.leaveType });
 
     if (policy) {
-      if (policy.maxAllowedLeaves !== undefined) {
+      if (policy.maxAllowedLeaves) {
         // Only update when maxAllowedLeaves is defined
         this.totalLeaves = policy.maxAllowedLeaves || 0;
         if (this.availableLeaves === 0) {
           this.availableLeaves = this.totalLeaves;
         }
         this.availableLeaves = Math.max(0, this.totalLeaves - this.usedLeaves);
+      }else{
+        this.totalLeaves = 0;
       }
     } else {
       throw new Error(`Leave policy not found for: ${this.leaveType}`);

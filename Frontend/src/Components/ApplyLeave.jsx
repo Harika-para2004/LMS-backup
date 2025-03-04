@@ -116,26 +116,26 @@ const ApplyLeave = () =>
 
     const handleSubmit = async (event) => {
       event.preventDefault();
-    
+
       const { leaveType, startDate, endDate, reason } = formData;
       const today = dayjs().format("YYYY-MM-DD");
       const startDayjs = dayjs(startDate, "DD/MM/YYYY");
       const endDayjs = dayjs(endDate, "DD/MM/YYYY");
       const formattedStartDate = startDayjs.format("YYYY-MM-DD");
       const formattedEndDate = endDayjs.format("YYYY-MM-DD");
-    
+
       // **✅ Required Fields Check**
       if (!leaveType || !startDate || !endDate) {
         showToast("All fields are required.", "warning");
         return;
       }
-    
+
       // **✅ Valid Date Range Check**
       if (endDayjs.isBefore(startDayjs)) {
         showToast("End Date cannot be before Start Date.", "error");
         return;
       }
-    
+
       // ❌ Restrict only if Start Date or End Date is a weekend
       if (startDayjs.day() === 0 || startDayjs.day() === 6) {
         showToast("Start Date cannot be on a weekend.", "warning");
@@ -145,12 +145,9 @@ const ApplyLeave = () =>
         showToast("End Date cannot be on a weekend.", "warning");
         return;
       }
-      if (leaveType.toLowerCase().includes("bereavement") && requestedDays > 3) {
-        showToast("Bereavement Leave cannot have more than 3 consecutive dates.", "warning");
-        return;
-      }
+
       let currentDate = startDayjs;
-    
+
       // ✅ Loop through the date range but only check for holidays (ignore weekends in between)
       while (currentDate.isBefore(endDayjs.add(1, "day"))) {
         const isHoliday = holidays.some(
@@ -158,12 +155,10 @@ const ApplyLeave = () =>
             holiday.type === "Mandatory" &&
             dayjs(holiday.date).isSame(currentDate, "day")
         );
-    
-     
-    
+
         currentDate = currentDate.add(1, "day"); // Move to the next day
       }
-    
+
       // **✅ No Duplicate Leave Requests**
       const alreadyApplied = leaveHistory.some(
         (leave) =>
@@ -175,53 +170,98 @@ const ApplyLeave = () =>
         showToast(`You have already applied for ${leaveType}.`, "info");
         return;
       }
-    
+
       // **✅ Leave Balance Check**
       const appliedLeave = leaveData.find(
         (leave) => formatCase(leave.leaveType) === formatCase(leaveType)
       );
-    
+
       const policy = leavePolicyRef.find(
         (policy) => formatCase(policy.leaveType) === formatCase(leaveType)
       );
-      
+
       const leaveBalance =
         appliedLeave?.availableLeaves ??
         (policy?.maxAllowedLeaves !== null ? policy?.maxAllowedLeaves : null); // ✅ Preserve `null` for unlimited leaves
-      
-      const requestedDays = endDayjs.diff(startDayjs, "day") + 1;
-      
-      // ✅ Allow Bereavement and LOP without limit checks
-      const isUnlimitedLeave = leaveType.toLowerCase().includes("bereavement") || leaveType.toLowerCase().includes("lop");
-      
-      if (!isUnlimitedLeave && leaveBalance !== null && requestedDays > leaveBalance) {
-        showToast(`Only ${leaveBalance} ${leaveType} leaves are available.`, "error");
+
+      // const requestedDays = endDayjs.diff(startDayjs, "day") + 1;
+      // let currentDate = startDayjs;
+      // Initialize requestedDays
+      let requestedDays = 0;
+
+      currentDate = startDayjs.clone();
+      const endLimit = endDayjs.clone().add(1, "day"); 
+
+      while (currentDate.isBefore(endLimit, "day")) {
+        const isWeekend = currentDate.day() === 0 || currentDate.day() === 6;
+        const isHoliday = holidays.some((holiday) =>
+        dayjs(holiday.date, "DD-MMM-YYYY").isSame(currentDate, "day") // Corrected date format
+        );
+
+        if (!isWeekend && !isHoliday) {
+          requestedDays++;
+        }
+
+        currentDate = currentDate.add(1, "day"); // Move to the next day
+      }
+
+      console.log("Final requestedDays:", requestedDays);
+
+      if (
+        leaveType.toLowerCase().includes("bereavement") &&
+        requestedDays > 3
+      ) {
+        showToast(
+          "Bereavement Leave cannot have more than 3 consecutive dates.",
+          "warning"
+        );
         return;
       }
-      
-    
+
+      // ✅ Allow Bereavement and LOP without limit checks
+      const isUnlimitedLeave =
+        leaveType.toLowerCase().includes("bereavement") ||
+        leaveType.toLowerCase().includes("lop");
+
+      if (
+        !isUnlimitedLeave &&
+        leaveBalance !== null &&
+        requestedDays > leaveBalance
+      ) {
+        showToast(
+          `Only ${leaveBalance} ${leaveType} leaves are available.`,
+          "error"
+        );
+        return;
+      }
+
       // **✅ Gender-Based Leave Restrictions**
 
-    
       // **✅ Sick Leave Past or Current Dates Only**
       if (leaveType === "Sick Leave" && startDayjs.isAfter(today)) {
-        showToast("Sick Leave can only be applied for past or current dates.", "warning");
+        showToast(
+          "Sick Leave can only be applied for past or current dates.",
+          "warning"
+        );
         return;
       }
-    
+
       // **✅ LOP (Unpaid Leave) only when Casual Leaves are exhausted**
       const casualLeave = leaveData.find((leave) =>
         leave.leaveType.toLowerCase().includes("casual")
       );
-    
+
       if (
         leaveType.toLowerCase().includes("LOP") &&
         casualLeave?.availableLeaves > 0
       ) {
-        showToast("LOP can only be applied when Casual Leaves are exhausted.", "info");
+        showToast(
+          "LOP can only be applied when Casual Leaves are exhausted.",
+          "info"
+        );
         return;
       }
-    
+
       // **✅ File Validation (New Check)**
       if (file) {
         const maxSize = 5 * 1024 * 1024; // 5MB limit
@@ -229,14 +269,14 @@ const ApplyLeave = () =>
           showToast("File size should be less than 5MB.", "error");
           return;
         }
-    
+
         const allowedTypes = ["image/png", "image/jpeg", "application/pdf"];
         if (!allowedTypes.includes(file.type)) {
           showToast("Only PNG, JPEG, or PDF files are allowed.", "error");
           return;
         }
       }
-    
+
       // **✅ Proceed with submission**
       const formDataToSend = new FormData();
       formDataToSend.append("email", email);
@@ -249,18 +289,20 @@ const ApplyLeave = () =>
       formDataToSend.append("endDate", formattedEndDate);
       if (file) formDataToSend.append("attachment", file);
       formDataToSend.append("reason", reason || "N/A");
-    
+
       try {
         const response = await fetch(
-          `http://localhost:5001/apply-leave?email=${encodeURIComponent(email)}`,
+          `http://localhost:5001/apply-leave?email=${encodeURIComponent(
+            email
+          )}`,
           { method: "POST", body: formDataToSend }
         );
-    
+
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.message || "Failed to submit form.");
         }
-    
+
         showToast("Leave application submitted successfully!", "success");
         setFormData({ leaveType: "", startDate: "", endDate: "", reason: "" });
         setFile(null);
@@ -270,7 +312,6 @@ const ApplyLeave = () =>
         showToast(error.message, "error");
       }
     };
-    
 
     const handleFileChange = (event) => {
       const selectedFile = event.target.files[0];

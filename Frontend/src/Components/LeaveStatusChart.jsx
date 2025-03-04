@@ -39,7 +39,7 @@ const LeaveStatusChart = ({ email,year }) => {
     const leaveTypes = chartData.map((item) => item.leaveType);
     const statuses = ["Pending", "Approved", "Rejected"];
     const barCount = leaveTypes.length;
-    const barWidth = barCount < 4 ? 40 : "60%";
+    const barWidth = barCount < 4 ? 30 : "40%";
   
     const statusColors = {
       Pending: ["#F4C542", "#FFD700"], // Golden gradient
@@ -135,14 +135,9 @@ const LeaveStatusChart = ({ email,year }) => {
     };
   };
   
-  
-  
-  
-  
-  
 
   return (
-    <Card sx={{ maxWidth: 700, margin: "auto", padding: 3, boxShadow: 3 }}>
+    <Card sx={{ maxWidth: 700, margin: "auto", padding: 3, boxShadow: 3,backgroundColor: "#F4F5F7" }}>
       <CardContent>
         <Typography variant="h6" align="center">
           Leave Status Overview

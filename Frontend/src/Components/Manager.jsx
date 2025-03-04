@@ -360,7 +360,8 @@ function LeaveRequests() {
   const handleLogout = (e) => {
     e.preventDefault();
     localStorage.clear();
-    navigate("/");  // Redirects user after logout
+    navigate("/"); 
+    window.location.reload(); 
   };
 
   const getTodayDate = () => {

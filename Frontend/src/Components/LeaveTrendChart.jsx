@@ -55,70 +55,6 @@ const LeaveTrendChart = ({ email, year }) => {
     fetchData();
   }, [email, year]);  
 
-  // const getYAxisInterval = (maxValue) => {
-  //   return maxValue <= 10 ? 1 : 1;
-  // };
-  
-
-  // const getOption = () => {
-  //   const months = [
-  //     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  //     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-  //   ];
-
-  //   // Compute max value from data
-  //   const maxValue = Math.max(
-  //     ...chartData.map((monthData) => 
-  //       Object.values(monthData).reduce((sum, val) => sum + (typeof val === "number" ? val : 0), 0)
-  //     ), 0
-  //   );
-
-  //   const yAxisInterval = getYAxisInterval(maxValue);
-
-  //   const series = leaveTypes.map((type) => ({
-  //     name: type,
-  //     type: "bar",
-  //     stack: "total",
-  //     data: months.map((_, idx) => chartData[idx]?.[type] || 0),
-  //     emphasis: { focus: "series" },
-  //   }));
-
-  //   return {
-  //     animation: false, // Disable animation for instant bar display
-
-  //     tooltip: {
-  //       trigger: "axis",
-  //       axisPointer: { type: "shadow" },
-  //       formatter: function (params) {
-  //         return params
-  //           .filter((p) => p.value > 0) // Show only non-zero values
-  //           .map((p) => `<strong style="color:${p.color}">${p.seriesName}:</strong> ${p.value}`)
-  //           .join("<br/>");
-  //       },
-  //     },
-      
-  //     legend: {
-  //       data: leaveTypes,
-  //       bottom: 0,
-  //       left: "center",
-  //       padding: [10, 0, 0, 0],
-  //     },
-
-  //     grid: { left: "3%", right: "4%", bottom: "10%", containLabel: true },
-
-  //     xAxis: {
-  //       type: "category",
-  //       data: months,
-  //       axisLabel: { rotate:0, margin: 10 },
-  //     },
-  //     yAxis: {
-  //       type: "value",
-  //       minInterval: 1,
-  //     },
-
-  //     series, 
-  //   };
-  // };
 
   
 
@@ -144,7 +80,7 @@ const LeaveTrendChart = ({ email, year }) => {
   
     // Elegant color palette with gradients
     const colorPalette = [
-      ["#FF6B6B", "#FF8E8E"], // Soft Red
+      ["#6A8CAF", "#A1B5D8"], // Muted Blue
       ["#6B8E23", "#A0C84C"], // Olive Green
       ["#1E90FF", "#87CEFA"], // Sky Blue
       ["#FFB84D", "#FFD580"], // Warm Orange
@@ -181,16 +117,12 @@ const LeaveTrendChart = ({ email, year }) => {
       animation: true,
   
       tooltip: {
-        trigger: "axis",
-        axisPointer: { type: "shadow" },
-        backgroundColor: "rgba(0, 0, 0, 0.75)", // Elegant dark background
+        trigger: "item", // Change trigger to 'item' so it only shows the hovered item
+        backgroundColor: "rgba(0, 0, 0, 0.75)", 
         borderRadius: 6,
         textStyle: { color: "#fff", fontSize: 12 },
         formatter: function (params) {
-          return params
-            .filter((p) => p.value > 0)
-            .map((p) => `<strong style="color:${p.color}">${p.seriesName}:</strong> ${p.value}`)
-            .join("<br/>");
+          return `<strong style="color:${params.color}">${params.seriesName}:</strong> ${params.value}`;
         },
       },
   
@@ -231,7 +163,7 @@ const LeaveTrendChart = ({ email, year }) => {
   
 
   return (
-    <Card sx={{margin: "auto", padding: 2, boxShadow: 3 }}>
+    <Card sx={{margin: "auto", padding: 2, boxShadow: 3,backgroundColor: "#F4F5F7" }}>
       <CardContent>
         <Typography variant="h6" align="center">
           Monthly Approved Leave Trends

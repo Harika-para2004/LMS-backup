@@ -96,6 +96,8 @@ function AdminDashboard() {
     e.preventDefault();
     localStorage.clear();
     navigate("/"); 
+    window.location.reload(); 
+
   };
 
   useEffect(() => {

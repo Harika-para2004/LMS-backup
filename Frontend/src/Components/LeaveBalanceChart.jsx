@@ -80,7 +80,7 @@ const LeaveBalanceChart = ({ email,year }) => {
   }));
 
   return (
-    <Card sx={{ maxWidth: 800, margin: "auto", padding: 3, boxShadow: 3, borderRadius: 3, backgroundColor: "#FFFFFF" }}>
+    <Card sx={{ maxWidth: 800, margin: "auto", padding: 3, boxShadow: 3, borderRadius: 3,backgroundColor: "#F4F5F7" }}>
       <CardContent>
         {/* <Typography variant="h5" align="center" sx={{ fontWeight: "bold", mb: 2 }}>
           Leave Balance Overview
@@ -93,13 +93,16 @@ const LeaveBalanceChart = ({ email,year }) => {
         <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 1 }}>
           <Table>
             <TableHead>
-              <TableRow sx={{ backgroundColor: "#E3F2FD" }}>
+              <TableRow sx={{ backgroundColor: "#ccc" }}>
                 <TableCell sx={{ fontWeight: "bold" }}>Leave Type</TableCell>
                 <TableCell sx={{ fontWeight: "bold" }} align="center">
-                  Total Leaves
+                  Total 
                 </TableCell>
                 <TableCell sx={{ fontWeight: "bold" }} align="center">
-                  Available Leaves
+                  Available 
+                </TableCell>
+                <TableCell sx={{ fontWeight: "bold" }} align="center">
+                  Used 
                 </TableCell>
               </TableRow>
             </TableHead>
@@ -107,8 +110,9 @@ const LeaveBalanceChart = ({ email,year }) => {
               {Object.entries(leaveBalance).map(([type, data]) => (
                 <TableRow key={type}>
                   <TableCell>{type}</TableCell>
-                  <TableCell align="center">{data.totalLeaves === null ? "N/A" : data.totalLeaves}</TableCell>
-                  <TableCell align="center">{data.totalLeaves === null ? "N/A" : data.availableLeaves}</TableCell>
+                  <TableCell align="center">{data.totalLeaves === null ? "-" : data.totalLeaves}</TableCell>
+                  <TableCell align="center">{data.totalLeaves === null ? "-" : data.availableLeaves}</TableCell>
+                  <TableCell align="center">{ data.usedLeaves}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
