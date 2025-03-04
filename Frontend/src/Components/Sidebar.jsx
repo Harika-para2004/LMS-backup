@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUser,
@@ -26,26 +26,28 @@ const Sidebar = ({
   logo,
   Profile,
 }) => {
+  const location = useLocation(); 
   const isEmployee = userType === "employee";
   const isAdmin = userType === "admin";
   const isManager = userType === "manager";
+  // console.log("location.pathname",location.pathname);
 
   const generateLinks = () => {
     if (isEmployee) {
       return (
         <>
           <li>
-            <Link to="/employee/dashboard" className={selectedCategory === "dashboard" ? "active-tab" : ""}>
+            <Link to="/employee/dashboard" className={location.pathname === "/employee/dashboard" || location.pathname === "/employee" ? "active-tab" : ""}>
               <FontAwesomeIcon icon={faChartLine} /> Dashboard
             </Link>
           </li>
           <li>
-            <Link to="/employee/apply-leave" className={selectedCategory === "apply-leave" ? "active-tab" : ""}>
+            <Link to="/employee/apply-leave" className={location.pathname === "/employee/apply-leave" ? "active-tab" : ""}>
               <FontAwesomeIcon icon={faPaperPlane} /> Apply Leave
             </Link>
           </li>
           <li>
-            <Link to="/employee/history" className={selectedCategory === "history" ? "active-tab" : ""}>
+            <Link to="/employee/history" className={location.pathname === "/employee/history" ? "active-tab" : ""}>
               <FontAwesomeIcon icon={faHistory} />Leave History
             </Link>
           </li>
@@ -58,8 +60,7 @@ const Sidebar = ({
          <li>
            <Link
              to="/admin/calendar"
-             className={
-               selectedCategory === "holiday-calendar" ? "active-tab" : ""
+             className={location.pathname.includes("/admin/calendar") || location.pathname === "/admin" ? "active-tab" : ""
              }
            >
              <FontAwesomeIcon icon={faCalendarDays} /> Calendar
@@ -68,7 +69,7 @@ const Sidebar = ({
          <li>
            <Link
              to="/admin/all-employees"
-             className={selectedCategory === "employee-list" ? "active-tab" : ""}
+             className={location.pathname.includes("/admin/all-employees") ? "active-tab" : ""}
            >
              <FaListAlt style={{ marginRight: "8px" }} />
              Employee List
@@ -77,15 +78,15 @@ const Sidebar = ({
          <li>
            <Link
              to="/admin/all-reports"
-             className={selectedCategory === "reports" ? "active-tab" : ""}
-           >
+             className={["/admin/all-reports", "/admin/analytics", "/admin/dashboard"].some(path => location.pathname.includes(path)) ? "active-tab" : ""}
+             >
              <FontAwesomeIcon icon={faFileLines} /> Reports
            </Link>
          </li>
          <li>
            <Link
              to="/admin/leave-policies"
-             className={selectedCategory === "leavepolicy" ? "active-tab" : ""}
+             className={location.pathname.includes("/admin/leave-policies") ? "active-tab" : ""}
            >
              <FontAwesomeIcon icon={faClipboardList} /> Leave Policy
            </Link>
@@ -93,8 +94,7 @@ const Sidebar = ({
          <li>
            <Link
              to="/admin/leave-requests"
-             className={
-               selectedCategory === "leaverequests" ? "active-tab" : ""
+             className={location.pathname === "/admin/leave-requests" ? "active-tab" : ""
              }
            >
              <FontAwesomeIcon icon={faEnvelopeOpenText} /> Leave Requests
@@ -107,23 +107,25 @@ const Sidebar = ({
       return (
         <>
           <li>
-            <Link to="/manager/leave-requests" className={selectedCategory === "leaverequests" ? "active-tab" : ""}>
+            <Link to="/manager/leave-requests" className={location.pathname === "/manager/leave-requests" || location.pathname === "/manager" ? "active-tab" : ""}>
               <FontAwesomeIcon icon={faCalendarCheck} /> Leave Requests
             </Link>
           </li>
           <li>
-            <Link to="/manager/analytics" className={selectedCategory === "dashboard" ? "active-tab" : ""}>
+            <Link to="/manager/analytics" 
+            className={["/manager/all-reports", "/manager/analytics", "/manager/dashboard"].some(path => location.pathname.includes(path)) ? "active-tab" : ""}
+            >
               <FontAwesomeIcon icon={faChartLine} /> Dashboard
             </Link>
           </li>
           <hr />
           <li>
-            <Link to="/manager/apply-leave" className={selectedCategory === "apply-leave" ? "active-tab" : ""}>
+            <Link to="/manager/apply-leave" className={location.pathname === "/manager/apply-leave" ? "active-tab" : ""}>
               <FontAwesomeIcon icon={faPaperPlane} /> Apply Leave
             </Link>
           </li>
           <li>
-            <Link to="/manager/history" className={selectedCategory === "history" ? "active-tab" : ""}>
+            <Link to="/manager/history" className={location.pathname === "/manager/history" ? "active-tab" : ""}>
               <FontAwesomeIcon icon={faHistory} /> Leave History
             </Link>
           </li>

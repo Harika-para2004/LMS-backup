@@ -40,43 +40,68 @@ const LeaveStatusChart = ({ email,year }) => {
     const statuses = ["Pending", "Approved", "Rejected"];
     const barCount = leaveTypes.length;
     const barWidth = barCount < 4 ? 40 : "60%";
-
+  
     const statusColors = {
-      Pending: "#F4C542",
-      Approved: "#4CAF50",
-      Rejected: "#F44336",
+      Pending: ["#F4C542", "#FFD700"], // Golden gradient
+      Approved: ["#4CAF50", "#81C784"], // Green gradient
+      Rejected: ["#F44336", "#FF6B6B"], // Red gradient
     };
-
+  
     const seriesData = statuses.map((status) => ({
       name: status,
       type: "bar",
       stack: "total",
       barWidth,
       emphasis: { focus: "series" },
-      itemStyle: { color: statusColors[status] },
-      data: chartData.map((item) => item.statuses[status] || 0),
-      label: { show: false },
-    }));
-
-    return {
-      animation: false, // ✅ Disable animation for instant bar display
-
-      tooltip: {
-        trigger: "item",
-        formatter: (params) => `<b>${params.seriesName}</b>: ${params.value}`,
+      itemStyle: {
+        color: {
+          type: "linear",
+          x: 0,
+          y: 0,
+          x2: 0,
+          y2: 1,
+          colorStops: [
+            { offset: 0, color: statusColors[status][0] }, // Start color
+            { offset: 1, color: statusColors[status][1] }, // End color
+          ],
+        },
+        borderRadius: [5, 5, 0, 0], // Smooth edges on top
       },
+      data: chartData.map((item) => item.statuses[status] || 0),
+      label: { show: false }, // ❌ Hides numbers on bars
+    }));
+  
+    return {
+      animation: true,
+  
+      tooltip: {
+        trigger: "item", // ✅ Shows only hovered bar details
+        backgroundColor: "rgba(0, 0, 0, 0.75)",
+        textStyle: { color: "#fff" },
+        borderRadius: 5,
+        padding: 10,
+        formatter: (params) => {
+          return `<b>${params.seriesName}:</b> ${params.value}`;
+        },
+        axisPointer: {
+          type: "shadow", // ✅ Enables x-axis label tooltip without affecting bar tooltips
+        },
+      },
+  
       legend: {
         data: statuses,
-        orient: "horizontal",
         bottom: "5%",
         left: "center",
+        textStyle: { fontSize: 14, fontWeight: "bold" },
       },
+  
       grid: {
         left: "5%",
         right: "5%",
         bottom: "15%",
         containLabel: true,
       },
+  
       xAxis: {
         type: "category",
         data: leaveTypes,
@@ -84,25 +109,37 @@ const LeaveStatusChart = ({ email,year }) => {
           interval: 0,
           rotate: barCount > 2 ? 25 : 0,
           margin: 10,
-          formatter: (value) => (value.length > 10 ? value.slice(0, 5) + "" : value), // Truncate if longer than 10 characters
-
+          fontSize: 12,
+          color: "#555",
+          formatter: (value) =>
+            value.length > 6 ? value.substring(0, 6) + "..." : value, // ✅ Truncated text
         },
-        
+        axisTick: { show: false }, // ❌ Removes x-axis tick lines
+        axisLine: { lineStyle: { color: "#ddd" } }, // Keeps the main axis line
         tooltip: {
-          show: true, // Show tooltip when hovering over X-axis labels
-          formatter: (params) => params.value, // Display the full project name
+          show: true, // ✅ Enables tooltip for x-axis labels
+          formatter: (params) => params.value, // Shows full leave type name on hover
         },
       },
-      
-      
-      
+  
       yAxis: {
         type: "value",
         minInterval: 1,
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { fontSize: 12, color: "#555" },
+        splitLine: { lineStyle: { type: "dashed", color: "#ddd" } },
       },
+  
       series: seriesData,
     };
   };
+  
+  
+  
+  
+  
+  
 
   return (
     <Card sx={{ maxWidth: 700, margin: "auto", padding: 3, boxShadow: 3 }}>

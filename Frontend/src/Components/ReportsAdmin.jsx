@@ -12,8 +12,9 @@ const ReportsAdmin = () => {
 
   const yearsRange = useMemo(() => {
     const currentYear = new Date().getFullYear();
-    return Array.from({ length: 16 }, (_, i) => currentYear - i + (i === 15 ? 1 : 0));
+    return Array.from({ length: 17 }, (_, i) => currentYear - i + 1);
   }, []);
+  
   
 
   useEffect(() => {
@@ -33,64 +34,124 @@ const ReportsAdmin = () => {
     }
   };
 
-  const exportFile = async (url, filename) => {
-    try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Failed to export file");
-      const blob = await response.blob();
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.setAttribute("download", filename);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (error) {
-      console.error(`Error exporting ${filename}:`, error);
-    }
-  };
-
+ 
   const formatName = (str) =>
     str ? str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase()) : "N/A";
 
   const sortedReports = reports
-    .flatMap((report) =>
-      report.leaves.length > 0
-        ? report.leaves.map((leave) => ({
+  .flatMap((report) =>
+    report.leaves.length > 0
+      ? report.leaves.map((leave) => ({
+          empname: formatName(report.empname),
+          empid: report.empid,
+          email: report.email || "N/A",
+          project: formatName(report.project),
+          leaveType: formatName(leave.leaveType),
+          startDate: new Date(leave.startDate), // Convert to Date for sorting
+          endDate: formatDate(leave.endDate),
+          status: formatName(leave.status),
+        }))
+      : [
+          {
             empname: formatName(report.empname),
             empid: report.empid,
             email: report.email || "N/A",
             project: formatName(report.project),
-            leaveType: formatName(leave.leaveType),
-            startDate: formatDate(leave.startDate),
-            endDate: formatDate(leave.endDate),
-            status: formatName(leave.status),
-          }))
-        : [
-            {
-              empname: formatName(report.empname),
-              empid: report.empid,
-              email: report.email || "N/A",
-              project: formatName(report.project),
-              leaveType: "N/A",
-              startDate: new Date(0),
-              endDate: "N/A",
-              status: "No Leaves",
-            },
-          ]
+            leaveType: "N/A",
+            startDate: new Date(0), // Earliest date for proper sorting
+            endDate: "N/A",
+            status: "No Leaves",
+          },
+        ]
+  )
+  .sort((a, b) => {
+    if (a.empname !== b.empname) return a.empname.localeCompare(b.empname); // Sort by name first
+    return a.startDate - b.startDate; // Then sort by startDate within each employee
+  })
+  .filter((report) => 
+    report.email !== "admin@gmail.com" &&
+    (
+      report.empname.toLowerCase().includes(search.toLowerCase()) ||
+      report.email.toLowerCase().includes(search.toLowerCase()) ||
+      report.project.toLowerCase().includes(search.toLowerCase()) ||
+      report.empid.toString().includes(search)
     )
-    .sort((a, b) => a.empname.localeCompare(b.empname) || a.startDate - b.startDate);
+  )
+  .map((report) => ({
+    ...report,
+    startDate: formatDate(report.startDate), // Convert back to dd/mm/yyyy for display
+  }));
 
+  const exportExcel = async () => {
+    const url = "http://localhost:5001/reports/export-excel";
+  
+
+  
+    // ✅ Ensure search filter is applied before sending data
+    const filteredReports = reports.filter((report) =>
+      report.empname.toLowerCase().includes(search.toLowerCase()) ||
+      report.email.toLowerCase().includes(search.toLowerCase()) ||
+      report.project.toLowerCase().includes(search.toLowerCase()) ||
+      report.empid.toString().includes(search)
+    );
+  
+    const postData = {
+      year: selectedYear,
+      reports: filteredReports, // Send only searched reports
+    };
+  
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(postData),
+      });
+  
+      if (!response.ok) throw new Error("Failed to export file");
+  
+      const blob = await response.blob();
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute("download", "leave_reports.xlsx");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Error exporting Excel:", error);
+    }
+  };
+  
+    
+    const exportFile = async (url, filename) => {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Failed to export file");
+        const blob = await response.blob();
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (error) {
+        console.error(`Error exporting ${filename}:`, error);
+      }
+    };
   return (
     <div className="reports-container">
 <h2 className="content-heading">Annual Approved Leave Summary</h2>
 
       <div className="filters">
-        <input
-          type="text"
-          placeholder="Search by name, email, project or ID"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      {!showAnalytics && (
+ <input
+ type="text"
+ placeholder="Search by name,project, or ID"
+ value={search}
+ onChange={(e) => setSearch(e.target.value)}
+/>
+)}
 
         {/* ✅ Year Selection Dropdown */}
         <FormControl>
@@ -111,18 +172,9 @@ const ReportsAdmin = () => {
 
         <div className="export-buttons" id="export-buttons1">
           {!showAnalytics && (
-            <Button
-              onClick={() =>
-                exportFile(
-                  `http://localhost:5001/reports/export-excel`,
-                  "leave_reports.xlsx"
-                )
-              }
-              sx={{ textTransform: "none" }}
-              className="btn-excel"
-            >
-              Export Excel
-            </Button>
+            <button onClick={exportExcel} className="btn-excel">
+            Export Excel
+          </button>
           )}
         </div>
 

@@ -37,9 +37,9 @@ const ProfilePage = () => {
         leavePolicyRef, setLeavePolicyRef,
         navigate,
         showToast,
-        mergedLeaveData, setMergedLeaveData
+        // mergedLeaveData, setMergedLeaveData
   } = useManagerContext();
-  // const [mergedLeaveData, setMergedLeaveData] = useState([]);
+  const [mergedLeaveData, setMergedLeaveData] = useState([]);
   const [open, setOpen] = useState(false);
   const currentYear = new Date().getFullYear();
   const [formData, setFormData] = useState({
@@ -51,6 +51,51 @@ const ProfilePage = () => {
   const formatCase = (text) => {
     return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
   };
+
+  useEffect(() => {
+    const storedUserData = localStorage.getItem("userData");
+    console.log("storedUserData",storedUserData);
+    if (storedUserData) {
+      try {
+        const parsedUserData = JSON.parse(storedUserData);
+        if (parsedUserData) {
+          setUserData(parsedUserData);
+          setUsername(parsedUserData.empname || "");
+          setEmpid(parsedUserData.empid || "");
+          setManagerEmail(parsedUserData.managerEmail || "")
+          setEmail(parsedUserData.email || "");
+          setGender(parsedUserData.gender || "");
+          setProject(parsedUserData.project || "");
+          setRole(parsedUserData.role || "");
+        }
+      } catch (error) {
+        console.error("Error parsing userData from localStorage:", error);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchLeaveData = async () => {
+      try {
+        console.log("email in emp",email);
+        console.log("user email",userData.email)
+        const response = await fetch(
+          `http://localhost:5001/leavesummary?email=${email}`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Fetched Data:", data);
+          setLeaveData(data);
+        } else {
+          console.error("Failed to fetch leave data");
+        }
+      } catch (error) {
+        console.error("Error fetching leave data:", error);
+      }
+    };
+
+    fetchLeaveData();
+  }, []);
 
   useEffect(() => {
     const fetchLeavePolicies = async () => {
@@ -79,8 +124,9 @@ const ProfilePage = () => {
       }
     };
     console.log("1st email",email);
+    if(email)
     fetchLeavePolicies();
-  }, [leaveData]);
+  }, [leaveData,email]);
 
   // Open and Close Modal functions
   const handleOpen = () => setOpen(true);

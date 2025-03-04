@@ -26,7 +26,16 @@ const LeaveHistory = () => {
   const filteredLeaves = leaveHistory.filter((leave) =>
     leave.year === Number(selectedYear)
   );
-
+  filteredLeaves.sort((a, b) => {
+    // Convert the startDate strings to Date objects
+    const dateA = new Date(a.startDate);
+    const dateB = new Date(b.startDate);
+  
+    // Subtracting returns the difference in milliseconds
+    // If dateB is later than dateA, the result will be positive,
+    // so b comes before a, which sorts in descending order.
+    return dateB - dateA;
+  });
   // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -83,7 +92,8 @@ const LeaveHistory = () => {
       console.error("Error fetching leave history:", error);
     }
   };
-
+  
+  
   useEffect(() => {
     fetchLeavehistory();
   }, [email, selectedYear]);

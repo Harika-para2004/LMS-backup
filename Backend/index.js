@@ -25,7 +25,7 @@ const app = express();
 const port = process.env.PORT || 5001;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));  // Increase JSON body size limit
 /* mongodb+srv://lahiri:sai*123@cluster0.r7eze9l.mongodb.net/*/
 // Connect to MongoDB
 mongoose
@@ -688,10 +688,9 @@ app.get("/reports", async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 });
-
 app.get("/reports-admin", async (req, res) => {
   try {
-    const { project, search } = req.query;
+    const { project, search, year } = req.query;
     let query = {};
 
     if (project) query.project = project;
@@ -706,12 +705,12 @@ app.get("/reports-admin", async (req, res) => {
     // Fetch employees based on project & search
     const employees = await User.find(query);
 
-    // Fetch leave data for each employee (only approved leaves)
+    // Fetch leave data for each employee (only approved leaves in selected year)
     const reports = await Promise.all(
       employees.map(async (employee) => {
         const leaves = await Leave.find({ email: employee.email });
 
-        // Filter only approved leaves
+        // Filter only approved leaves within the selected year
         const approvedLeaves = leaves.flatMap((leave) =>
           leave.startDate
             .map((start, index) => ({
@@ -725,10 +724,14 @@ app.get("/reports-admin", async (req, res) => {
               duration: leave.duration[index] || "N/A",
               attachments: leave.attachments[index] || [],
             }))
-            .filter((leave) => leave.status === "Approved") // ✅ Only approved leaves
+            .filter(
+              (leave) =>
+                leave.status === "Approved" &&
+                new Date(leave.startDate).getFullYear() === parseInt(year) // ✅ Filter by year
+            )
         );
 
-        // Only return employees who have at least one approved leave
+        // Only return employees who have at least one approved leave in the selected year
         if (approvedLeaves.length > 0) {
           return {
             empid: employee.empid,
@@ -739,7 +742,7 @@ app.get("/reports-admin", async (req, res) => {
           };
         }
 
-        return null; // Ignore employees with no approved leaves
+        return null; // Ignore employees with no approved leaves in the selected year
       })
     );
 
@@ -752,6 +755,7 @@ app.get("/reports-admin", async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 });
+
 
 
 
@@ -769,13 +773,12 @@ const formatLeaveDate = (date) => {
   if (!date || date === "N/A" || date === "Invalid date") return "N/A";
   return moment(date).isValid() ? moment(date).format("DD/MM/YYYY") : "N/A";
 };
-
 app.get("/reports/export-excel", async (req, res) => {
   try {
-    let { project, reports } = req.query;
+    let { project, reports,year } = req.query;
     let query = {};
     if (project) query.project = project;
-
+    // console.log("reports:", reports);
     if (typeof reports === "string") {
       try {
         reports = JSON.parse(reports);
@@ -785,6 +788,7 @@ app.get("/reports/export-excel", async (req, res) => {
       }
     }
 
+    // const employees = await User.find(query);
     const employees = Array.isArray(reports)
       ? reports
           .filter((report) => report.email !== "admin@gmail.com")
@@ -808,43 +812,59 @@ app.get("/reports/export-excel", async (req, res) => {
     let allReports = [];
 
     for (const empemail of employees) {
-      const empl = await User.findOne({ email: empemail }); // Fetch user details once
-      if (!empl) continue; // Skip if employee not found
-
-      const leaves = await Leave.find({ email: empemail });
-
-      let approvedLeaves = leaves.flatMap((leave) =>
-        leave.startDate
-          .map((start, i) => ({
-            empid: empl.empid,
-            empname: formatName(empl.empname),
-            email: empl.email || "N/A",
-            project: formatName(empl.project),
-            leaveType: formatName(leave.leaveType),
-            startDate: new Date(start),
-            endDate: formatDate(leave.endDate[i]),
-            status: formatName(leave.status[i] || "Pending"),
-          }))
-          .filter((leave) => leave.status === "Approved") // ✅ Only approved leaves
-      );
-
-      if (approvedLeaves.length > 0) {
-        allReports.push(...approvedLeaves);
+      const empl = await User.find({ email: empemail });
+      for (const emp of empl) {
+        const leaves = await Leave.find({ 
+          email: empemail, 
+          year: { $elemMatch: { $elemMatch: { $eq: Number(year) } } }  // ✅ Double `$elemMatch` for deeply nested arrays
+        });
+        
+               console.log(emp);
+        if (leaves.length > 0) {
+          leaves.forEach((leave, index) => {
+            leave.startDate.forEach((start, i) => {
+              allReports.push({
+                empid: emp.empid,
+                empname: formatName(emp.empname),
+                email: emp.email || "N/A",
+                project: formatName(emp.project),
+                leaveType: formatName(leave.leaveType),
+                startDate: new Date(start), // Convert to Date for sorting
+                endDate: formatDate(leave.endDate[i]),
+                status: formatName(leave.status[i] || "Pending"),
+              });
+            });
+          });
+        } else {
+          allReports.push({
+            empid: emp.empid,
+            empname: formatName(emp.empname),
+            email: emp.email || "N/A",
+            project: formatName(emp.project),
+            leaveType: "N/A",
+            startDate: new Date(0), // Default earliest date for sorting
+            endDate: "N/A",
+            status: "No Leaves",
+          });
+        }
       }
     }
 
-    // **Sorting: First by empname (A-Z), then by startDate (earliest first)**
+    // **Sorting logic: First by name (A-Z), then by startDate (earliest first)**
     allReports.sort((a, b) => {
       if (a.empname < b.empname) return -1;
       if (a.empname > b.empname) return 1;
-      return a.startDate - b.startDate;
+      return a.startDate - b.startDate; // Sort by date if names are same
     });
 
-    // Add sorted approved data to the worksheet
+    // Add sorted data to the worksheet
     allReports.forEach((report) => {
       worksheet.addRow({
         ...report,
-        startDate: formatDate(report.startDate),
+        startDate:
+          report.startDate.getTime() === 0
+            ? "N/A"
+            : formatDate(report.startDate),
       });
     });
 
@@ -864,6 +884,111 @@ app.get("/reports/export-excel", async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 });
+app.post("/reports/export-excel", async (req, res) => {
+  try {
+    let { project, reports, year } = req.body;
+    let query = {};
+    if (project) query.project = project;
+
+    if (!Array.isArray(reports)) {
+      return res.status(400).json({ message: "Invalid reports format" });
+    }
+
+    const employees = reports
+      .filter((report) => report.email !== "admin@gmail.com")
+      .map((report) => report.email);
+
+    const workbook = new excelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Reports");
+
+    worksheet.columns = [
+      { header: "Employee ID", key: "empid", width: 15 },
+      { header: "Name", key: "empname", width: 25 },
+      { header: "Email", key: "email", width: 30 },
+      { header: "Project", key: "project", width: 25 },
+      { header: "Leave Type", key: "leaveType", width: 20 },
+      { header: "Start Date", key: "startDate", width: 15 },
+      { header: "End Date", key: "endDate", width: 15 },
+      { header: "Status", key: "status", width: 15 },
+    ];
+
+    let allReports = [];
+
+    for (const empemail of employees) {
+      const empl = await User.find({ email: empemail });
+      for (const emp of empl) {
+        const leaves = await Leave.find({
+          email: empemail,
+          year: { $elemMatch: { $elemMatch: { $eq: Number(year) } } },
+        });
+
+        let empLeaves = [];
+
+        if (leaves.length > 0) {
+          leaves.forEach((leave) => {
+            leave.startDate.forEach((start, i) => {
+              if (leave.status[i] === "Approved") {
+                empLeaves.push({
+                  empid: emp.empid,
+                  empname: emp.empname,
+                  email: emp.email || "N/A",
+                  project: emp.project,
+                  leaveType: leave.leaveType,
+                  startDate: new Date(start),
+                  endDate: new Date(leave.endDate[i]),
+                  status: leave.status[i],
+                });
+              }
+            });
+          });
+        }
+
+        // ✅ Sort leaves **within** the employee based on startDate
+        empLeaves.sort((a, b) => a.startDate - b.startDate);
+
+        // ✅ Push sorted leaves to allReports
+        allReports.push(...empLeaves);
+      }
+    }
+
+    // Convert dates to `dd/mm/yyyy` before writing to Excel
+// ✅ Sort employees alphabetically and their leaves by startDate
+allReports.sort((a, b) => {
+  if (a.empname.toLowerCase() !== b.empname.toLowerCase()) {
+    return a.empname.toLowerCase().localeCompare(b.empname.toLowerCase());
+  }
+  return a.startDate - b.startDate;
+});
+
+// ✅ Convert dates to `dd/mm/yyyy` before writing to Excel
+allReports.forEach((report) => {
+  worksheet.addRow({
+    ...report,
+    startDate: formatDate(report.startDate),
+    endDate: formatDate(report.endDate),
+  });
+});
+
+
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=leave_reports.xlsx"
+    );
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error("Error exporting Excel:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
+
+
 
 const PDFDocument = require("pdfkit");
 const moment = require("moment");

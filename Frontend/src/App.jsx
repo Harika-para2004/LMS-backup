@@ -162,7 +162,7 @@ function App() {
                 <Route path="reports" element={<ReportsAdmin />} />
               </Route>
 
-              <Route path="dashboard/:email?" element={<EmployeeDashboard />} />
+              <Route path="dashboard/:managerEmail/:email?" element={<EmployeeDashboard />} />
               <Route path="leave-requests" element={<LeaveRequestsTable />} />
               <Route path="leave-policies" element={<LeavePolicyPage />} />
               <Route path="calendar" element={<HolidayCalendar />} />
