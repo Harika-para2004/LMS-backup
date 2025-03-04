@@ -145,7 +145,7 @@ const ApplyLeave = () =>
         showToast("End Date cannot be on a weekend.", "warning");
         return;
       }
-
+   
       let currentDate = startDayjs;
 
       // ✅ Loop through the date range but only check for holidays (ignore weekends in between)

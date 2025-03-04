@@ -22,34 +22,42 @@ const LeaveTrendChart = ({ email, year }) => {
         const res = await axios.get(
           `http://localhost:5001/leave-trends/${email}/${year}`
         );
-  
+      
         console.log("Fetched Data:", res.data);
-        
+      
         const data = res.data || [];
-  
+      
         if (data.length === 0) {
           console.log("No leave data found.");
           setChartData([]);
           setLeaveTypes([]);
-          return; // ✅ Stops execution here, preventing error state
+          return; // ✅ Prevents error from being set
         }
-  
+      
         setChartData(data);
-  
+      
         const types = new Set();
         data.forEach((monthData) => {
           Object.keys(monthData).forEach((key) => {
             if (key !== "month") types.add(key);
           });
         });
-  
+      
         setLeaveTypes([...types]);
       } catch (err) {
         console.error("Error fetching leave trends:", err);
-        setError("Failed to load leave trends."); // ✅ Only sets error if request truly fails
+      
+        if (err.response && err.response.status === 404) {
+          // ✅ Handle 404 explicitly by treating it as "No data" instead of an error
+          setChartData([]);
+          setLeaveTypes([]);
+        } else {
+          setError("Failed to load leave trends."); // ✅ Only set error for actual failures
+        }
       } finally {
         setLoading(false);
       }
+     
     };
   
     fetchData();
@@ -115,16 +123,19 @@ const LeaveTrendChart = ({ email, year }) => {
   
     return {
       animation: true,
-  
       tooltip: {
-        trigger: "item", // Change trigger to 'item' so it only shows the hovered item
-        backgroundColor: "rgba(0, 0, 0, 0.75)", 
+        trigger: "item",  // Show tooltip only for the hovered bar
+        backgroundColor: "rgba(0, 0, 0, 0.75)",
         borderRadius: 6,
         textStyle: { color: "#fff", fontSize: 12 },
         formatter: function (params) {
-          return `<strong style="color:${params.color}">${params.seriesName}:</strong> ${params.value}`;
+          return `
+            <span style="display:inline-block;width:10px;height:10px;background-color:${params.color};margin-right:5px;border-radius:50%;"></span>
+            <strong>${params.seriesName}:</strong> ${params.value}
+          `;
         },
       },
+      
   
       legend: {
         data: leaveTypes,

@@ -321,7 +321,6 @@ router.get("/leave-status/:year", async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 });
-
 router.get("/leave-type-distribution/:year", async (req, res) => {
   try {
     const { year } = req.params;
@@ -335,35 +334,36 @@ router.get("/leave-type-distribution/:year", async (req, res) => {
       return res.status(500).json({ message: "Server Error: Data is invalid" });
     }
 
-    const leaveTypeCount = {};
+    const leaveTypeDuration = {};
 
     // Step 1: Iterate over reports safely
     reports.forEach(({ leaves }) => {
       if (!Array.isArray(leaves)) return;
 
-      leaves.forEach(({ leaveType, startDate, endDate, status }) => {
-        if (!startDate || !endDate || !status) return;
+      leaves.forEach(({ leaveType, startDate, endDate, status, duration }) => {
+        if (!startDate || !endDate || !status || !duration) return;
 
         const startYear = new Date(startDate).getFullYear();
         const endYear = new Date(endDate).getFullYear();
 
         // Check if the selectedYear is in the start or end year
         if ((startYear === selectedYear || endYear === selectedYear) && status === "Approved") {
-          leaveTypeCount[leaveType] = (leaveTypeCount[leaveType] || 0) + 1;
+          leaveTypeDuration[leaveType] = (leaveTypeDuration[leaveType] || 0) + duration;
         }
       });
     });
 
-    console.log("✅ Leave Type Distribution:", JSON.stringify(leaveTypeCount, null, 2));
+    console.log("✅ Leave Type Duration Distribution:", JSON.stringify(leaveTypeDuration, null, 2));
 
     // Step 2: Return structured response
-    res.status(200).json(leaveTypeCount);
+    res.status(200).json(leaveTypeDuration);
 
   } catch (error) {
     console.error("❌ Error fetching leave type distribution:", error);
     res.status(500).json({ message: "Server Error" });
   }
 });
+
 
 
 // router.get("/manager-leave-trends/:year/:managerEmail", async (req, res) => {

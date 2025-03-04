@@ -1339,7 +1339,7 @@ app.get('/leave-type-status/:email/:year', async (req, res) => {
 
     const formattedResponse = {};
 
-    leaveStats.forEach(({ leaveType, status, year: leaveYears }) => {
+    leaveStats.forEach(({ leaveType, status, year: leaveYears, duration }) => {
       if (!formattedResponse[leaveType]) {
         formattedResponse[leaveType] = { Pending: 0, Approved: 0, Rejected: 0 };
       }
@@ -1347,7 +1347,8 @@ app.get('/leave-type-status/:email/:year', async (req, res) => {
       // Iterate through each set of years and statuses
       leaveYears.forEach((yearGroup, i) => {
         if (Array.isArray(yearGroup) && yearGroup.includes(parseInt(year))) {
-          formattedResponse[leaveType][status[i]] = (formattedResponse[leaveType][status[i]] || 0) + 1;
+          const leaveDuration = duration[i] ? duration[i].reduce((acc, days) => acc + days, 0) : 0;
+          formattedResponse[leaveType][status[i]] = (formattedResponse[leaveType][status[i]] || 0) + leaveDuration;
         }
       });
     });
@@ -1358,15 +1359,17 @@ app.get('/leave-type-status/:email/:year', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 app.get("/leave-trends/:email/:year", async (req, res) => {
   const { email, year } = req.params;
 
   try {
     const leaves = await Leave.find({ email });
 
-    if (!leaves.length) {
-      return res.status(404).json({ message: "No leave records found." });
-    }
+  if (!leaves.length) {
+  return res.status(200).json([]); // ✅ Return an empty array with 200 OK
+}
+
 
     const leaveTrends = Array(12).fill(null).map((_, idx) => ({ month: idx + 1 }));
 
