@@ -84,6 +84,14 @@ const Reports = () => {
           ]
     )
     .sort((a, b) => a.empname.localeCompare(b.empname) || a.startDate - b.startDate);
+    const exportExcel = async () => {
+      await exportFile(
+        `http://localhost:5001/reports/export-excel?year=${selectedYear}&reports=${JSON.stringify(
+          reports
+        )}`,
+        "leave_reports.xlsx"
+      );
+    };
     const exportFile = async (url, filename) => {
       try {
         const response = await fetch(url);
@@ -103,12 +111,13 @@ const Reports = () => {
     <div className="reports-container">
 <h2 className="content-heading">Annual Approved Leave Summary</h2>
 <div className="filters">
-        <input
+{!showAnalytics && (
+   <input
           type="text"
-          placeholder="Search by name, email, project or ID"
+          placeholder="Search by name, project or ID"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-        />
+        />)}
         <Select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="year-select">
           {yearsRange.map((year) => (
             <MenuItem key={year} value={year}>
@@ -129,7 +138,7 @@ const Reports = () => {
 
                       {!showAnalytics && (
         <div className="export-buttons" id="export-buttons">
-          <button onClick={() => exportFile(`http://localhost:5001/reports/export-excel`, "leave_reports.xlsx")} className="btn-excel">
+              <button onClick={exportExcel} className="btn-excel">
             Export Excel
           </button>
         </div>)}

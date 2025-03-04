@@ -1,6 +1,15 @@
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useEffect, useState, useMemo } from "react";
-import { Grid, Typography, Select, MenuItem, FormControl, InputLabel } from "@mui/material";
-import { useLocation, useParams } from "react-router-dom";
+import {
+  Grid,
+  Typography,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Button,
+} from "@mui/material";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useManagerContext } from "../context/ManagerContext";
 import LeaveStatusChart from "./LeaveStatusChart";
 import LeaveBalanceChart from "./LeaveBalanceChart";
@@ -8,7 +17,7 @@ import LeaveTrendChart from "./LeaveTrendChart";
 
 const EmployeeDashboard = () => {
   const { email: contextEmail } = useManagerContext();
-  const { email: paramEmail } = useParams();
+  const { managerEmail, email: paramEmail } = useParams(); // Access both params
   const location = useLocation();
   const [userData, setUserData] = useState(location.state?.userData || {});
   const [email, setEmail] = useState(userData?.email);
@@ -22,6 +31,28 @@ const EmployeeDashboard = () => {
     }
   }, [contextEmail, paramEmail]);
 
+  const navigate = useNavigate();
+
+  const role = localStorage.getItem("role"); // Retrieve role from localStorage
+
+  const handleBack = () => {
+
+    if (role === "Manager") {
+      navigate("/manager/analytics/employees");
+    } else if (role === "Admin") {
+      navigate(`/admin/analytics/${managerEmail}/employees`);
+    }
+  };
+
+  console.log("mg1 email" ,email);
+  console.log("mg2 email" ,paramEmail);
+  console.log("mg3 email" ,contextEmail);
+  console.log("mg4 email" ,userData?.email);
+
+
+
+
+
   const yearsRange = useMemo(() => {
     const currentYear = new Date().getFullYear();
     return Array.from({ length: 15 }, (_, i) => currentYear + 1 - i);
@@ -30,7 +61,27 @@ const EmployeeDashboard = () => {
   return (
     <Grid container direction="column" sx={{ p: 3 }}>
       {/* Year Selection - Styled Officially */}
-      <Grid container justifyContent="center" sx={{ mb: 3 }}>
+      <Grid container justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+
+        { !location.pathname.includes("/analytics") && (role === "Manager" || role === "Admin") &&   <Button
+          variant="contained"
+          color="primary"
+          startIcon={<ArrowBackIcon />}
+          onClick={handleBack}
+          sx={{
+            textTransform: "none",
+            fontSize: "1rem",
+            fontWeight: 500,
+            borderRadius: 2,
+            px: 3,
+            py: 1,
+            bgcolor: "#1976d2",
+            "&:hover": { bgcolor: "#1565c0" },
+          }}
+        >
+          Back
+        </Button>}
+
         <FormControl sx={{ minWidth: 150 }}>
           <InputLabel>Select Year</InputLabel>
           <Select

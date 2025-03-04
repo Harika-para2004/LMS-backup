@@ -13,8 +13,12 @@ const LeaveTrendChart = ({ email, year }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   useEffect(() => {
-    if (!email || !year) return;
+    // Clear previous data immediately if email or year is missing or changing
+    setChartData([]);
+    setLeaveTypes([]);
   
+    if (!email || !year) return;
+    
     const fetchData = async () => {
       setLoading(true);
       setError(null);
@@ -22,38 +26,37 @@ const LeaveTrendChart = ({ email, year }) => {
         const res = await axios.get(
           `http://localhost:5001/leave-trends/${email}/${year}`
         );
-  
+    
         console.log("Fetched Data:", res.data);
         
         const data = res.data || [];
-  
+    
         if (data.length === 0) {
           console.log("No leave data found.");
-          setChartData([]);
-          setLeaveTypes([]);
-          return; // ✅ Stops execution here, preventing error state
+          return; // Stops execution here if no data is found
         }
-  
+    
         setChartData(data);
-  
+    
         const types = new Set();
         data.forEach((monthData) => {
           Object.keys(monthData).forEach((key) => {
             if (key !== "month") types.add(key);
           });
         });
-  
+    
         setLeaveTypes([...types]);
       } catch (err) {
         console.error("Error fetching leave trends:", err);
-        setError("Failed to load leave trends."); // ✅ Only sets error if request truly fails
+        setError("Failed to load leave trends.");
       } finally {
         setLoading(false);
       }
     };
   
     fetchData();
-  }, [email, year]);  
+  }, [email, year]);
+    
   const getYAxisInterval = (maxValue) => {
     return maxValue <= 10 ? 1 : 1;
   };

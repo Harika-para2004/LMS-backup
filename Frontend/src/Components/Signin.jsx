@@ -16,9 +16,11 @@ const LoginForm = () => {
   const {
     showToast,
   } = useManagerContext();
+
   useEffect( () => {
     localStorage.removeItem("userData");
     localStorage.removeItem("admin");
+    localStorage.clear();
   },[]);
 
   const handleInputChange = (e) => {
@@ -34,6 +36,7 @@ const LoginForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.email === "admin@gmail.com" && formData.password === "1234") {
+      localStorage.setItem("role", "Admin");
       localStorage.setItem("admin", JSON.stringify(formData.email));
       navigate(`/admin`);
     } else {
@@ -47,6 +50,7 @@ const LoginForm = () => {
           );
           const userData = userDataResponse.data;
 
+          localStorage.setItem("role", userData.role);
           localStorage.setItem("userData", JSON.stringify(userData));
           
           if (

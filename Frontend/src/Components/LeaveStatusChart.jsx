@@ -84,7 +84,7 @@ const LeaveStatusChart = ({ email,year }) => {
           interval: 0,
           rotate: barCount > 2 ? 25 : 0,
           margin: 10,
-          formatter: (value) => (value.length > 10 ? value.slice(0, 5) + "..." : value), // Truncate if longer than 10 characters
+          formatter: (value) => (value.length > 10 ? value.slice(0, 5)  : value), // Truncate if longer than 10 characters
 
         },
         

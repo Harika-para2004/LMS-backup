@@ -32,9 +32,7 @@ router.post('/uploadEmployees', upload.single('file'), async (req, res) => {
         // Check if the uploaded file has the correct columns
         const hasCorrectFormat = expectedColumns.every(col => fileColumns.includes(col));
     
-        if (!hasCorrectFormat) {
-          return res.status(400).json({ message: "Wrong format! Please upload a correctly formatted file." });
-        }
+     
         const newUsers = [];
         const failedEntries = [];
         for (let row of sheetData) {

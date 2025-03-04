@@ -1874,3 +1874,21 @@ td:hover{
   background-color: #45a049;
 }
 
+.active-tab {
+  background-color: rgba(255, 255, 255, 0.2); /* Subtle highlight */
+  color: #ffffff; /* Ensuring text remains visible */
+  font-weight: bold;
+  border-left: 4px solid white; /* Gold highlight on the left */
+  padding: 8px 12px; /* Adjust padding for uniform alignment */
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease-in-out;
+}
+
+.active-tab svg {
+  color: white; /* Match the border color for consistency */
+}
+
+.sidebar ul li a:hover {
+  background-color: rgba(255, 255, 255, 0.3); /* Slightly darker hover effect */
+}
