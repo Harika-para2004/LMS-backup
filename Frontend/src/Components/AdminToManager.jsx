@@ -23,7 +23,7 @@ const AdminToManager = () => {
   const handleBack = () => {
 
     if (role === "Admin") {
-      navigate("/admin/all-reports");
+      navigate("/admin/all-reports/managers");
     } 
   };
 

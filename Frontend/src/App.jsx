@@ -157,7 +157,7 @@ function App() {
               </Route>
 
               <Route path="all-reports" element={<AdminTrends />}>
-                <Route index element={<ManagersList />} />
+                <Route index element={<ReportsAdmin />} />
                 <Route path="managers" element={<ManagersList />} />
                 <Route path="reports" element={<ReportsAdmin />} />
               </Route>

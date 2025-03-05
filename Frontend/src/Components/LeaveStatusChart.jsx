@@ -84,7 +84,7 @@ const LeaveStatusChart = ({ email,year }) => {
           return `<b>${params.seriesName}:</b> ${params.value}`;
         },
         axisPointer: {
-          type: "shadow", // ✅ Enables x-axis label tooltip without affecting bar tooltips
+          type: "shadow", 
         },
       },
   
@@ -112,13 +112,13 @@ const LeaveStatusChart = ({ email,year }) => {
           fontSize: 12,
           color: "#555",
           formatter: (value) =>
-            value.length > 6 ? value.substring(0, 6) + "..." : value, // ✅ Truncated text
+            value.length > 6 ? value.substring(0, 6) + "..." : value,
         },
-        axisTick: { show: false }, // ❌ Removes x-axis tick lines
-        axisLine: { lineStyle: { color: "#ddd" } }, // Keeps the main axis line
+        axisTick: { show: false }, 
+        axisLine: { lineStyle: { color: "#ddd" } }, 
         tooltip: {
-          show: true, // ✅ Enables tooltip for x-axis labels
-          formatter: (params) => params.value, // Shows full leave type name on hover
+          show: true,
+          formatter: (params) => params.value,
         },
       },
   

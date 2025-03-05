@@ -41,6 +41,7 @@ const ManagerDashboard = () => {
             backgroundColor: location.pathname.includes(`${baseRoute}/self`) ? "var(--deep-blue)" : "transparent",
             color: location.pathname.includes(`${baseRoute}/self`) ? "white" : "var(--deep-blue)",
             minWidth: "200px",
+            textTransform:"none",
           }}
         >
           Personal Dashboard
@@ -52,6 +53,7 @@ const ManagerDashboard = () => {
             backgroundColor: location.pathname.includes(`${baseRoute}/reports`) ? "var(--deep-blue)" : "transparent",
             color: location.pathname.includes(`${baseRoute}/reports`) ? "white" : "var(--deep-blue)",
             minWidth: "200px",
+            textTransform:"none",
           }}
         >
           Reports
@@ -63,6 +65,7 @@ const ManagerDashboard = () => {
             backgroundColor: location.pathname.includes(`${baseRoute}/employees`) ? "var(--deep-blue)" : "transparent",
             color: location.pathname.includes(`${baseRoute}/employees`) ? "white" : "var(--deep-blue)",
             minWidth: "200px",
+            textTransform:"none",
           }}
         >
           Employee Dashboards

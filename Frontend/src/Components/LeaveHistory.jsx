@@ -4,14 +4,11 @@ import { MdCheckCircle, MdCancel, MdWatchLater } from "react-icons/md";
 import { FaTrash } from "react-icons/fa";
 import { formatDate } from "../utils/dateUtlis";
 import { useManagerContext } from "../context/ManagerContext";
-import { Button, Select, MenuItem } from "@mui/material";
+import { Button, Select, MenuItem, FormControl } from "@mui/material";
 
 const LeaveHistory = () => {
-  const {
-    leaveHistory, setLeaveHistory,
-    email, setEmail,
-    showToast
-  } = useManagerContext();
+  const { leaveHistory, setLeaveHistory, email, setEmail, showToast } =
+    useManagerContext();
 
   const [currentPage, setCurrentPage] = useState(1);
   const currentYear = new Date().getFullYear();
@@ -20,17 +17,20 @@ const LeaveHistory = () => {
   const itemsPerPage = 10;
 
   // Generate last 17 years dynamically
-  const yearsRange = useMemo(() => Array.from({ length: 18 }, (_, i) => currentYear + 1 - i), [currentYear]);
+  const yearsRange = useMemo(
+    () => Array.from({ length: 18 }, (_, i) => currentYear + 1 - i),
+    [currentYear]
+  );
 
   // ✅ Correct Year Filtering: Ensure year is properly compared
-  const filteredLeaves = leaveHistory.filter((leave) =>
-    leave.year === Number(selectedYear)
+  const filteredLeaves = leaveHistory.filter(
+    (leave) => leave.year === Number(selectedYear)
   );
   filteredLeaves.sort((a, b) => {
     // Convert the startDate strings to Date objects
     const dateA = new Date(a.startDate);
     const dateB = new Date(b.startDate);
-  
+
     // Subtracting returns the difference in milliseconds
     // If dateB is later than dateA, the result will be positive,
     // so b comes before a, which sorts in descending order.
@@ -81,7 +81,9 @@ const LeaveHistory = () => {
 
   const fetchLeavehistory = async () => {
     try {
-      const response = await fetch(`http://localhost:5001/leave-history?email=${email}&year=${selectedYear}`);
+      const response = await fetch(
+        `http://localhost:5001/leave-history?email=${email}&year=${selectedYear}`
+      );
       if (response.ok) {
         const data = await response.json();
         setLeaveHistory(data);
@@ -92,32 +94,78 @@ const LeaveHistory = () => {
       console.error("Error fetching leave history:", error);
     }
   };
-  
-  
+
   useEffect(() => {
     fetchLeavehistory();
   }, [email, selectedYear]);
 
   return (
     <div className="history-container">
-      <h2 className="content-heading">Leave History</h2>
-
       {/* Year Filter Dropdown */}
       <div className="history-header">
-  <h2 className="content-heading"></h2>
+        <h2 className="content-heading">Leave History</h2>
+        <div className="legend-container">
+          <div className="legend-item">
+            <MdWatchLater size={20} color="blue" /> <span>Pending</span>
+          </div>
+          <div className="legend-item">
+            <MdCheckCircle size={20} color="green" /> <span>Approved</span>
+          </div>
+          <div className="legend-item">
+            <MdCancel size={20} color="red" /> <span>Rejected</span>
+          </div>
+        </div>
 
-  {/* Year Filter Dropdown (Top Right) */}
-  <div className="year-filter">
-    <Select
-      value={selectedYear}
-      onChange={(e) => setSelectedYear(e.target.value)}
-      className="year-select"
-    >
-      {yearsRange.map((year) => (
-        <MenuItem key={year} value={year}>
-          {year}
-        </MenuItem>
-      ))}</Select></div></div>
+        {/* Year Filter Dropdown (Top Right) */}
+        <div className="year-filter">
+          <FormControl
+            sx={{
+              minWidth: 85,
+              bgcolor: "white",
+              borderRadius: 1,
+              boxShadow: "0px 2px 6px rgba(159, 50, 178, 0.2)", // Softer purple glow for elegance
+              "& .MuiOutlinedInput-notchedOutline": { border: "none" }, // Removes default border
+            }}
+          >
+            <Select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              displayEmpty
+              sx={{
+                fontSize: "12px",
+                fontWeight: 500,
+                color: "#fff",
+                background: "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)", // Elegant gradient
+                borderRadius: 1,
+                height: 40, // Slightly reduced height for compact look
+                px: 1.2, // Well-balanced padding
+                bgcolor: "#fafafa", // Softer background
+                transition: "all 0.3s ease-in-out",
+                "&:hover": { bgcolor: "#f0f0f0" },
+                "&.Mui-focused": {
+                  background:
+                    "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)", // Elegant gradient
+                  boxShadow: "0px 3px 8px rgba(159, 50, 178, 0.3)", // Elegant focused effect
+                },
+              }}
+            >
+              {yearsRange.map((year) => (
+                <MenuItem
+                  key={year}
+                  value={year}
+                  sx={{
+                    fontSize: "12px",
+                    px: 1.2,
+                    "&:hover": { bgcolor: "#f5e9f7" }, // Subtle hover effect
+                  }}
+                >
+                  {year}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </div>
+      </div>
       <table>
         <thead>
           <tr>
@@ -154,16 +202,24 @@ const LeaveHistory = () => {
                   <td>{getStatusIcon(leave.status)}</td>
                   <td>
                     <button
-                      onClick={() => handleDelete(leave._id, formatDate(leave.startDate))}
+                      onClick={() =>
+                        handleDelete(leave._id, formatDate(leave.startDate))
+                      }
                       className="delete-btn"
                       disabled={leave.status !== "Pending"}
                       style={{
                         border: "none",
-                        cursor: leave.status !== "Pending" ? "not-allowed" : "pointer",
+                        cursor:
+                          leave.status !== "Pending"
+                            ? "not-allowed"
+                            : "pointer",
                         opacity: leave.status !== "Pending" ? 0.5 : 1,
                       }}
                     >
-                      <FaTrash size={18} color={leave.status === "Pending" ? "red" : "gray"} />
+                      <FaTrash
+                        size={18}
+                        color={leave.status === "Pending" ? "red" : "gray"}
+                      />
                     </button>
                   </td>
                 </tr>

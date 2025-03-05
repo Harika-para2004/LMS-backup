@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { formatDate } from "../utils/dateUtlis";
 import ManagerEmployeeDashboard from "./ManagerEmployeeDashboard";
-import { Button, Select, MenuItem } from "@mui/material";
+import { Button, Select, MenuItem, FormControl, Stack, Pagination } from "@mui/material";
 import { useManagerContext } from "../context/ManagerContext";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
@@ -23,7 +23,6 @@ const Reports = () => {
   const yearsRange = useMemo(() => {
     return Array.from({ length: 17 }, (_, i) => currentYear - (i - 1));
   }, [currentYear]);
-  
 
   useEffect(() => {
     if (paramEmail) {
@@ -55,7 +54,9 @@ const Reports = () => {
   };
 
   const formatName = (str) =>
-    str ? str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase()) : "N/A";
+    str
+      ? str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
+      : "N/A";
 
   const sortedReports = reports
     .flatMap((report) =>
@@ -83,50 +84,118 @@ const Reports = () => {
             },
           ]
     )
-    .sort((a, b) => a.empname.localeCompare(b.empname) || a.startDate - b.startDate);
-    const exportExcel = async () => {
-      await exportFile(
-        `http://localhost:5001/reports/export-excel?year=${selectedYear}&reports=${JSON.stringify(
-          reports
-        )}`,
-        "leave_reports.xlsx"
-      );
+    .sort(
+      (a, b) => a.empname.localeCompare(b.empname) || a.startDate - b.startDate
+    );
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const employeesPerPage = 10;
+  
+    // Calculate the indexes for slicing the data
+    const indexOfLastEmployee = currentPage * employeesPerPage;
+    const indexOfFirstEmployee = indexOfLastEmployee - employeesPerPage;
+    const currentReports = sortedReports.slice(
+      indexOfFirstEmployee,
+      indexOfLastEmployee
+    );
+  
+    // Handle page change
+    const handlePageChange = (event, value) => {
+      setCurrentPage(value);
     };
-    const exportFile = async (url, filename) => {
-      try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("Failed to export file");
-        const blob = await response.blob();
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.setAttribute("download", filename);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } catch (error) {
-        console.error(`Error exporting ${filename}:`, error);
-      }
-    };
+
+  const exportExcel = async () => {
+    await exportFile(
+      `http://localhost:5001/reports/export-excel?year=${selectedYear}&reports=${JSON.stringify(
+        reports
+      )}`,
+      "leave_reports.xlsx"
+    );
+  };
+  const exportFile = async (url, filename) => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Failed to export file");
+      const blob = await response.blob();
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error(`Error exporting ${filename}:`, error);
+    }
+  };
   return (
     <div className="reports-container">
-<h2 className="content-heading">Annual Approved Leave Summary</h2>
-<div className="filters">
-{!showAnalytics && (
-   <input
-          type="text"
-          placeholder="Search by name, project or ID"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />)}
-        <Select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="year-select">
-          {yearsRange.map((year) => (
-            <MenuItem key={year} value={year}>
-              {year}
-            </MenuItem>
-          ))}
-        </Select>
-      
-        <Button onClick={() => setShowAnalytics(!showAnalytics)} sx={{ textTransform: "none" }} className="btn-analytics">
+      <div className="filters">
+        <h2 className="content-heading">Annual Approved Leave Summary</h2>
+        <FormControl
+          sx={{
+            minWidth: 85,
+            bgcolor: "white",
+            borderRadius: 1,
+            boxShadow: "0px 2px 6px rgba(159, 50, 178, 0.2)", // Softer purple glow for elegance
+            "& .MuiOutlinedInput-notchedOutline": { border: "none" }, // Removes default border
+          }}
+        >
+          <Select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+            displayEmpty
+            sx={{
+              fontSize: "12px",
+              fontWeight: 500,
+              color: "#fff",
+              background: "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)", // Elegant gradient
+              borderRadius: 1,
+              height: 40, // Slightly reduced height for compact look
+              px: 1.2, // Well-balanced padding
+              bgcolor: "#fafafa", // Softer background
+              transition: "all 0.3s ease-in-out",
+              "&:hover": { bgcolor: "#f0f0f0" },
+              "&.Mui-focused": {
+                background: "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)", // Elegant gradient
+                boxShadow: "0px 3px 8px rgba(159, 50, 178, 0.3)", // Elegant focused effect
+              },
+            }}
+          >
+            {yearsRange.map((year) => (
+              <MenuItem
+                key={year}
+                value={year}
+                sx={{
+                  fontSize: "12px",
+                  px: 1.2,
+                  "&:hover": { bgcolor: "#f5e9f7" }, // Subtle hover effect
+                }}
+              >
+                {year}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <Button
+          onClick={() => setShowAnalytics(!showAnalytics)}
+          sx={{
+            textTransform: "none",
+            fontSize: "14px",
+            fontWeight: 500,
+            color: "#333", // Normal text color
+            background: "#fff", // Default white background
+            borderRadius: 1,
+            height: 40, // Matches Select height
+            px: 2, // Balanced padding
+            border: "1px solid #ccc", // Light border for structure
+            transition: "all 0.3s ease-in-out",
+            "&:hover": {
+              background: "#f5f5f5", // Subtle hover effect
+            },
+          }}
+          className="btn-analytics"
+        >
           {showAnalytics ? "Show Reports" : "Show Analytics"}
         </Button>
       </div>
@@ -134,16 +203,27 @@ const Reports = () => {
         <ManagerEmployeeDashboard email={email} selectedYear={selectedYear} />
       ) : (
         <div className="table-container" id="table-container">
-                      <h2 className="table-heading">Export the Annual Approved Leave Data</h2>
+          {!showAnalytics && (
+            <div className="export-container">
+              <h2 className="">Export the Annual Approved Leave Data</h2>
+              <div className="search-container">
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="Search by name, project or ID"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
 
-                      {!showAnalytics && (
-        <div className="export-buttons" id="export-buttons">
-              <button onClick={exportExcel} className="btn-excel">
-            Export Excel
-          </button>
-        </div>)}
+              <div className="export-btn">
+                <button onClick={exportExcel} className="btn-excel">
+                  Export Excel
+                </button>
+              </div>
+            </div>
+          )}
           <table>
-            
             <thead>
               <tr>
                 <th>Employee</th>
@@ -156,8 +236,8 @@ const Reports = () => {
               </tr>
             </thead>
             <tbody>
-              {sortedReports.length > 0 ? (
-                sortedReports
+              {currentReports.length > 0 ? (
+                currentReports
                   .filter((report) => report.email !== "admin@gmail.com")
                   .map((report, index) => (
                     <tr key={index}>
@@ -179,6 +259,14 @@ const Reports = () => {
               )}
             </tbody>
           </table>
+          <Stack spacing={2} sx={{ mt: 2, display: "flex", alignItems: "center" }}>
+        <Pagination
+          count={Math.ceil(sortedReports.length / employeesPerPage)}
+          page={currentPage}
+          onChange={handlePageChange}
+          color="primary"
+        />
+      </Stack>
         </div>
       )}
     </div>

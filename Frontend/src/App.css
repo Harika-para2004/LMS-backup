@@ -104,15 +104,95 @@ body, html {
   position: relative;
 }
 
+.legend-container {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  /* margin-top: 10px; */
+  margin-left: 400px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #555;
+}
+
+.export-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 15px;
+  padding: 10px;
+  border-radius: 12px;
+  margin-bottom: 5px;
+  background: linear-gradient(135deg, #f5f7fa, #e6ecf0);
+  /* box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12); */
+  border: 1px solid #dce1e7;
+}
+
+.export-container h2 {
+  font-size: 17px;
+  font-weight: bold;
+  color: #555;
+  margin: 0;
+}
+
+.search-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.search-input {
+  width: 100%;
+  max-width: 350px;
+  padding: 10px;
+  border: 1px solid #c0c7d0;
+  border-radius: 8px;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.3s ease-in-out;
+}
+
+.export-btn {
+  display: flex;
+  justify-content: center;
+}
+
+.btn-excel {
+  padding: 10px 18px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  background: #007bff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0 3px 8px rgba(0, 123, 255, 0.3);
+}
+
+.btn-excel:hover {
+  background: #0056b3;
+  box-shadow: 0 4px 12px rgba(0, 86, 179, 0.3);
+}
+
 .year-filter {
   position: relative;
-  top: -10px;
+  /* top: -10px; */
+  display: flex;
+  gap: 10px;
   right: 0;
 }
 
 .dashboard-container .main-content {
   flex: 1;
-  padding: 40px 20px;
+  padding: 0px 20px;
   /* overflow: hidden; */
   background-color: #F7F8FA;
   overflow-y: auto;
@@ -485,12 +565,15 @@ body, html {
 
  .holiday-table th,
 .holiday-table td {
-  padding: 4px;
+  padding: 0px 5px;
   text-align: left;
   font-size: 14px;
   border-bottom: 1px solid #ddd;
 }
 
+.css-jiabcu-MuiTableCell-root{
+  padding: 0px 16px;
+}
 
 
 .holiday-table th {
@@ -1652,7 +1735,7 @@ body {
   align-items: center;
   flex-wrap: wrap;
   gap: 30px;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 
 .filters input {
@@ -1674,6 +1757,8 @@ body {
 .export-buttons {
   display: flex;
   gap: 10px;
+  background-color: var(--purple);
+
 }
 
 .export-buttons button {
@@ -1687,12 +1772,12 @@ body {
 }
 
 .btn-excel {
-  background-color: #28a745;
+  background-color: var(--purple);
   color: white;
 }
 
 .btn-excel:hover {
-  background-color: #218838;
+  background-color: var(--purple);
 }
 
 .btn-pdf {
@@ -1864,7 +1949,7 @@ td:hover{
 
 #btn-excel {
   padding: 8px 10px;
-  background-color: #4CAF50;
+  background-color: var(--purple);
   color: white;
   border: none;
   cursor: pointer;

@@ -231,6 +231,10 @@ const HolidayCalendar = () => {
     });
   };
 
+  const formatCase = (text) => {
+    return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
   const handleAddHoliday = async () => {
     if (!validateForm()) return;
 
@@ -500,9 +504,7 @@ const HolidayCalendar = () => {
                       <input
                         type="text"
                         name="name"
-                        value={formData.name
-                          .toLowerCase()
-                          .replace(/\b\w/g, (char) => char.toUpperCase())}
+                        value={formatCase(formData.name)}
                         onChange={handleInputChange}
                       />
                     </td>

@@ -38,10 +38,10 @@ import {
     console.log("employees",employees);
   
     return (
-      <Box p={2}>
-        <Typography variant="h6" gutterBottom>
+      <Box >
+        {/* <Typography variant="h6" gutterBottom>
           Managers List
-        </Typography>
+        </Typography> */}
         <TableContainer component={Paper}>
           <Table size="small">
             <TableHead>

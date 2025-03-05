@@ -67,29 +67,32 @@ const ManagerDashboard = () => {
     <Box sx={{ width: "100%", typography: "body1", p: 2 }}>
       {/* Navigation Tabs as Buttons */}
       <Stack direction="row" spacing={2} justifyContent="center" sx={{ mb: 3 }}>
-        <Button
-          variant={location.pathname.includes("/all-reports/managers") ? "contained" : "outlined"}
-          onClick={() => navigate("/admin/all-reports/managers")}
-          sx={{
-            backgroundColor:
-              location.pathname.includes("/all-reports/managers") ? "var(--deep-blue)" : "transparent",
-            color: location.pathname.includes("/all-reports/managers") ? "white" : "var(--deep-blue)",
-            minWidth: "200px",
-          }}
-        >
-          Managers Dashboards
-        </Button>
+        
         <Button
           variant={location.pathname.includes("/all-reports/reports") ? "contained" : "outlined"}
           onClick={() => navigate("/admin/all-reports/reports")}
           sx={{
             backgroundColor:
-              location.pathname.includes("/all-reports/reports") ? "var(--deep-blue)" : "transparent",
-            color: location.pathname.includes("/all-reports/reports") ? "white" : "var(--deep-blue)",
+            ["/all-reports","/all-reports/reports"].some(path => location.pathname.includes(path)) && !location.pathname.includes("/managers") ? "var(--deep-blue)" : "transparent",
+            color: ["/all-reports","/all-reports/reports"].some(path => location.pathname.includes(path)) && !location.pathname.includes("/managers")  ? "white" : "var(--deep-blue)",
             minWidth: "200px",
+            textTransform:"none",
           }}
         >
           Reports
+        </Button>
+        <Button
+          variant={location.pathname.includes("/all-reports/managers") ? "contained" : "outlined"}
+          onClick={() => navigate("/admin/all-reports/managers")}
+          sx={{
+            backgroundColor:
+            [ "/all-reports/managers"].some(path => location.pathname.includes(path)) && !location.pathname.includes("/reports") ? "var(--deep-blue)" : "transparent",
+            color:  [ "/all-reports/managers"].some(path => location.pathname.includes(path)) && !location.pathname.includes("/reports") ? "white" : "var(--deep-blue)",
+            minWidth: "200px",
+            textTransform:"none",
+          }}
+        >
+          Manager Dashboards
         </Button>
         
       </Stack>
