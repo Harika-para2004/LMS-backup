@@ -574,7 +574,9 @@ body, html {
 .css-jiabcu-MuiTableCell-root{
   padding: 0px 16px;
 }
-
+.css-jiabcu-MuiTableCell-root {
+  padding: 0px 16px;
+}
 
 .holiday-table th {
   background: var(--dark-blue);

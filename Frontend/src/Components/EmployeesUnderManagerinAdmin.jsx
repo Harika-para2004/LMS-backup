@@ -70,9 +70,9 @@ const EmployeesUnderManagerinAdmin = () => {
 
   return (
     <Box p={2}>
-      <Typography variant="h6" gutterBottom>
+      {/* <Typography variant="h6" gutterBottom>
         Employees List
-      </Typography>
+      </Typography> */}
       <TableContainer component={Paper}>
         <Table size="small">
           <TableHead>

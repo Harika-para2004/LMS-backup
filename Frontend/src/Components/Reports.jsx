@@ -1,7 +1,14 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { formatDate } from "../utils/dateUtlis";
 import ManagerEmployeeDashboard from "./ManagerEmployeeDashboard";
-import { Button, Select, MenuItem, FormControl, Stack, Pagination } from "@mui/material";
+import {
+  Button,
+  Select,
+  MenuItem,
+  FormControl,
+  Stack,
+  Pagination,
+} from "@mui/material";
 import { useManagerContext } from "../context/ManagerContext";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
@@ -86,21 +93,21 @@ const Reports = () => {
     .sort(
       (a, b) => a.empname.localeCompare(b.empname)     );
 
-    const [currentPage, setCurrentPage] = useState(1);
-    const employeesPerPage = 10;
-  
-    // Calculate the indexes for slicing the data
-    const indexOfLastEmployee = currentPage * employeesPerPage;
-    const indexOfFirstEmployee = indexOfLastEmployee - employeesPerPage;
-    const currentReports = sortedReports.slice(
-      indexOfFirstEmployee,
-      indexOfLastEmployee
-    );
-  
-    // Handle page change
-    const handlePageChange = (event, value) => {
-      setCurrentPage(value);
-    };
+  const [currentPage, setCurrentPage] = useState(1);
+  const employeesPerPage = 15;
+
+  // Calculate the indexes for slicing the data
+  const indexOfLastEmployee = currentPage * employeesPerPage;
+  const indexOfFirstEmployee = indexOfLastEmployee - employeesPerPage;
+  const currentReports = sortedReports.slice(
+    indexOfFirstEmployee,
+    indexOfLastEmployee
+  );
+
+  // Handle page change
+  const handlePageChange = (event, value) => {
+    setCurrentPage(value);
+  };
 
   const exportExcel = async () => {
     await exportFile(
@@ -257,14 +264,17 @@ const Reports = () => {
               )}
             </tbody>
           </table>
-          <Stack spacing={2} sx={{ mt: 2, display: "flex", alignItems: "center" }}>
-        <Pagination
-          count={Math.ceil(sortedReports.length / employeesPerPage)}
-          page={currentPage}
-          onChange={handlePageChange}
-          color="primary"
-        />
-      </Stack>
+          <Stack
+            spacing={2}
+            sx={{ mt: 2, display: "flex", alignItems: "center" }}
+          >
+            <Pagination
+              count={Math.ceil(sortedReports.length / employeesPerPage)}
+              page={currentPage}
+              onChange={handlePageChange}
+              color="primary"
+            />
+          </Stack>
         </div>
       )}
     </div>

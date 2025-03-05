@@ -38,12 +38,10 @@ const AdminAnalytics = ({year}) => {
     fetchAnalytics(year);
     fetchManagers();
   }, [year]);
-  useEffect(() => {
-    fetchAnalytics(year);
-    fetchManagers();
-  }, []);
-
-
+  // useEffect(() => {
+  //   fetchAnalytics(year);
+  //   fetchManagers();
+  // }, []);
 
   const fetchAnalytics = async (year) => {
     setLoading(true);
@@ -427,99 +425,91 @@ const leaveStatusOptions = {
   
 
   return (
-    <Card sx={{ p: 2, width: "100%", mb: 2,overflowY:"auto" }}>
+    < >
       <CardContent>
-       
-
         {loading ? (
           <CircularProgress sx={{ display: "block", mx: "auto", mt: 2 }} />
         ) : (
-          <Grid container spacing={2} sx={{ mt: 2 }}>
-            <Grid item xs={12} md={12} style={{ height: 400, width: "100%" }}>
-              {noTrendsData ? (
-                <div>
-                  <Typography>{`Leave Trends - ${year}`} </Typography>
-                  <p>No leave data available</p>
-                </div>
-              ) : (
-                <ReactECharts
-                  option={trendsOptions}
-                  style={{ height: 400, width: "100%" }}
-                />
-              )}
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} md={12}>
+              <Card sx={{ p: 2, bgcolor: "#eef2f7", boxShadow: 2 }}>
+                {noTrendsData ? (
+                  <div>
+                    <Typography>{`Leave Trends - ${year}`} </Typography>
+                    <p>No leave data available</p>
+                  </div>
+                ) : (
+                  <ReactECharts option={trendsOptions} style={{ height: 400, width: "100%" }} />
+                )}
+              </Card>
             </Grid>
-            <Grid item xs={12} md={6} style={{ height: 400, width: "100%" }}>
-              {noDeptData ? (
-                <div>
-                  <Typography variant="h6" sx={{ mb: 3 }}>
-                    {`Project wise Leave Trends - ${year}`}{" "}
-                  </Typography>
-                  <p>No leave data  available .</p>
-                </div>
-              ) : (
-                <ReactECharts
-                  option={departmentLeavesOptions}
-                  style={{ height: 400, width: "100%" }}
-                />
-              )}
+  
+            <Grid item xs={12} md={6}>
+              <Card sx={{ p: 2, bgcolor: "#eef2f7", boxShadow: 2 }}>
+                {noDeptData ? (
+                  <div>
+                    <Typography variant="h6" sx={{ mb: 3 }}>
+                      {`Project wise Leave Trends - ${year}`}
+                    </Typography>
+                    <p>No leave data available.</p>
+                  </div>
+                ) : (
+                  <ReactECharts option={departmentLeavesOptions} style={{ height: 400, width: "100%" }} />
+                )}
+              </Card>
             </Grid>
-            <Grid item xs={12} md={6} style={{ height: 400, width: "100%" }}>
-              {noTypesData ? (
-                <div>
-                  <Typography variant="h6" sx={{ mb: 3 }}>
-                    {`Leave Status Trends - ${year}`}{" "}
-                  </Typography>
-                  <p>No leave data  available </p>
-                </div>
-              ) : (
-                <ReactECharts
-                  option={leaveTypesOptions}
-                  style={{ height: 400, width: "100%" }}
-                />
-              )}
+  
+            <Grid item xs={12} md={6}>
+              <Card sx={{ p: 2, bgcolor: "#eef2f7", boxShadow: 2 }}>
+                {noTypesData ? (
+                  <div>
+                    <Typography variant="h6" sx={{ mb: 3 }}>
+                      {`Leave Status Trends - ${year}`}
+                    </Typography>
+                    <p>No leave data available</p>
+                  </div>
+                ) : (
+                  <ReactECharts option={leaveTypesOptions} style={{ height: 400, width: "100%" }} />
+                )}
+              </Card>
             </Grid>
-
-           
-
-            <Grid item xs={12} md={6} style={{ height: 400, width: "100%" }}>
-              {noTopEmployeesData ? (
-                <div>
-                  <Typography variant="h6" sx={{ mb: 3 }}>
-                    {`Top 10 leave takers - ${year}`}{" "}
-                  </Typography>
-                  <p>No leave data available .</p>
-                </div>
-              ) : (
-                <ReactECharts
-                  option={topLeaveTakersOptions}
-                  style={{ height: 400, width: "100%" }}
-                />
-              )}
+  
+            <Grid item xs={12} md={6}>
+              <Card sx={{ p: 2, bgcolor: "#eef2f7", boxShadow: 2 }}>
+                {noTopEmployeesData ? (
+                  <div>
+                    <Typography variant="h6" sx={{ mb: 3 }}>
+                      {`Top 10 leave takers - ${year}`}
+                    </Typography>
+                    <p>No leave data available.</p>
+                  </div>
+                ) : (
+                  <ReactECharts option={topLeaveTakersOptions} style={{ height: 400, width: "100%" }} />
+                )}
+              </Card>
             </Grid>
-
-            <Grid item xs={12} md={6} style={{ height: 400, width: "100%" }}>
-              {noLeaveStatusData ? (
-                <div>
-                  <Typography variant="h6" sx={{ mb: 3 }}>
-                    {`Leave Status Distribution `}{" "}
-                  </Typography>
-                  <p>No leave data available .</p>
-                </div>
-              ) : (
-                <ReactECharts
-                  option={leaveStatusOptions}
-                  style={{ height: 400, width: "100%" }}
-                />
-              )}
+  
+            <Grid item xs={12} md={6}>
+              <Card sx={{ p: 2, bgcolor: "#eef2f7", boxShadow: 2 }}>
+                {noLeaveStatusData ? (
+                  <div>
+                    <Typography variant="h6" sx={{ mb: 3 }}>
+                      {`Leave Status Distribution`}
+                    </Typography>
+                    <p>No leave data available.</p>
+                  </div>
+                ) : (
+                  <ReactECharts option={leaveStatusOptions} style={{ height: 400, width: "100%" }} />
+                )}
+              </Card>
             </Grid>
-
-           
-          
           </Grid>
         )}
       </CardContent>
-    </Card>
+    </>
   );
+  
+  
 };
 
 export default AdminAnalytics;

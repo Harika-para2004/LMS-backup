@@ -38,8 +38,12 @@ const ManagerDashboard = () => {
           variant={location.pathname.includes(`${baseRoute}/self`) ? "contained" : "outlined"}
           onClick={() => navigate(`${baseRoute}/self`)}
           sx={{
-            backgroundColor: location.pathname.includes(`${baseRoute}/self`) ? "var(--deep-blue)" : "transparent",
-            color: location.pathname.includes(`${baseRoute}/self`) ? "white" : "var(--deep-blue)",
+
+            backgroundColor: 
+            [`${baseRoute}/self`,`${baseRoute}`].some(path => location.pathname.includes(path)) && !location.pathname.includes("/reports") &&  !location.pathname.includes("/employees") ? "var(--deep-blue)" : "transparent",
+            color:  [`${baseRoute}/self`,`${baseRoute}`].some(path => location.pathname.includes(path)) && !location.pathname.includes("/reports")  && !location.pathname.includes("/employees") ? "white" : "var(--deep-blue)",
+            // location.pathname.includes(`${baseRoute}/self`) ? "var(--deep-blue)" : "transparent",
+            // color: location.pathname.includes(`${baseRoute}/self`) ? "white" : "var(--deep-blue)",
             minWidth: "200px",
             textTransform:"none",
           }}

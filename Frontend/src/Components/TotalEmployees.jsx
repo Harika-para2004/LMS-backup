@@ -68,7 +68,7 @@ const TotalEmployees = () => {
     );
 
   const [currentPage, setCurrentPage] = useState(1);
-  const employeesPerPage = 10;
+  const employeesPerPage = 15;
 
   // Calculate the indexes for slicing the data
   const indexOfLastEmployee = currentPage * employeesPerPage;

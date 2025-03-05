@@ -87,21 +87,21 @@ const ReportsAdmin = () => {
       startDate: formatDate(report.startDate), // Convert back to dd/mm/yyyy for display
     }));
 
-    const [currentPage, setCurrentPage] = useState(1);
-    const employeesPerPage = 10;
-  
-    // Calculate the indexes for slicing the data
-    const indexOfLastEmployee = currentPage * employeesPerPage;
-    const indexOfFirstEmployee = indexOfLastEmployee - employeesPerPage;
-    const currentReports = sortedReports.slice(
-      indexOfFirstEmployee,
-      indexOfLastEmployee
-    );
-  
-    // Handle page change
-    const handlePageChange = (event, value) => {
-      setCurrentPage(value);
-    };
+  const [currentPage, setCurrentPage] = useState(1);
+  const employeesPerPage = 15;
+
+  // Calculate the indexes for slicing the data
+  const indexOfLastEmployee = currentPage * employeesPerPage;
+  const indexOfFirstEmployee = indexOfLastEmployee - employeesPerPage;
+  const currentReports = sortedReports.slice(
+    indexOfFirstEmployee,
+    indexOfLastEmployee
+  );
+
+  // Handle page change
+  const handlePageChange = (event, value) => {
+    setCurrentPage(value);
+  };
 
   const exportExcel = async () => {
     const url = "http://localhost:5001/reports/export-excel";
@@ -162,6 +162,7 @@ const ReportsAdmin = () => {
     <div className="reports-container">
       <div className="filters">
         <h2 className="content-heading">Annual Approved Leave Summary</h2>
+
         <FormControl
           sx={{
             minWidth: 85,
@@ -300,18 +301,19 @@ const ReportsAdmin = () => {
               )}
             </tbody>
           </table>
-          <Stack spacing={2} sx={{ mt: 2, display: "flex", alignItems: "center" }}>
-        <Pagination
-          count={Math.ceil(sortedReports.length / employeesPerPage)}
-          page={currentPage}
-          onChange={handlePageChange}
-          color="primary"
-        />
-      </Stack>
+          <Stack
+            spacing={2}
+            sx={{ mt: 2, display: "flex", alignItems: "center" }}
+          >
+            <Pagination
+              count={Math.ceil(sortedReports.length / employeesPerPage)}
+              page={currentPage}
+              onChange={handlePageChange}
+              color="primary"
+            />
+          </Stack>
         </div>
       )}
-
-
     </div>
   );
 };

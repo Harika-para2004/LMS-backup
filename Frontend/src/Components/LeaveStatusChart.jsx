@@ -149,7 +149,7 @@ const LeaveStatusChart = ({ email,year }) => {
         ) : chartData.length === 0 ? (
           <Typography align="center">No data available for {year}.</Typography>
         ) : (
-          <ReactECharts option={getOption()} style={{ height: 400 }} />
+          <ReactECharts option={getOption()} style={{ height: 340 }} />
         )}
       </CardContent>
     </Card>

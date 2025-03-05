@@ -252,7 +252,7 @@ const ApplyLeave = () =>
       );
 
       if (
-        leaveType.toLowerCase().includes("LOP") &&
+        leaveType.toLowerCase().includes("lop") &&
         casualLeave?.availableLeaves > 0
       ) {
         showToast(
@@ -306,6 +306,7 @@ const ApplyLeave = () =>
         showToast("Leave application submitted successfully!", "success");
         setFormData({ leaveType: "", startDate: "", endDate: "", reason: "" });
         setFile(null);
+        setFileName("")
         setErrors({});
       } catch (error) {
         console.error("Error submitting form:", error);

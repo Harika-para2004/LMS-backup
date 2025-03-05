@@ -4,17 +4,17 @@ import { MdCheckCircle, MdCancel, MdWatchLater } from "react-icons/md";
 import { FaTrash } from "react-icons/fa";
 import { formatDate } from "../utils/dateUtlis";
 import { useManagerContext } from "../context/ManagerContext";
-import { Button, Select, MenuItem, FormControl } from "@mui/material";
+import { Button, Select, MenuItem, FormControl, Stack, Pagination } from "@mui/material";
 
 const LeaveHistory = () => {
   const { leaveHistory, setLeaveHistory, email, setEmail, showToast } =
     useManagerContext();
 
-  const [currentPage, setCurrentPage] = useState(1);
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
 
-  const itemsPerPage = 10;
+
+
 
   // Generate last 17 years dynamically
   const yearsRange = useMemo(
@@ -36,11 +36,31 @@ const LeaveHistory = () => {
     // so b comes before a, which sorts in descending order.
     return dateB - dateA;
   });
+  
   // Pagination logic
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentLeaves = filteredLeaves.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredLeaves.length / itemsPerPage);
+  // const itemsPerPage = 15;
+  // const [currentPage, setCurrentPage] = useState(1);
+  // const indexOfLastItem = currentPage * itemsPerPage;
+  // const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  // const currentLeaves = filteredLeaves.slice(indexOfFirstItem, indexOfLastItem);
+  // const totalPages = Math.ceil(filteredLeaves.length / itemsPerPage);
+
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
+
+  // Calculate the indexes for slicing the data
+  const indexOfLastEmployee = currentPage * itemsPerPage;
+  const indexOfFirstEmployee = indexOfLastEmployee - itemsPerPage;
+  const currentItems = filteredLeaves.slice(
+    indexOfFirstEmployee,
+    indexOfLastEmployee
+  );
+
+  // Handle page change
+  const handlePageChange = (event, value) => {
+    setCurrentPage(value);
+  };
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -180,8 +200,8 @@ const LeaveHistory = () => {
           </tr>
         </thead>
         <tbody>
-          {currentLeaves.length > 0 ? (
-            currentLeaves
+          {currentItems.length > 0 ? (
+            currentItems
               .sort((a, b) => new Date(b.startDate) - new Date(a.startDate))
               .map((leave, index) => (
                 <tr key={index}>
@@ -233,31 +253,14 @@ const LeaveHistory = () => {
           )}
         </tbody>
       </table>
-      {totalPages > 1 && (
-        <div className="pagination">
-          <button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-            className="pagination-btn"
-          >
-            ◀
-          </button>
-
-          <span className="pagination-info">
-            {currentPage} / {totalPages}
-          </span>
-
-          <button
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-            }
-            disabled={currentPage === totalPages}
-            className="pagination-btn"
-          >
-            ▶
-          </button>
-        </div>
-      )}
+      <Stack spacing={2} sx={{ mt: 2, display: "flex", alignItems: "center" }}>
+        <Pagination
+          count={Math.ceil(filteredLeaves.length / itemsPerPage)}
+          page={currentPage}
+          onChange={handlePageChange}
+          color="primary"
+        />
+      </Stack>
     </div>
   );
 };

@@ -4,6 +4,8 @@ import {
   FormControlLabel,
   Checkbox,
   FormControl,
+  Stack,
+  Pagination,
 } from "@mui/material";
 import { MdCheckCircle, MdCancel, MdWatchLater } from "react-icons/md";
 import { useManagerContext } from "../context/ManagerContext";
@@ -26,6 +28,9 @@ const LeaveRequestsTable = () => {
     setSelectedLeave,
     selectedFilter,
     setSelectedFilter,
+    email,
+    role,
+    showToast,
   } = useManagerContext();
 
   const location = useLocation();
@@ -104,7 +109,7 @@ const LeaveRequestsTable = () => {
   const fetchLeaveRequests = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5001/leaverequests?userRole=${userData.role}&userEmail=${userData.email}&year=${selectedYear}`
+        `http://localhost:5001/leaverequests?userRole=${role}&userEmail=${email}&year=${selectedYear}`
       );
       if (response.ok) {
         const data = await response.json();
@@ -121,18 +126,13 @@ const LeaveRequestsTable = () => {
   };
 
   useEffect(() => {
-    if (
-      userData.role !== "Admin" &&
-      userData.email &&
-      selectedYear &&
-      userData.role === "Manager"
-    ) {
+    if (email && selectedYear && role) {
       console.log(
-        `Fetching leave requests for ${userData.email} in ${selectedYear} role is ${userData.role}`
+        `Fetching leave requests for ${email} in ${selectedYear} role is ${role}`
       );
       fetchLeaveRequests();
     }
-  }, [userData.email, selectedYear, userData.role]);
+  }, [email, selectedYear, role]);
 
   const handleFilterChange = (e) => {
     setSelectedFilter(e.target.value);
@@ -182,7 +182,7 @@ const LeaveRequestsTable = () => {
         return;
       }
       if (leave.totalLeaves && leave.availableLeaves < totalLeaveDays) {
-        console.log("Not enough available leaves.");
+        showToast("Not enough available leaves.");
         return;
       }
       // console.log("totalLeaves",leave.totalLeaves === 0);
@@ -319,6 +319,7 @@ const LeaveRequestsTable = () => {
     () => Array.from({ length: 18 }, (_, i) => currentYear + 1 - i),
     [currentYear]
   );
+
   const filteredLeaves = leaveRequests.filter((leave) => {
     const yearValues = leave.year.flat(2); // Flatten nested arrays
     return yearValues.includes(Number(selectedYear)); // Check if selectedYear exists in the array
@@ -333,8 +334,7 @@ const LeaveRequestsTable = () => {
   );
   const getDownloadLink = (attachments) =>
     `http://localhost:5001/${attachments}`;
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10; // Show 10 leave requests per page
+
   const formatCase = (text) => {
     return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
   };
@@ -377,9 +377,6 @@ const LeaveRequestsTable = () => {
           (leave) => leave.status === selectedFilter.toLowerCase()
         );
 
-  // 🔹 Pagination logic (use displayedData after it's declared)
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const sortedItems = [...displayedData]
     .filter((item) => item.startDate) // Remove invalid dates
     .sort(
@@ -388,20 +385,48 @@ const LeaveRequestsTable = () => {
         new Date(a.startDate.split("/").reverse().join("-"))
     );
 
-  const currentItems = sortedItems.slice(indexOfFirstItem, indexOfLastItem);
+  // 🔹 Pagination logic (use displayedData after it's declared)
+  // const [currentPage, setCurrentPage] = useState(1);
+  // const itemsPerPage = 15;
+  // const indexOfLastItem = currentPage * itemsPerPage;
+  // const indexOfFirstItem = indexOfLastItem - itemsPerPage;
 
-  // console.log(
-  //   "Sorted Items:",
-  //   currentItems.map((i) => i.startDate)
-  // );
+  // const currentItems = sortedItems.slice(indexOfFirstItem, indexOfLastItem);
 
-  const totalPages = Math.ceil(displayedData.length / itemsPerPage);
+  // const totalPages = Math.ceil(displayedData.length / itemsPerPage);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
+
+  // Calculate the indexes for slicing the data
+  const indexOfLastEmployee = currentPage * itemsPerPage;
+  const indexOfFirstEmployee = indexOfLastEmployee - itemsPerPage;
+  const currentItems = sortedItems.slice(
+    indexOfFirstEmployee,
+    indexOfLastEmployee
+  );
+
+  // Handle page change
+  const handlePageChange = (event, value) => {
+    setCurrentPage(value);
+  };
 
   return (
     <div>
       <div className="history-container">
         <div className="history-header">
           <h2 className="content-heading">Leave Requests</h2>
+          <div className="legend-container" style={{ marginLeft: "10px" }}>
+            <div className="legend-item">
+              <MdWatchLater size={20} color="blue" /> <span>Pending</span>
+            </div>
+            <div className="legend-item">
+              <MdCheckCircle size={20} color="green" /> <span>Approved</span>
+            </div>
+            <div className="legend-item">
+              <MdCancel size={20} color="red" /> <span>Rejected</span>
+            </div>
+          </div>
           <div className="year-filter">
             {/* Filters */}
             <div className="filter-container">
@@ -454,6 +479,7 @@ const LeaveRequestsTable = () => {
                 </Select>
               </FormControl>
             </div>
+            {/* year filter */}
             <FormControl
               sx={{
                 minWidth: 85,
@@ -611,32 +637,14 @@ const LeaveRequestsTable = () => {
           </tbody>
         </table>
 
-        {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="pagination">
-            <button
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="pagination-btn"
-            >
-              ◀
-            </button>
-
-            <span className="pagination-info">
-              {currentPage} / {totalPages}
-            </span>
-
-            <button
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-              }
-              disabled={currentPage === totalPages}
-              className="pagination-btn"
-            >
-              ▶
-            </button>
-          </div>
-        )}
+        <Stack spacing={2} sx={{ mt: 2, display: "flex", alignItems: "center" }}>
+        <Pagination
+          count={Math.ceil(sortedItems.length / itemsPerPage)}
+          page={currentPage}
+          onChange={handlePageChange}
+          color="primary"
+        />
+      </Stack>
       </div>
       <Modal open={modalOpen} onClose={handleCloseModal}>
         <Box
