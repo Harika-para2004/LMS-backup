@@ -917,7 +917,7 @@ app.post("/reports/export-excel", async (req, res) => {
       { header: "Leave Type", key: "leaveType", width: 20 },
       { header: "Start Date", key: "startDate", width: 15 },
       { header: "End Date", key: "endDate", width: 15 },
-      { header: "Status", key: "status", width: 15 },
+      { header: "Duration", key: "duration", width: 15 },
     ];
 
     let allReports = [];
@@ -943,9 +943,10 @@ app.post("/reports/export-excel", async (req, res) => {
                   project: emp.project,
                   leaveType: leave.leaveType,
                   startDate: new Date(start),
-                  endDate: new Date(leave.endDate[i]),
-                  status: leave.status[i],
-                });
+                  endDate: new Date(new Date(leave.endDate[i]).setDate(new Date(leave.endDate[i]).getDate() - 1)),
+                  duration: Array.isArray(leave.duration) && Array.isArray(leave.duration[i]) 
+                  ? leave.duration[i].flat().reduce((sum, val) => sum + (typeof val === "number" ? val : 0), 0) 
+                  : "N/A",                });
               }
             });
           });
