@@ -27,14 +27,20 @@ const LeaveTrendChart = ({ email, year }) => {
       
         const data = res.data || [];
       
-        if (data.length === 0) {
-          console.log("No leave data found.");
+        const approvedData = data.filter(monthData => 
+          Object.keys(monthData).some(type => type !== "month" && monthData[type] > 0)
+        );
+        
+        if (approvedData.length === 0) {
+          console.log("No approved leave data found.");
           setChartData([]);
           setLeaveTypes([]);
-          return; // ✅ Prevents error from being set
+          return;
         }
+        
+        setChartData(approvedData);
+        
       
-        setChartData(data);
       
         const types = new Set();
         data.forEach((monthData) => {

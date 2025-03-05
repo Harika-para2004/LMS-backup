@@ -69,8 +69,7 @@ const Reports = () => {
             leaveType: formatName(leave.leaveType),
             startDate: formatDate(leave.startDate),
             endDate: formatDate(leave.endDate),
-            status: formatName(leave.status),
-          }))
+            duration: leave.duration,          }))
         : [
             {
               empname: formatName(report.empname),
@@ -80,13 +79,12 @@ const Reports = () => {
               leaveType: "N/A",
               startDate: "N/A",
               endDate: "N/A",
-              status: "No Leaves",
+              duration: "No Leaves",
             },
           ]
     )
     .sort(
-      (a, b) => a.empname.localeCompare(b.empname) || a.startDate - b.startDate
-    );
+      (a, b) => a.empname.localeCompare(b.empname)     );
 
     const [currentPage, setCurrentPage] = useState(1);
     const employeesPerPage = 10;
@@ -232,7 +230,7 @@ const Reports = () => {
                 <th>Leave Type</th>
                 <th>Start Date</th>
                 <th>End Date</th>
-                <th>Status</th>
+                <th>Duration</th>
               </tr>
             </thead>
             <tbody>
@@ -247,7 +245,7 @@ const Reports = () => {
                       <td>{report.leaveType}</td>
                       <td>{report.startDate}</td>
                       <td>{report.endDate}</td>
-                      <td>{report.status}</td>
+                      <td>{report.duration}</td>
                     </tr>
                   ))
               ) : (

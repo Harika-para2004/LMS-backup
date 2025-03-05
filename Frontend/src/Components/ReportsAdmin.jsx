@@ -56,8 +56,7 @@ const ReportsAdmin = () => {
             leaveType: formatName(leave.leaveType),
             startDate: new Date(leave.startDate), // Convert to Date for sorting
             endDate: formatDate(leave.endDate),
-            status: formatName(leave.status),
-          }))
+            duration: leave.duration,          }))
         : [
             {
               empname: formatName(report.empname),
@@ -67,7 +66,7 @@ const ReportsAdmin = () => {
               leaveType: "N/A",
               startDate: new Date(0), // Earliest date for proper sorting
               endDate: "N/A",
-              status: "No Leaves",
+              duration: "No Leaves",
             },
           ]
     )
@@ -274,7 +273,7 @@ const ReportsAdmin = () => {
                 <th>Leave Type</th>
                 <th>Start Date</th>
                 <th>End Date</th>
-                <th>Status</th>
+                <th>Duration</th>
               </tr>
             </thead>
             <tbody>
@@ -289,7 +288,7 @@ const ReportsAdmin = () => {
                       <td>{report.leaveType}</td>
                       <td>{report.startDate}</td>
                       <td>{report.endDate}</td>
-                      <td>{report.status}</td>
+                      <td>{report.duration}</td>
                     </tr>
                   ))
               ) : (

@@ -648,12 +648,14 @@ app.get("/reports", async (req, res) => {
               leaveType: leave.leaveType,
               startDate: new Date(start).toLocaleDateString(),
               endDate: leave.endDate[index]
-                ? new Date(leave.endDate[index]).toLocaleDateString()
-                : "N/A",
+              ? new Date(leave.endDate[index]).toISOString().split("T")[0] // ✅ Fix: Get only the YYYY-MM-DD part
+              : "N/A",
+            
               status: leave.status[index] || "Pending",
               reason: leave.reason[index] || "No reason provided",
-              duration: leave.duration[index] || "N/A",
-              attachments: leave.attachments[index] || [],
+              duration: Array.isArray(leave.duration) && Array.isArray(leave.duration[index]) 
+              ? leave.duration[index].reduce((sum, val) => sum + val, 0) // Flatten and sum up the nested array
+              : "N/A",              attachments: leave.attachments[index] || [],
             }))
             .filter(
               (leave) =>
@@ -717,12 +719,15 @@ app.get("/reports-admin", async (req, res) => {
               leaveType: leave.leaveType,
               startDate: new Date(start).toLocaleDateString(),
               endDate: leave.endDate[index]
-                ? new Date(leave.endDate[index]).toLocaleDateString()
-                : "N/A",
+              ? new Date(leave.endDate[index]).toISOString().split("T")[0] // ✅ Fix: Get only the YYYY-MM-DD part
+              : "N/A",
+            
               status: leave.status[index] || "Pending",
               reason: leave.reason[index] || "No reason provided",
-              duration: leave.duration[index] || "N/A",
-              attachments: leave.attachments[index] || [],
+              duration: Array.isArray(leave.duration) && Array.isArray(leave.duration[index]) 
+              ? leave.duration[index].reduce((sum, val) => sum + val, 0) // Flatten and sum up the nested array
+              : "N/A",  
+                            attachments: leave.attachments[index] || [],
             }))
             .filter(
               (leave) =>
@@ -806,7 +811,7 @@ app.get("/reports/export-excel", async (req, res) => {
       { header: "Leave Type", key: "leaveType", width: 20 },
       { header: "Start Date", key: "startDate", width: 15 },
       { header: "End Date", key: "endDate", width: 15 },
-      { header: "Status", key: "status", width: 15 },
+      { header: "Duration", key: "duration", width: 15 },
     ];
 
     let allReports = [];
@@ -830,8 +835,11 @@ app.get("/reports/export-excel", async (req, res) => {
                 project: formatName(emp.project),
                 leaveType: formatName(leave.leaveType),
                 startDate: new Date(start), // Convert to Date for sorting
-                endDate: formatDate(leave.endDate[i]),
-                status: formatName(leave.status[i] || "Pending"),
+                endDate: formatDate(new Date(leave.endDate[i]).setDate(new Date(leave.endDate[i]).getDate() - 1)),
+                duration: Array.isArray(leave.duration) && Array.isArray(leave.duration[i]) 
+                ? leave.duration[i].flat().reduce((sum, val) => sum + (typeof val === "number" ? val : 0), 0) 
+                : "N/A",
+              
               });
             });
           });
@@ -844,7 +852,7 @@ app.get("/reports/export-excel", async (req, res) => {
             leaveType: "N/A",
             startDate: new Date(0), // Default earliest date for sorting
             endDate: "N/A",
-            status: "No Leaves",
+            duration: "No Leaves",
           });
         }
       }
