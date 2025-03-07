@@ -45,10 +45,10 @@ const EmployeeDashboard = () => {
     }
   };
 
-  console.log("mg1 email", email);
-  console.log("mg2 email", paramEmail);
-  console.log("mg3 email", contextEmail);
-  console.log("mg4 email", userData?.email);
+  // console.log("mg1 email", email);
+  // console.log("mg2 email", paramEmail);
+  // console.log("mg3 email", contextEmail);
+  // console.log("mg4 email", userData?.email);
 
   const yearsRange = useMemo(() => {
     const currentYear = new Date().getFullYear();

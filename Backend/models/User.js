@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema({
   gender: { type: String },
   role: { type: String, required: true },
   managerEmail: { type: String, required: function () { return this.role === 'Employee'; } },
+  isActive:{type: Boolean, default: true},
   yearlyLeavesTaken: {
     type: Map,
     of: Number, 

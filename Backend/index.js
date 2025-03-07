@@ -45,7 +45,7 @@ const formatCase = (text) => {
 };
 app.get("/managers-list", async (req, res) => {
   try {
-    const managers = await User.find({ role: "Manager" }, { empname: 1, empid: 1, email: 1,project:1,gender:1, _id: 0 }); 
+    const managers = await User.find({ role: "Manager" }, { empname: 1, empid: 1, email: 1,project:1,gender:1,isActive:1, _id: 0 }); 
     res.status(200).json(managers);
   } catch (error) {
     res.status(500).json({ message: "Error fetching managers", error: error.message });
@@ -301,6 +301,8 @@ app.get("/leave-history", async (req, res) => {
 
   try {
     let leaveHistory = await Leave.find({ email });
+    leaveHistory.flatMap((leave) => console.log("leave.startDate",leave));
+
 
     let formattedHistory = leaveHistory.flatMap((leave) => {
       return leave.startDate.map((start, index) => ({
@@ -487,6 +489,7 @@ app.get("/holidays", async (req, res) => {
 app.get("/employee-list", async (req, res) => {
   try {
     const employees = await User.find();
+    console.log("employees",employees);
     res.json(employees);
   } catch (err) {
     console.error("Error fetching holidays:", err);
@@ -595,25 +598,25 @@ app.delete("/holidays/:id", async (req, res) => {
   }
 });
 
-app.delete("/employee-del/:id", async (req, res) => {
+app.put("/employee-del/:id", async (req, res) => {
   try {
-    // Check if the employee exists
     const emp = await User.findById(req.params.id);
 
     if (!emp) {
       return res.status(404).json({ message: "Employee not found" });
     }
 
-    // Delete the employee
-    await User.findByIdAndDelete(req.params.id);
+    // Update isActive to false instead of deleting
+    await User.findByIdAndUpdate(req.params.id, { isActive: false });
 
-    res.json({ message: "Employee deleted successfully" });
+    res.json({ message: "Employee deactivated successfully" });
   } catch (err) {
     res
       .status(500)
-      .json({ message: "Error deleting employee", error: err.message });
+      .json({ message: "Error deactivating employee", error: err.message });
   }
 });
+
 
 // Start server
 app.listen(port, () => {
@@ -663,6 +666,7 @@ app.get("/reports", async (req, res) => {
                 new Date(leave.startDate).getFullYear() === parseInt(year) // ✅ Filter by year
             )
         );
+        console.log(approvedLeaves);
 
         // Only return employees who have at least one approved leave in the selected year
         if (approvedLeaves.length > 0) {
@@ -712,12 +716,14 @@ app.get("/reports-admin", async (req, res) => {
       employees.map(async (employee) => {
         const leaves = await Leave.find({ email: employee.email });
 
+
         // Filter only approved leaves within the selected year
         const approvedLeaves = leaves.flatMap((leave) =>
+        // console.log(leave);
           leave.startDate
             .map((start, index) => ({
               leaveType: leave.leaveType,
-              startDate: new Date(start).toLocaleDateString(),
+              startDate: new Date(start).toISOString().split("T")[0],
               endDate: leave.endDate[index]
               ? new Date(leave.endDate[index]).toISOString().split("T")[0] // ✅ Fix: Get only the YYYY-MM-DD part
               : "N/A",
@@ -735,6 +741,9 @@ app.get("/reports-admin", async (req, res) => {
                 new Date(leave.startDate).getFullYear() === parseInt(year) // ✅ Filter by year
             )
         );
+
+        // console.log(approvedLeaves);
+
 
         // Only return employees who have at least one approved leave in the selected year
         if (approvedLeaves.length > 0) {
@@ -824,7 +833,6 @@ app.get("/reports/export-excel", async (req, res) => {
           year: { $elemMatch: { $elemMatch: { $eq: Number(year) } } }  // ✅ Double `$elemMatch` for deeply nested arrays
         });
         
-               console.log(emp);
         if (leaves.length > 0) {
           leaves.forEach((leave, index) => {
             leave.startDate.forEach((start, i) => {
@@ -857,6 +865,8 @@ app.get("/reports/export-excel", async (req, res) => {
         }
       }
     }
+
+    console.log("allReports",allReports);
 
     // **Sorting logic: First by name (A-Z), then by startDate (earliest first)**
     allReports.sort((a, b) => {

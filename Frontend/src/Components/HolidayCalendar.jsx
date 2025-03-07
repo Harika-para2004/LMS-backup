@@ -318,7 +318,14 @@ const HolidayCalendar = () => {
       {showModal && (
         <Modal
           open={showModal}
-          onClose={() => setShowModal(false)}
+          onClose={() => {
+            setShowModal(false);
+            setFormData({
+              date: "",
+              holidayName: "",
+              holidayType: "Mandatory",
+            });
+          }}
           aria-labelledby="holiday-modal"
           aria-describedby="holiday-form"
         >
@@ -402,7 +409,17 @@ const HolidayCalendar = () => {
               )}
             </FormControl>
             <Box display="flex" justifyContent="flex-end">
-              <Button onClick={() => setShowModal(false)} sx={{ mr: 2 }}>
+              <Button
+                onClick={() => {
+                  setShowModal(false);
+                  setFormData({
+                    date: "",
+                    holidayName: "",
+                    holidayType: "Mandatory",
+                  });
+                }}
+                sx={{ mr: 2 }}
+              >
                 Cancel
               </Button>
               <Button
@@ -421,6 +438,30 @@ const HolidayCalendar = () => {
 
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <Button
+            id="file-input"
+            variant="contained"
+            component="label"
+            sx={{
+              backgroundColor: "steelblue",
+              borderRadius: "5px",
+              "&:focus": { outline: "none" },
+              textTransform: "none",
+            }}
+            startIcon={<CloudUploadIcon />}
+          >
+            {/* <CloudUploadIcon fontSize="small" /> */}
+            Upload Holidays
+            <input
+              type="file"
+              accept=".xlsx, .xls"
+              hidden
+              onChange={(e) => {
+                handlefileChange(e);
+                setSelectedFile(e.target.files[0]); // Update selected file state
+              }}
+            />
+          </Button>
+          <Button
             variant="contained"
             onClick={() => setShowModal(true)}
             sx={{
@@ -433,28 +474,6 @@ const HolidayCalendar = () => {
             }}
           >
             Add Holiday
-          </Button>
-          <Button
-            id="file-input"
-            variant="contained"
-            component="label"
-            sx={{
-              backgroundColor: "steelblue",
-              padding: "8px 17px",
-              borderRadius: "5px",
-              "&:focus": { outline: "none" },
-            }}
-          >
-            <CloudUploadIcon fontSize="small" />
-            <input
-              type="file"
-              accept=".xlsx, .xls"
-              hidden
-              onChange={(e) => {
-                handlefileChange(e);
-                setSelectedFile(e.target.files[0]); // Update selected file state
-              }}
-            />
           </Button>
 
           {/* Show file name only if selected */}
@@ -504,7 +523,7 @@ const HolidayCalendar = () => {
                       <input
                         type="text"
                         name="name"
-                        value={formatCase(formData.name)}
+                        value={formData.name}
                         onChange={handleInputChange}
                       />
                     </td>
@@ -532,7 +551,7 @@ const HolidayCalendar = () => {
                       {/* Display without the year */}
                     </td>
                     <td>{holiday.day}</td>
-                    <td>{holiday.name}</td>
+                    <td>{formatCase(holiday.name)}</td>
                     <td>{holiday.type}</td>
                     <td>
                       <button onClick={() => handleEdit(index)}>

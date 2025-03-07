@@ -235,33 +235,37 @@ const TotalEmployees = () => {
     }
   };
 
-  const handleDeleteEmployee = async (id) => {
-    // Ask for confirmation before proceeding
+  const handleDeactivateEmployee = async (id) => {
     const isConfirmed = window.confirm(
-      "Are you sure you want to delete this employee? This action cannot be undone."
+      "Are you sure you want to deactivate this employee?"
     );
 
-    if (!isConfirmed) {
-      return; // Exit the function if the user cancels
-    }
+    if (!isConfirmed) return;
 
     try {
       const response = await fetch(`${BASE_URL}employee-del/${id}`, {
-        method: "DELETE",
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ isActive: false }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to delete employee.");
+        throw new Error("Failed to deactivate employee.");
       }
 
-      // Update the state by removing the deleted employee
+      alert("Employee deactivated successfully!");
+
+      // Update UI state to reflect the deactivation
       setEmpList((prevEmployees) =>
-        prevEmployees.filter((emp) => emp._id !== id)
+        prevEmployees.map((emp) =>
+          emp._id === id ? { ...emp, isActive: false } : emp
+        )
       );
-      alert("Employee deleted successfully!");
     } catch (error) {
-      console.error("Error deleting employee:", error);
-      setError("Failed to delete employee. Please try again later.");
+      console.error("Error deactivating employee:", error);
+      setError("Failed to deactivate employee. Please try again later.");
     }
   };
 
@@ -292,6 +296,16 @@ const TotalEmployees = () => {
   };
 
   const handleAddEmployeeClose = () => {
+    setEmpData({
+      empname: "",
+      empid: "",
+      email: "",
+      password: "",
+      project: "",
+      gender: "",
+      role: "",
+      managerEmail: "",
+    });
     setShowAddEmployeeModal(false);
   };
 
@@ -368,7 +382,14 @@ const TotalEmployees = () => {
             ),
           }}
         />
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }} >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "16px",
+          }}
+        >
           <div>
             <Tooltip title="Upload Employees" arrow>
               <Button
@@ -376,6 +397,7 @@ const TotalEmployees = () => {
                 variant="contained"
                 color="primary"
                 startIcon={<CloudUploadIcon />}
+                sx={{ textTransform: "none" }}
               >
                 Upload Excel
                 <input
@@ -434,6 +456,7 @@ const TotalEmployees = () => {
             <th>Email</th>
             <th>Role</th>
             <th>Project</th>
+            <th>Is Active</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -485,7 +508,7 @@ const TotalEmployees = () => {
                         onChange={handleEmployeeData}
                       />
                     </td>
-
+                    <td>{emp.isActive ? "Yes" : "No"}</td>
                     <td>
                       <button
                         className="save-btn"
@@ -510,6 +533,9 @@ const TotalEmployees = () => {
                         .toLowerCase()
                         .replace(/\b\w/g, (char) => char.toUpperCase())}
                     </td>
+                    <td style={{ color: !emp.isActive ? "red" : "green" }}>
+                      {emp.isActive ? "Yes" : "No"}
+                    </td>{" "}
                     <td>
                       <button
                         onClick={() => handleEditEmployee(index)}
@@ -522,11 +548,13 @@ const TotalEmployees = () => {
                         <FaEdit className="edit-icon" size={20} color="blue" />
                       </button>
                       <button
-                        onClick={() => handleDeleteEmployee(emp._id)}
+                        onClick={() => handleDeactivateEmployee(emp._id)}
+                        disabled={!emp.isActive}
                         style={{
                           border: "none",
                           background: "none",
-                          cursor: "pointer",
+                          cursor: emp.isActive ? "pointer" : "not-allowed",
+                          opacity: emp.isActive ? 1 : 0.2,
                         }}
                       >
                         <FaTrash className="del-icon" size={20} color="red" />

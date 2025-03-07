@@ -54,7 +54,7 @@ const ReportsAdmin = () => {
             email: report.email || "N/A",
             project: formatName(report.project),
             leaveType: formatName(leave.leaveType),
-            startDate: new Date(leave.startDate), // Convert to Date for sorting
+            startDate: formatDate(leave.startDate), // Convert to Date for sorting
             endDate: formatDate(leave.endDate),
             duration: leave.duration,          }))
         : [
@@ -82,10 +82,10 @@ const ReportsAdmin = () => {
           report.project.toLowerCase().includes(search.toLowerCase()) ||
           report.empid.toString().includes(search))
     )
-    .map((report) => ({
-      ...report,
-      startDate: formatDate(report.startDate), // Convert back to dd/mm/yyyy for display
-    }));
+    // .map((report) => ({
+    //   ...report,
+    //   startDate: formatDate(report.startDate), // Convert back to dd/mm/yyyy for display
+    // }));
 
   const [currentPage, setCurrentPage] = useState(1);
   const employeesPerPage = 15;

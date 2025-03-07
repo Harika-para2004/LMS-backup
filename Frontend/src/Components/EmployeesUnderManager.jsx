@@ -27,6 +27,10 @@ const EmployeesUnderManager = () => {
 
   const [email, setEmail] = useState(userData?.email);
 
+  const formatCase = (text) => {
+    return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
   useEffect(() => {
     // CASE 1: If manager navigates, use paramEmail
     if (paramEmail) {
@@ -83,16 +87,22 @@ const EmployeesUnderManager = () => {
               <TableCell sx={{ fontWeight: "bold", color: "#fff" }}>Name</TableCell>
               <TableCell sx={{ fontWeight: "bold", color: "#fff" }}>Project</TableCell>
               <TableCell sx={{ fontWeight: "bold", color: "#fff" }}>Gender</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "#fff" }}>Is Active</TableCell>
               <TableCell sx={{ fontWeight: "bold", color: "#fff" }}>Dashboard</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {employees.map((emp) => (
+            {[...employees]
+  .sort((a, b) => a.empid.localeCompare(b.empid, undefined, { numeric: true }))
+  .map((emp) => (
               <TableRow key={emp.empid}>
                 <TableCell>{emp.empid}</TableCell>
-                <TableCell>{emp.empname}</TableCell>
-                <TableCell>{emp.project}</TableCell>
+                <TableCell>{formatCase(emp.empname)}</TableCell>
+                <TableCell>{formatCase(emp.project)}</TableCell>
                 <TableCell>{emp.gender}</TableCell>
+                <TableCell style={{ color: !emp.isActive ? "red" : "green" }}>
+                      {emp.isActive ? "Yes" : "No"}
+                </TableCell>
                 <TableCell>
                   <IconButton
                     onClick={() => {

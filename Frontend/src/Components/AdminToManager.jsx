@@ -63,8 +63,11 @@ const AdminToManager = () => {
           variant={location.pathname.includes(`/admin/analytics/${email}/self`) ? "contained" : "outlined"}
           onClick={() => navigate(`/admin/analytics/${email}/self`)}
           sx={{
-            backgroundColor: location.pathname.includes(`/admin/analytics/${email}/self`) ? "var(--deep-blue)" : "transparent",
-            color: location.pathname.includes(`/admin/analytics/${email}/self`) ? "white" : "var(--deep-blue)",
+            backgroundColor:
+            [`/admin/analytics`,`/admin/analytics/${email}/self`].some(path => location.pathname.includes(path)) && !location.pathname.includes("/reports") &&  !location.pathname.includes("/employees") ? "var(--deep-blue)" : "transparent",
+            color:  [`/admin/analytics`,`/admin/analytics/${email}/self`].some(path => location.pathname.includes(path)) && !location.pathname.includes("/reports")  && !location.pathname.includes("/employees") ? "white" : "var(--deep-blue)",
+            //location.pathname.includes(`/admin/analytics/${email}/self`) ? "var(--deep-blue)" : "transparent",
+            //color: location.pathname.includes(`/admin/analytics/${email}/self`) ? "white" : "var(--deep-blue)",
             minWidth: "200px",
             textTransform:"none",
           }}

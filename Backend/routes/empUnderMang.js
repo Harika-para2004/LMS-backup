@@ -10,7 +10,7 @@ router.get("/", async (req, res) => {
       return res.status(400).json({ error: "Manager email is required" });
     }
 
-    const employees = await User.find({ managerEmail, role: "Employee" }).select("empid empname project gender email");
+    const employees = await User.find({ managerEmail, role: "Employee" }).select("empid empname project gender isActive email");
 
     res.status(200).json(employees);
   } catch (error) {

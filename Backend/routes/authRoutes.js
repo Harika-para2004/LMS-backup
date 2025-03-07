@@ -29,6 +29,7 @@ router.post('/addEmployee', async (req, res) => {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+
     // Create new user
     const newUser = new User({
       empname,
@@ -40,6 +41,8 @@ router.post('/addEmployee', async (req, res) => {
       role,
       ...(role === "Employee" && { managerEmail }),
     });
+
+    // console.log(newUser);
 
     await newUser.save();
 
@@ -102,8 +105,8 @@ router.get('/user/:userId', async (req, res) => {
 
   try {
     const user = await User.findById(userId);
-
-    if (!user) {
+    // console.log("USER>>",user)
+    if (!user && !user.isActive) {
       return res.status(404).json({ message: 'User not found' });
     }
 
@@ -116,6 +119,8 @@ router.get('/user/:userId', async (req, res) => {
       project: user.project,
       role: user.role, // Add role here
       managerEmail:user.managerEmail,
+      isActive:user.isActive,
+      
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

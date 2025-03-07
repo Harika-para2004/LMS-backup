@@ -18,6 +18,7 @@ const Reports = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+
   const [userData, setUserData] = useState(location.state?.userData || {});
   const [email, setEmail] = useState(userData?.email);
   const [reports, setReports] = useState([]);
@@ -30,6 +31,10 @@ const Reports = () => {
   const yearsRange = useMemo(() => {
     return Array.from({ length: 17 }, (_, i) => currentYear - (i - 1));
   }, [currentYear]);
+
+  const formatCase = (text) => {
+    return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+  };
 
   useEffect(() => {
     if (paramEmail) {
@@ -246,10 +251,10 @@ const Reports = () => {
                   .filter((report) => report.email !== "admin@gmail.com")
                   .map((report, index) => (
                     <tr key={index}>
-                      <td>{report.empname}</td>
+                      <td>{formatCase(report.empname)}</td>
                       <td>{report.empid}</td>
-                      <td>{report.project}</td>
-                      <td>{report.leaveType}</td>
+                      <td>{formatCase(report.project)}</td>
+                      <td>{formatCase(report.leaveType)}</td>
                       <td>{report.startDate}</td>
                       <td>{report.endDate}</td>
                       <td>{report.duration}</td>

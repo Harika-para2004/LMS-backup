@@ -250,6 +250,7 @@ const ApplyLeave = () =>
       const casualLeave = leaveData.find((leave) =>
         leave.leaveType.toLowerCase().includes("casual")
       );
+      console.log("casual leaves count: ",casualLeave?.availableLeaves )
 
       if (
         leaveType.toLowerCase().includes("lop") &&
@@ -401,7 +402,7 @@ const ApplyLeave = () =>
       };
 
       fetchLeavePolicies();
-    }, [leaveData]);
+    }, []);
 
     const handleFileChangeWithState = (event) => {
       const file = event.target.files[0];

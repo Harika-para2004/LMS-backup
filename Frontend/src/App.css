@@ -71,7 +71,7 @@ body, html {
 }
 
 .emp-list-container{
-  max-width: 1022px;
+  /* max-width: 1022px; */
   margin: auto;
 }
 
@@ -454,6 +454,12 @@ body, html {
   padding-top: 20px;
 }
 
+.disabled-btn:disabled{
+  cursor: not-allowed !important;
+  opacity: 0.5 !important;
+  border: none;
+}
+
 .profile-section {
   display: flex;
   align-items: center;
@@ -533,7 +539,7 @@ body, html {
 /* Holidays Table */
 
  .holiday-cal-container{
-  max-width: 1000px;
+  /* max-width: 1000px; */
   margin: auto;
   overflow-y: auto;
  }
@@ -772,7 +778,7 @@ body, html {
   margin-bottom: 40px;
   text-align: center;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  max-width: 800px; 
+  max-width: 80%; 
   margin: 0 auto;
   background: whitesmoke;
   color: var(--text-dark);
@@ -917,7 +923,7 @@ body, html {
 
 .leave-types-container {
   margin: 20px auto;
-  max-width: 1000px; 
+  /* max-width: 1000px;  */
   padding: 20px;
 }
 
@@ -1804,6 +1810,10 @@ body {
   }
 }
 
+.MuiButton-root {
+  text-transform: none !important;
+}
+
 /* Table container */
 .reports-container .table-container {
   overflow-x: auto;
@@ -1919,7 +1929,7 @@ body {
   white-space: nowrap; /* Ensures text stays in one line */
   overflow: hidden;
   text-overflow: ellipsis; /* Adds "..." when text overflows */
-  max-width: 150px; /* Prevents excessive stretching */
+  max-width: fit-content; /* Prevents excessive stretching */
 }
 
 td:hover{
