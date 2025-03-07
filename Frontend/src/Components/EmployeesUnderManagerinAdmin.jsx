@@ -45,8 +45,8 @@ const EmployeesUnderManagerinAdmin = () => {
   console.log("location", location);
   console.log("dash email", email);
 
-  console.log("email in emp dash",email);
-  console.log("role",userData.role );
+  console.log("email in emp dash", email);
+  console.log("role", userData.role);
 
   const [employees, setEmployees] = useState([]);
 
@@ -84,36 +84,52 @@ const EmployeesUnderManagerinAdmin = () => {
               <TableCell sx={{ fontWeight: "bold", color: "#fff" }}>
                 Employee ID
               </TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "#fff" }}>Name</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "#fff" }}>Project</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "#fff" }}>Gender</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "#fff" }}>Is Active</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "#fff" }}>Dashboard</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "#fff" }}>
+                Name
+              </TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "#fff" }}>
+                Project
+              </TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "#fff" }}>
+                Gender
+              </TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "#fff" }}>
+                Is Active
+              </TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "#fff" }}>
+                Dashboard
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {[...employees]
-  .sort((a, b) => a.empid.localeCompare(b.empid, undefined, { numeric: true }))
-  .map((emp) => (
-              <TableRow key={emp.empid}>
-                <TableCell>{emp.empid}</TableCell>
-                <TableCell>{formatCase(emp.empname)}</TableCell>
-                <TableCell>{formatCase(emp.project)}</TableCell>
-                <TableCell>{emp.gender}</TableCell>
-                <TableCell style={{ color: !emp.isActive ? "red" : "green" }}>
-                      {emp.isActive ? "Yes" : "No"}
-                </TableCell>
-                <TableCell>
-                  <IconButton
-                    onClick={() => {
-                      navigate(`/admin/dashboard/${email}/${emp.email}`);
-                    }}
-                  >
-                    <DashboardIcon color="primary" />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
+              .filter(
+                (emp) =>
+                  emp.email.toLowerCase() !== "dummy@gmail.com" && emp.isActive
+              )
+              .sort((a, b) =>
+                a.empid.localeCompare(b.empid, undefined, { numeric: true })
+              )
+              .map((emp) => (
+                <TableRow key={emp.empid}>
+                  <TableCell>{emp.empid}</TableCell>
+                  <TableCell>{formatCase(emp.empname)}</TableCell>
+                  <TableCell>{formatCase(emp.project)}</TableCell>
+                  <TableCell>{emp.gender}</TableCell>
+                  <TableCell style={{ color: !emp.isActive ? "red" : "green" }}>
+                    {emp.isActive ? "Yes" : "No"}
+                  </TableCell>
+                  <TableCell>
+                    <IconButton
+                      onClick={() => {
+                        navigate(`/admin/dashboard/${email}/${emp.email}`);
+                      }}
+                    >
+                      <DashboardIcon color="primary" />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
       </TableContainer>

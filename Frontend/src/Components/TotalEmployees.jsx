@@ -363,6 +363,10 @@ const TotalEmployees = () => {
     }
   };
 
+  const formatCase = (text) => {
+    return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
   return (
     <div className="emp-list-container">
       <div className="head">
@@ -502,9 +506,7 @@ const TotalEmployees = () => {
                       <input
                         type="text"
                         name="project"
-                        value={empData.project
-                          .toLowerCase()
-                          .replace(/\b\w/g, (char) => char.toUpperCase())}
+                        value={empData.project}
                         onChange={handleEmployeeData}
                       />
                     </td>
@@ -522,16 +524,12 @@ const TotalEmployees = () => {
                   <>
                     <td>{emp.empid}</td>
                     <td>
-                      {emp.empname
-                        .toLowerCase()
-                        .replace(/\b\w/g, (char) => char.toUpperCase())}
+                      {formatCase(emp.empname)}
                     </td>
                     <td>{emp.email}</td>
                     <td>{emp.role}</td>
                     <td>
-                      {emp.project
-                        .toLowerCase()
-                        .replace(/\b\w/g, (char) => char.toUpperCase())}
+                      {formatCase(emp.project)}
                     </td>
                     <td style={{ color: !emp.isActive ? "red" : "green" }}>
                       {emp.isActive ? "Yes" : "No"}
@@ -539,13 +537,15 @@ const TotalEmployees = () => {
                     <td>
                       <button
                         onClick={() => handleEditEmployee(index)}
+                        disabled={!emp.isActive}
                         style={{
                           border: "none",
                           background: "none",
-                          cursor: "pointer",
-                        }}
+                          marginRight:"5px",
+                          cursor: emp.isActive ? "pointer" : "not-allowed",
+                          opacity: emp.isActive ? 1 : 0.2,                        }}
                       >
-                        <FaEdit className="edit-icon" size={20} color="blue" />
+                        <FaEdit  size={20} color="blue" />
                       </button>
                       <button
                         onClick={() => handleDeactivateEmployee(emp._id)}
@@ -557,7 +557,7 @@ const TotalEmployees = () => {
                           opacity: emp.isActive ? 1 : 0.2,
                         }}
                       >
-                        <FaTrash className="del-icon" size={20} color="red" />
+                        <FaTrash size={20} color="red" />
                       </button>
                     </td>
                   </>

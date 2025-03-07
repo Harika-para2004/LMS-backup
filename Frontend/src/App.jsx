@@ -84,6 +84,7 @@ import ReportsAdmin from "./Components/ReportsAdmin";
 import ManagersList from "./Components/ManagersList";
 import AdminToManager from "./Components/AdminToManager";
 import EmployeesUnderManagerinAdmin from "./Components/EmployeesUnderManagerinAdmin";
+import InActiveEmp from "./Components/InActiveEmp";
 
 function App() {
   return (
@@ -154,6 +155,7 @@ function App() {
                 <Route path="self" element={<EmployeeDashboard />} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="employees" element={<EmployeesUnderManagerinAdmin />} />
+                <Route path="inactive-employees" element={<InActiveEmp />} />
               </Route>
 
               <Route path="all-reports" element={<AdminTrends />}>

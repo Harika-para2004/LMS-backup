@@ -88,8 +88,12 @@ const AdminToManager = () => {
         </Button>
         <Button
           variant={location.pathname.includes(`/admin/analytics/${email}/employees`) ? "contained" : "outlined"}
-          onClick={() => navigate(`/admin/analytics/${email}/employees`)}
-          sx={{
+          onClick={() => 
+            navigate(email === "dummy@gmail.com" 
+              ? `/admin/analytics/${email}/inactive-employees` 
+              : `/admin/analytics/${email}/employees`
+            )
+          }          sx={{
             backgroundColor: location.pathname.includes(`/admin/analytics/${email}/employees`) ? "var(--deep-blue)" : "transparent",
             color: location.pathname.includes(`/admin/analytics/${email}/employees`) ? "white" : "var(--deep-blue)",
             minWidth: "200px",

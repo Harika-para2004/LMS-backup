@@ -301,8 +301,6 @@ app.get("/leave-history", async (req, res) => {
 
   try {
     let leaveHistory = await Leave.find({ email });
-    leaveHistory.flatMap((leave) => console.log("leave.startDate",leave));
-
 
     let formattedHistory = leaveHistory.flatMap((leave) => {
       return leave.startDate.map((start, index) => ({
@@ -495,7 +493,7 @@ app.get("/employee-list", async (req, res) => {
     console.error("Error fetching holidays:", err);
     res.status(500).json({ message: "Server Error", error: err.message }); // Include error message
   }
-});
+});   
 
 // Create a new holiday
 app.post("/holidays", async (req, res) => {
@@ -607,8 +605,19 @@ app.put("/employee-del/:id", async (req, res) => {
     }
 
     // Update isActive to false instead of deleting
-    await User.findByIdAndUpdate(req.params.id, { isActive: false });
+    await User.findByIdAndUpdate(req.params.id, {
+      isActive: false,
+      managerEmail: "dummy@gmail.com",
+    });
 
+    if (emp.role === "Manager") {
+      await User.updateMany(
+        { managerEmail: emp.email }, 
+        { $set: { managerEmail: "" }} 
+      );
+    }
+
+    
     res.json({ message: "Employee deactivated successfully" });
   } catch (err) {
     res
@@ -622,6 +631,7 @@ app.put("/employee-del/:id", async (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
+
 app.get("/reports", async (req, res) => {
   try {
     const { project, search, email, year } = req.query;
@@ -685,6 +695,8 @@ app.get("/reports", async (req, res) => {
       })
     );
 
+    console.log(reports);
+
     // Remove null values (employees with no approved leaves)
     const filteredReports = reports.filter((report) => report !== null);
 
@@ -694,6 +706,7 @@ app.get("/reports", async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 });
+
 app.get("/reports-admin", async (req, res) => {
   try {
     const { project, search, year } = req.query;
@@ -715,6 +728,7 @@ app.get("/reports-admin", async (req, res) => {
     const reports = await Promise.all(
       employees.map(async (employee) => {
         const leaves = await Leave.find({ email: employee.email });
+        leaves.flatMap((leave) => console.log(leave.startDate));
 
 
         // Filter only approved leaves within the selected year
@@ -759,6 +773,7 @@ app.get("/reports-admin", async (req, res) => {
         return null; // Ignore employees with no approved leaves in the selected year
       })
     );
+    console.log(reports);
 
     // Remove null values (employees with no approved leaves)
     const filteredReports = reports.filter((report) => report !== null);
