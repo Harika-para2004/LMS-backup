@@ -7,8 +7,13 @@ const userSchema = new mongoose.Schema({
   project: { type: String },
   gender: { type: String },
   role: { type: String, required: true },
-  managerEmail: { type: String, required: function () { return this.role === 'Employee'; } },
+  managerEmail: { type: String, },
   isActive:{type: Boolean, default: true},
+  role: {
+    type: String,
+    enum: ["Employee", "Manager", "Admin"], // Ensure "Manager" is included
+    required: true,
+  },  managerEmail: { type: String },
   yearlyLeavesTaken: {
     type: Map,
     of: Number, 

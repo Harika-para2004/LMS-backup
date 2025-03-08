@@ -5,6 +5,7 @@ const dotenv = require("dotenv");
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const leavepolicyRoutes = require("./routes/LeavePolicyRoutes");
+const projectRoutes=require("./routes/projectRoutes");
 const Leave = require("./models/Leave");
 const User = require("./models/User");
 const bcrypt = require("bcrypt");
@@ -12,7 +13,7 @@ const Holiday = require("./models/Holiday");
 const multer = require("multer");
 const path = require("path");
 const LeavePolicy = require("./models/LeavePolicy");
-
+const leavereports = require("./routes/overlaproutes");
 const excelJS = require("exceljs");
 const pdfkit = require("pdfkit");
 const fs = require("fs");
@@ -36,10 +37,12 @@ mongoose
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/leave-policies", leavepolicyRoutes);
+app.use("/api",projectRoutes)
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/excel",exceluploads);
 app.use("/admin", adminRoutes);
 app.use("/api/employees", require("./routes/empUnderMang"));
+app.use("/data",leavereports);
 const formatCase = (text) => {
   return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
 };
@@ -486,14 +489,31 @@ app.get("/holidays", async (req, res) => {
 });
 app.get("/employee-list", async (req, res) => {
   try {
-    const employees = await User.find();
-    console.log("employees",employees);
-    res.json(employees);
+   
+    const employees = await User.find().lean(); // Use .lean() to return plain objects
+
+    // Create a map of managers for quick lookup
+    const managerMap = {};
+    employees.forEach(emp => {
+      if (emp.role === "Manager") {
+        managerMap[emp.email] = { name: emp.empname, id: emp.empid };
+      }
+    });
+
+    // Add manager details to employees
+    const updatedEmployees = employees.map(emp => ({
+      ...emp, // Now it's always a plain object
+      managerName: emp.managerEmail && managerMap[emp.managerEmail] ? managerMap[emp.managerEmail].name : "-",
+    }));
+
+    res.json(updatedEmployees);
   } catch (err) {
-    console.error("Error fetching holidays:", err);
-    res.status(500).json({ message: "Server Error", error: err.message }); // Include error message
+    console.error("Error fetching employees:", err);
+    res.status(500).json({ message: "Server Error", error: err.message });
   }
 });   
+
+
 
 // Create a new holiday
 app.post("/holidays", async (req, res) => {
@@ -556,14 +576,14 @@ app.put("/holidays/:id", async (req, res) => {
   }
 });
 app.put("/updateEmployeeList/:id", async (req, res) => {
-  const { empid, empname, email, project } = req.body;
+  const { empid, empname, email, project,role,managerEmail } = req.body;
   try {
     if (!empid || !empname || !email || !project) {
       return res.status(400).json({ message: "All fields are required!" });
     }
     const updatedEmployee = await User.findByIdAndUpdate(
       req.params.id,
-      { empid, empname, email, project },
+      { empid, empname, email,role, project,managerEmail },
       { new: true }
     );
 
@@ -578,6 +598,22 @@ app.put("/updateEmployeeList/:id", async (req, res) => {
       .json({ message: "Error updating holiday", error: err.message });
   }
 });
+app.get("/getManagers", async (req, res) => {
+  try {
+    // Fetch users where role is 'Manager'
+    const managers = await User.find({ role: "Manager" }, { email: 1, _id: 1 });
+
+    if (!managers.length) {
+      return res.status(404).json({ message: "No managers found." });
+    }
+
+    res.status(200).json(managers);
+  } catch (error) {
+    console.error("Error fetching managers:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
 // Delete a holiday
 app.delete("/holidays/:id", async (req, res) => {
   try {
@@ -613,7 +649,7 @@ app.put("/employee-del/:id", async (req, res) => {
     if (emp.role === "Manager") {
       await User.updateMany(
         { managerEmail: emp.email }, 
-        { $set: { managerEmail: "" }} 
+        { $set: { managerEmail: "dummy@gmail.com" }} 
       );
     }
 
@@ -661,14 +697,14 @@ app.get("/reports", async (req, res) => {
               leaveType: leave.leaveType,
               startDate: new Date(start).toLocaleDateString(),
               endDate: leave.endDate[index]
-              ? new Date(leave.endDate[index]).toISOString().split("T")[0] // ✅ Fix: Get only the YYYY-MM-DD part
-              : "N/A",
-            
+              ? new Date(new Date(leave.endDate[index]).setDate(new Date(leave.endDate[index]).getDate() - 1)).toLocaleDateString()
+              : "N/A",  
               status: leave.status[index] || "Pending",
               reason: leave.reason[index] || "No reason provided",
-              duration: Array.isArray(leave.duration) && Array.isArray(leave.duration[index]) 
-              ? leave.duration[index].reduce((sum, val) => sum + val, 0) // Flatten and sum up the nested array
-              : "N/A",              attachments: leave.attachments[index] || [],
+              duration: Array.isArray(leave.duration[index]) 
+              ? leave.duration[index].reduce((sum, num) => sum + num, 0) 
+              : "N/A",
+                        attachments: leave.attachments[index] || [],
             }))
             .filter(
               (leave) =>
@@ -739,15 +775,14 @@ app.get("/reports-admin", async (req, res) => {
               leaveType: leave.leaveType,
               startDate: new Date(start).toISOString().split("T")[0],
               endDate: leave.endDate[index]
-              ? new Date(leave.endDate[index]).toISOString().split("T")[0] // ✅ Fix: Get only the YYYY-MM-DD part
-              : "N/A",
-            
+              ? new Date(new Date(leave.endDate[index]).setDate(new Date(leave.endDate[index]).getDate() - 1)).toLocaleDateString()
+              : "N/A",          
               status: leave.status[index] || "Pending",
               reason: leave.reason[index] || "No reason provided",
-              duration: Array.isArray(leave.duration) && Array.isArray(leave.duration[index]) 
-              ? leave.duration[index].reduce((sum, val) => sum + val, 0) // Flatten and sum up the nested array
-              : "N/A",  
-                            attachments: leave.attachments[index] || [],
+              duration: Array.isArray(leave.duration[index]) 
+              ? leave.duration[index].reduce((sum, num) => sum + num, 0) 
+              : "N/A"
+,                        attachments: leave.attachments[index] || [],
             }))
             .filter(
               (leave) =>
@@ -784,10 +819,6 @@ app.get("/reports-admin", async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 });
-
-
-
-
 // Helper function to format names like in frontend
 const formatName = (str) =>
   str
@@ -835,7 +866,7 @@ app.get("/reports/export-excel", async (req, res) => {
       { header: "Leave Type", key: "leaveType", width: 20 },
       { header: "Start Date", key: "startDate", width: 15 },
       { header: "End Date", key: "endDate", width: 15 },
-      { header: "Duration", key: "duration", width: 15 },
+      { header: "Status", key: "status", width: 15 },
     ];
 
     let allReports = [];
@@ -858,11 +889,8 @@ app.get("/reports/export-excel", async (req, res) => {
                 project: formatName(emp.project),
                 leaveType: formatName(leave.leaveType),
                 startDate: new Date(start), // Convert to Date for sorting
-                endDate: formatDate(new Date(leave.endDate[i]).setDate(new Date(leave.endDate[i]).getDate() - 1)),
-                duration: Array.isArray(leave.duration) && Array.isArray(leave.duration[i]) 
-                ? leave.duration[i].flat().reduce((sum, val) => sum + (typeof val === "number" ? val : 0), 0) 
-                : "N/A",
-              
+                endDate: formatDate(leave.endDate[i]),
+                status: formatName(leave.status[i] || "Pending"),
               });
             });
           });
@@ -875,7 +903,7 @@ app.get("/reports/export-excel", async (req, res) => {
             leaveType: "N/A",
             startDate: new Date(0), // Default earliest date for sorting
             endDate: "N/A",
-            duration: "No Leaves",
+            status: "No Leaves",
           });
         }
       }
@@ -942,7 +970,7 @@ app.post("/reports/export-excel", async (req, res) => {
       { header: "Leave Type", key: "leaveType", width: 20 },
       { header: "Start Date", key: "startDate", width: 15 },
       { header: "End Date", key: "endDate", width: 15 },
-      { header: "Duration", key: "duration", width: 15 },
+      { header: "Status", key: "status", width: 15 },
     ];
 
     let allReports = [];
@@ -968,10 +996,9 @@ app.post("/reports/export-excel", async (req, res) => {
                   project: emp.project,
                   leaveType: leave.leaveType,
                   startDate: new Date(start),
-                  endDate: new Date(new Date(leave.endDate[i]).setDate(new Date(leave.endDate[i]).getDate() - 1)),
-                  duration: Array.isArray(leave.duration) && Array.isArray(leave.duration[i]) 
-                  ? leave.duration[i].flat().reduce((sum, val) => sum + (typeof val === "number" ? val : 0), 0) 
-                  : "N/A",                });
+                  endDate: new Date(leave.endDate[i]),
+                  status: leave.status[i],
+                });
               }
             });
           });
@@ -1373,7 +1400,7 @@ app.get('/leave-type-status/:email/:year', async (req, res) => {
 
     const formattedResponse = {};
 
-    leaveStats.forEach(({ leaveType, status, year: leaveYears, duration }) => {
+    leaveStats.forEach(({ leaveType, status, year: leaveYears }) => {
       if (!formattedResponse[leaveType]) {
         formattedResponse[leaveType] = { Pending: 0, Approved: 0, Rejected: 0 };
       }
@@ -1381,8 +1408,7 @@ app.get('/leave-type-status/:email/:year', async (req, res) => {
       // Iterate through each set of years and statuses
       leaveYears.forEach((yearGroup, i) => {
         if (Array.isArray(yearGroup) && yearGroup.includes(parseInt(year))) {
-          const leaveDuration = duration[i] ? duration[i].reduce((acc, days) => acc + days, 0) : 0;
-          formattedResponse[leaveType][status[i]] = (formattedResponse[leaveType][status[i]] || 0) + leaveDuration;
+          formattedResponse[leaveType][status[i]] = (formattedResponse[leaveType][status[i]] || 0) + 1;
         }
       });
     });
@@ -1393,17 +1419,15 @@ app.get('/leave-type-status/:email/:year', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 app.get("/leave-trends/:email/:year", async (req, res) => {
   const { email, year } = req.params;
 
   try {
     const leaves = await Leave.find({ email });
 
-  if (!leaves.length) {
-  return res.status(200).json([]); // ✅ Return an empty array with 200 OK
-}
-
+    if (!leaves.length) {
+      return res.status(404).json({ message: "No leave records found." });
+    }
 
     const leaveTrends = Array(12).fill(null).map((_, idx) => ({ month: idx + 1 }));
 
@@ -1721,6 +1745,12 @@ app.delete("/leaves/:id", async (req, res) => {
       return res.status(404).json({ error: "Leave not found" });
     }
 
+    // If only one record exists, delete the entire document
+    if (leave.startDate.length === 1) {
+      await Leave.findByIdAndDelete(id);
+      return res.status(200).json({ message: "Leave record deleted completely" });
+    }
+
     const parsedStartDate = parseDate(startDate);
 
     const indexToRemove = leave.startDate.findIndex(date => 
@@ -1731,6 +1761,7 @@ app.delete("/leaves/:id", async (req, res) => {
       return res.status(404).json({ error: "Start date not found" });
     }
 
+    // Remove the specific leave entry
     leave.startDate.splice(indexToRemove, 1);
     leave.endDate.splice(indexToRemove, 1);
     leave.reason.splice(indexToRemove, 1);

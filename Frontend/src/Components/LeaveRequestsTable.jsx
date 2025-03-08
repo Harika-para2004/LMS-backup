@@ -11,6 +11,7 @@ import { MdCheckCircle, MdCancel, MdWatchLater } from "react-icons/md";
 import { useManagerContext } from "../context/ManagerContext";
 import { Modal, Box, IconButton } from "@mui/material";
 import { Button, Select, MenuItem } from "@mui/material";
+import { BASE_URL } from "../Config";
 import {
   AiFillFilePdf,
   AiOutlineClose,
@@ -87,6 +88,9 @@ const LeaveRequestsTable = () => {
   // }, [userData.email, selectedYear,userData.role]);
 
   const fetchLeaveRequestsAdmin = async () => {
+    const userDataResponse = await fetch(
+      `${BASE_URL}api/auth/user/${responseData.userId}`
+    );
     const excludeEmail = "admin@gmail.com"; // Replace with the email to exclude
     try {
       const response = await fetch("http://localhost:5001/leaverequests");

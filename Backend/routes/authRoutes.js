@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const nodemailer = require('nodemailer');
 const router = express.Router();
+const Project=require('../models/Project')
 require('dotenv').config();
 const formatCase = (text) => {
   return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
@@ -15,22 +16,30 @@ router.post('/addEmployee', async (req, res) => {
     if (userExists) {
       return res.status(400).json({ message: "User already exists!" });
     }
-    if (project) {
-      project = project.trim().toLowerCase();
+
+    // Check if empid already exists
+    const user = await User.findOne({ empid });
+    if (user) {
+      return res.status(400).json({ message: "Empid already exists!" });
     }
 
-    // Enforce unique project per Manager
+    // **For Managers Only** - Merge Projects From Project Collection
     if (role === "Manager") {
-      const projectExists = await User.findOne({ project, role: "Manager" });
-      if (projectExists) {
-        return res.status(400).json({ message: "A Manager already exists for this project!" });
-      }
+      // ✅ Fetch all projects from the Project Collection based on managerEmail
+      const projectList = await Project.find({ managerEmail: email });
+console.log("p",projectList)
+      // ✅ Convert all projects to comma-separated string
+      const projectNames = projectList.map(p => p.projectName.toLowerCase()).join(",");
+      project=projectNames
+console.log("p1",projectNames)
+      // ✅ Append the newly added project to the existing project list
+     
     }
-    // Hash the password
+
+    // ✅ Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-
-    // Create new user
+    // ✅ Create new user (Manager or Employee)
     const newUser = new User({
       empname,
       empid,
@@ -39,14 +48,13 @@ router.post('/addEmployee', async (req, res) => {
       gender,
       project,
       role,
-      ...(role === "Employee" && { managerEmail }),
+      managerEmail
     });
 
-    // console.log(newUser);
-
+    // ✅ Save the User
     await newUser.save();
 
-    // Send welcome email
+    // ✅ Send welcome email
     const transporter = nodemailer.createTransport({
       service: 'Gmail',
       auth: {

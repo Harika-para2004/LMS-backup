@@ -85,7 +85,7 @@ import ManagersList from "./Components/ManagersList";
 import AdminToManager from "./Components/AdminToManager";
 import EmployeesUnderManagerinAdmin from "./Components/EmployeesUnderManagerinAdmin";
 import InActiveEmp from "./Components/InActiveEmp";
-
+import Project from "./Components/Projects"
 function App() {
   return (
     <BrowserRouter>
@@ -167,6 +167,7 @@ function App() {
               <Route path="dashboard/:managerEmail/:email?" element={<EmployeeDashboard />} />
               <Route path="leave-requests" element={<LeaveRequestsTable />} />
               <Route path="leave-policies" element={<LeavePolicyPage />} />
+              <Route path="projects" element={<Project/>}/>
               <Route path="calendar" element={<HolidayCalendar />} />
             </Route>
           </Routes>

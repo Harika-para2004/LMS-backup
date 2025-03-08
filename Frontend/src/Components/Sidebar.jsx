@@ -100,6 +100,15 @@ const Sidebar = ({
              <FontAwesomeIcon icon={faEnvelopeOpenText} /> Leave Requests
            </Link>
          </li>
+         <li>
+           <Link
+             to="/admin/projects"
+             className={location.pathname.includes("/admin/projects") ? "active-tab" : ""}
+           >
+             <FaListAlt style={{ marginRight: "8px" }} />
+             Projects
+           </Link>
+         </li>
          </ul>
        </div>
      );

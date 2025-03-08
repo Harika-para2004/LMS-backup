@@ -10,6 +10,7 @@ import { AiOutlineClose } from "react-icons/ai";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import Pagination from "@mui/material/Pagination";
 import Stack from "@mui/material/Stack";
+import { useRef } from "react";
 import {
   Box,
   Button,
@@ -30,6 +31,7 @@ import {
 } from "@mui/material";
 
 const TotalEmployees = () => {
+  const editFormRef = useRef(null);
   const [selectedCategory, setSelectedCategory] = useState("holiday-calendar");
   const [editingRow, setEditingRow] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -47,6 +49,7 @@ const TotalEmployees = () => {
   const [loading, setLoading] = useState(false);
   const excludeEmail = "admin@gmail.com"; // Email to exclude from the list
   // const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
+  
   const [empData, setEmpData] = useState({
     empname: "",
     empid: "",
@@ -57,7 +60,23 @@ const TotalEmployees = () => {
     role: "",
     managerEmail: "",
   });
-
+  const handleManagerChange = (e) => {
+    const selectedValue = e.target.value;
+    setSelectedManager(selectedValue);
+    setEmpData((prevData) => ({
+      ...prevData,
+      managerEmail: selectedValue, // Assuming manager is identified by email
+    }));
+  };
+  
+  const handleProjectChange = (e) => {
+    const selectedValue = e.target.value;
+    setSelectedProject(selectedValue);
+    setEmpData((prevData) => ({
+      ...prevData,
+      project: selectedValue,
+    }));
+  };
   const filteredEmployees = employeeList
     .slice() // Create a shallow copy to avoid mutating original data
     .sort((a, b) =>
@@ -69,7 +88,60 @@ const TotalEmployees = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const employeesPerPage = 15;
+  const [managers, setManagers] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [selectedManager, setSelectedManager] = useState(""); // Default to empty string
+  const [selectedProject, setSelectedProject] = useState(""); // Default empty value
+  const [projectDetails,setProjectDetails]=useState([]);
+  useEffect(() => {
+    fetchProjects();
+  }, []);
 
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}api/projects`);
+      const data = await response.json();
+      setProjectDetails(data);
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+    }
+  };
+  useEffect(() => {
+    const fetchProjectsAndManagers = async () => {
+      try {
+        const response = await axios.get(`${BASE_URL}api/fetchprojects`, {
+          params: { managerEmail: selectedManager || undefined },
+        });
+
+        setProjects(response.data.projects); // Update projects when manager changes
+        setManagers(response.data.managers);
+
+        setSelectedProject(""); // Reset project selection when manager changes
+      } catch (error) {
+        console.error("Error fetching projects and managers:", error);
+      }
+    };
+
+    fetchProjectsAndManagers();
+  }, [selectedManager]); // Refetch projects when manager changes
+
+
+  useEffect(() => {
+    const fetchManagers = async () => {
+      try {
+        const response = await fetch(`${BASE_URL}getManagers`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch managers.");
+        }
+        const data = await response.json();
+        setManagers(data); // Assuming API returns an array of managers
+      } catch (error) {
+        console.error("Error fetching managers:", error);
+      }
+    };
+  
+    fetchManagers();
+  }, []);
   // Calculate the indexes for slicing the data
   const indexOfLastEmployee = currentPage * employeesPerPage;
   const indexOfFirstEmployee = indexOfLastEmployee - employeesPerPage;
@@ -113,7 +185,7 @@ const TotalEmployees = () => {
     }
   };
 
-  const handleSave1 = async (index) => {
+  const handleSave1 = async (id) => {
     // Validate all required fields
     if (
       !empData.email ||
@@ -125,38 +197,41 @@ const TotalEmployees = () => {
       setError("All fields are required.");
       return;
     }
-
-    const updatedEmployeeList = [...employeeList];
-    const employeeId = updatedEmployeeList[index]._id;
-
+  
+    // Find the employee index based on _id
+    const index = employeeList.findIndex((emp) => emp._id === id);
+    if (index === -1) {
+      setError("Employee not found.");
+      return;
+    }
+  
     try {
       // API call to update employee details
-      const response = await fetch(
-        `${BASE_URL}updateEmployeeList/${employeeId}`,
-        {
-          method: "PUT",
-          body: JSON.stringify(empData),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
+      const response = await fetch(`${BASE_URL}updateEmployeeList/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(empData),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+  
       if (!response.ok) {
         throw new Error("Failed to update employee.");
       }
-
+  
       // Update the employee in the list
-      updatedEmployeeList[index] = { ...empData, _id: employeeId };
-
+      const updatedEmployeeList = [...employeeList];
+      updatedEmployeeList[index] = { ...empData, _id: id };
+  
       // Sort the updated list by employee ID (or any other criteria)
       const sortedEmployeeList = updatedEmployeeList.sort((a, b) =>
         a.empid.localeCompare(b.empid)
       );
-
+  
       // Update the state with the sorted list
       setEmpList(sortedEmployeeList);
-
+      fetchEmployees(); // Refresh data from API
+  
       // Reset form data and exit edit mode
       setEmpData({
         empname: "",
@@ -165,6 +240,7 @@ const TotalEmployees = () => {
         password: "",
         project: "",
         role: "",
+        managerEmail: "",
       });
       setEditingRow(null);
       setError(null); // Clear errors
@@ -173,14 +249,44 @@ const TotalEmployees = () => {
       setError("Failed to update employee. Please try again later.");
     }
   };
-
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setEmpData({ ...empData, [name]: value });
+  
+    setEmpData((prevData) => {
+      const updatedData = { ...prevData, [name]: value };
+  
+      // If role is "Manager" and managerEmail is empty, auto-assign project
+      if (name === "role" && value === "Manager" && !prevData.managerEmail) {
+        const assignedProject = projectDetails.find(
+          (project) => project.managerEmail === prevData.email && !project.managerAssigned
+        );
+  
+        if (assignedProject) {
+          updatedData.project = assignedProject.projectName;
+        }
+      }
+  
+      return updatedData;
+    });
   };
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const { empname, empid, email, password, project, gender, role,managerEmail } = empData;
+      if(!empname || !empid || !email || !password || !role || !gender){
+        alert("Please Enter Required Fields *")
+        return
+      }
+
+
+      if (role === "Employee") {
+        if (!managerEmail || !project) {
+          alert("For Employees, Manager Email and Project are required *");
+          return;
+        }
+      }
     try {
       const response = await fetch(`${BASE_URL}api/auth/addEmployee`, {
         method: "POST",
@@ -200,10 +306,9 @@ const TotalEmployees = () => {
 
           if (userDataResponse.ok) {
             const userData = await userDataResponse.json();
-
-            // Update employee list immediately
             setEmpList((prevList) => [...prevList, userData]);
-
+            fetchEmployees();
+            // Update employee list immediately
             // Set active category to "employee-list" (to navigate to the employee list view)
             setSelectedCategory("employee-list");
 
@@ -263,25 +368,44 @@ const TotalEmployees = () => {
           emp._id === id ? { ...emp, isActive: false } : emp
         )
       );
+      fetchEmployees();
     } catch (error) {
       console.error("Error deactivating employee:", error);
       setError("Failed to deactivate employee. Please try again later.");
     }
   };
-
-  const handleEditEmployee = (index) => {
-    // Enter edit mode for the selected row
-    setEditingRow(index);
-
-    // Populate the form data with the selected employee's details
-    setEmpData({
-      empname: employeeList[index].empname,
-      empid: employeeList[index].empid,
-      email: employeeList[index].email,
-      project: employeeList[index].project,
-      role: employeeList[index].role,
-    });
+  const handleEditEmployee = (id) => {
+    // Find the employee using _id
+    console.log("id",id)
+    const selectedEmployee = employeeList.find((emp) => emp._id === id);
+  
+    if (selectedEmployee) {
+      // Set editing row to the found employee's _id
+      setEditingRow(id);
+      setTimeout(() => {
+        if (editFormRef.current) {
+          editFormRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 100);
+      // Populate the form data with the selected employee's details
+      setEmpData({
+        empname: selectedEmployee.empname,
+        empid: selectedEmployee.empid,
+        email: selectedEmployee.email,
+        project: selectedEmployee.project,
+        role: selectedEmployee.role,
+        managerEmail: selectedEmployee.managerEmail,
+      });
+      handleSave1(id)
+    }
   };
+  const handleCancel = () => {
+    setEditingRow(null); // Exit edit mode
+    setEmpData({}); // Reset form data (optional, if needed)
+    setSelectedManager("");
+    setSelectedProject("");
+  };
+  
 
   const handleEmployeeData = (e) => {
     const { name, value } = e.target;
@@ -450,127 +574,313 @@ const TotalEmployees = () => {
       </div>
 
       {message && <p>{message}</p>}
+      {showAddEmployeeModal && (
+  <div style={{ display: "flex", justifyContent: "center", alignItems: "center", marginTop: "20px" }}>
+    <form
+      onSubmit={handleSubmit}
+      style={{
+        width: "700px",
+        backgroundColor: "white",
+        borderRadius: "8px",
+        boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+        padding: "20px",
+        display: "flex",
+        flexDirection: "column",
+        gap: "16px",
+        overflowY: "auto",
+        margin: "10px auto",
+      }}
+    >
+      <Typography
+        variant="h5"
+        id="add-employee-form"
+        textTransform="capitalize"
+        textAlign="center"
+      >
+        Add Employee
+      </Typography>
+    
+      <div style={{ display: "flex", gap: "16px" }}>
+        <TextField label="Employee Name *" name="empname" value={empData.empname} onChange={handleChange} fullWidth />
+        <TextField label="Employee Id *" name="empid" value={empData.empid} onChange={handleChange} fullWidth />
+      </div>
+      <div style={{ display: "flex", gap: "16px" }}>
+        <TextField label="Email *" name="email" value={empData.email} onChange={handleChange} fullWidth />
+        <TextField label="Password *" name="password" value={empData.password} onChange={handleChange} fullWidth />
+      </div>
+      <div style={{ display: "flex", gap: "16px" }}>
+        <FormControl fullWidth>
+          <InputLabel id="gender-label" sx={{ backgroundColor: "white", paddingX: "4px" }}>Gender *</InputLabel>
+          <Select labelId="gender-label" id="gender" name="gender" value={empData.gender} onChange={handleChange}>
+            <MenuItem value="Male">Male</MenuItem>
+            <MenuItem value="Female">Female</MenuItem>
+            <MenuItem value="Other">Other</MenuItem>
+          </Select>
+        </FormControl>
+        <FormControl fullWidth>
+          <InputLabel id="role-label" sx={{ backgroundColor: "white", paddingX: "4px" }}>Role *</InputLabel>
+          <Select labelId="role-label" id="role" name="role" value={empData.role} onChange={handleChange}>
+            <MenuItem value="Manager">Manager</MenuItem>
+            <MenuItem value="Employee">Employee</MenuItem>
+          </Select>
+        </FormControl>
+      </div>
+      <div style={{ display: "flex", gap: "16px" }}>
+        <FormControl fullWidth>
+        <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>managerEmail</InputLabel>
+        <Select value={selectedManager || ""} onChange={handleManagerChange}>
+            <MenuItem value="">All Managers</MenuItem>
+            {managers.map((manager) => (
+              <MenuItem key={manager} value={manager}>
+                {manager}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <FormControl fullWidth>
+          <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>Project</InputLabel>
+          <Select value={selectedProject || ""} onChange={handleProjectChange}>
+            {projects.length > 0 ? (
+              projects.map((project) => (
+                <MenuItem key={project._id} value={project.projectName}>
+                  {project.projectName}
+                </MenuItem>
+              ))
+            ) : (
+              <MenuItem disabled>No projects available</MenuItem>
+            )}
+          </Select>
+        </FormControl>
+      </div>
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <Button variant="contained" type="submit">
+          Add Employee
+        </Button>
+        <Button onClick={handleAddEmployeeClose} style={{ marginRight: "8px" }}>
+          Cancel
+        </Button>
+      </div>
+    </form>
+  </div>
+)}
+{editingRow && (
+  <div
+  ref={editFormRef} // Attach ref here
+    style={{
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      padding: "20px",
+    }}
+  >
+    <div
+      style={{
+        background: "#f9f9f9",
+        padding: "24px",
+        borderRadius: "8px",
+        boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+        width: "700px",
+      }}
+    >
+          <Typography
+        variant="h5"
+        id="add-employee-form"
+        textTransform="capitalize"
+        textAlign="center"
+      >
+        Update Employee 
+        
+      </Typography><br/>
+      <div
+        style={{
+          display: "flex",
+          gap: "16px",
+          marginBottom: "16px",
+        }}
+      >
+      
+        <TextField
+          label="Employee ID"
+          name="empid"
+          value={empData.empid}
+          onChange={handleEmployeeData}
+          fullWidth
+        />
+        <TextField
+          label="Employee Name"
+          name="empname"
+          value={empData.empname}
+          onChange={handleEmployeeData}
+          fullWidth
+        />
+      </div>
+      <div
+        style={{
+          display: "flex",
+          gap: "16px",
+          marginBottom: "16px",
+        }}
+      >
+        <TextField
+          label="Email"
+          name="email"
+          value={empData.email}
+          onChange={handleEmployeeData}
+          fullWidth
+        />
+       <FormControl fullWidth variant="outlined">
+  <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>Role</InputLabel>
+  <Select
+    name="role"
+    value={empData.role}
+    onChange={handleEmployeeData}
+  >
+    <MenuItem value="Manager">Manager</MenuItem>
+    <MenuItem value="Employee">Employee</MenuItem>
+  </Select>
+</FormControl>
 
-      <table className="holiday-table">
-        {/* <caption>Employee Details</caption> */}
-        <thead>
-          <tr>
-            <th>Employee ID</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Project</th>
-            <th>Is Active</th>
-            <th>Actions</th>
+      </div>
+      <div
+        style={{
+          display: "flex",
+          gap: "16px",
+          marginBottom: "16px",
+        }}
+      >
+       <FormControl fullWidth>
+  <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>Manager Email</InputLabel>
+  <Select 
+    value={selectedManager || empData.managerEmail} 
+    onChange={handleManagerChange}
+  >
+    <MenuItem value="">All Managers</MenuItem>
+    {managers.map((manager) => (
+      <MenuItem key={manager} value={manager}>
+        {manager}
+      </MenuItem>
+    ))}
+  </Select>
+</FormControl>
+
+<FormControl fullWidth>
+  <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>Project</InputLabel>
+  <Select 
+    value={selectedProject || empData.project} 
+    onChange={handleProjectChange}
+  >
+    {projects.length > 0 ? (
+      projects
+        .filter(project => 
+          selectedManager !== ""  // Check if any manager is selected
+            ? project.managerEmail === selectedManager // Show only selected manager's projects
+            : empData.managerEmail  // If no manager selected, use database value
+              ? project.managerEmail === empData.managerEmail
+              : true // Show all projects if "All Managers" is selected
+        )
+        .map((project) => (
+          <MenuItem key={project._id} value={project.projectName}>
+            {project.projectName}
+          </MenuItem>
+        ))
+    ) : (
+      <MenuItem disabled>No projects available</MenuItem>
+    )}
+  </Select>
+</FormControl>
+
+
+      </div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          gap: "16px",
+          marginTop: "20px",
+        }}
+      >
+        <Button variant="contained" color="primary" onClick={() => handleSave1(editingRow)}>
+          Update Employee
+        </Button>
+        <Button onClick={handleCancel} style={{ marginRight: "8px" }}>
+          Cancel
+        </Button>
+      </div>
+    </div>
+  </div>
+)}
+
+
+<div className="employee-container">
+  <table className="holiday-table">
+    <thead>
+      <tr>
+        <th>Employee ID</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Project</th>
+        <th>Is Active</th>
+        <th>Manager Name</th>
+        <th>Manager Email</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {currentEmployees.length > 0 ? (
+        currentEmployees.map((emp) => (
+          <tr key={emp._id} className="employee-row">
+            <td>{emp.empid}</td>
+            <td>{emp.empname.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())}</td>
+            <td>{emp.email}</td>
+            <td>{emp.role}</td>
+            <td>{emp.project.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())}</td>
+            <td style={{ color: !emp.isActive ? "red" : "green" }}>
+              {emp.isActive ? "Yes" : "No"}
+            </td>
+            <td> {emp.role === "Employee"
+    ? emp.managerEmail === "dummy@gmail.com"
+      ? "Not Assigned"
+      : emp.managerName || "-"
+    : emp.managerName || "-"}</td>
+<td>
+  {emp.role === "Employee"
+    ? emp.managerEmail === "dummy@gmail.com"
+      ? emp.isActive === "Yes"
+        ? "Not Assigned"
+        : "Not Assigned"
+      : emp.managerEmail || "-"
+    : emp.managerEmail || "-"}
+</td>
+
+
+
+            <td>
+              <button
+                onClick={() => handleEditEmployee(emp._id)}
+                style={{ border: "none", background: "none", cursor: "pointer" }}
+              >
+                <FaEdit className="edit-icon" size={20} color="blue" />
+              </button>
+              <button
+                onClick={() => handleDeactivateEmployee(emp._id)}
+                disabled={!emp.isActive}
+                style={{ border: "none", background: "none", cursor: emp.isActive ? "pointer" : "not-allowed", opacity: emp.isActive ? 1 : 0.2 }}
+              >
+                <FaTrash className="del-icon" size={20} color="red" />
+              </button>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {currentEmployees.length > 0 ? (
-            currentEmployees.map((emp, index) => (
-              <tr key={emp._id}>
-                {editingRow === index ? (
-                  <>
-                    <td>
-                      <input
-                        type="text"
-                        name="empid"
-                        value={empData.empid}
-                        onChange={handleEmployeeData}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        name="empname"
-                        value={empData.empname}
-                        onChange={handleEmployeeData}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        name="email"
-                        value={empData.email}
-                        onChange={handleEmployeeData}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        name="role"
-                        value={empData.role}
-                        onChange={handleEmployeeData}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        name="project"
-                        value={empData.project}
-                        onChange={handleEmployeeData}
-                      />
-                    </td>
-                    <td>{emp.isActive ? "Yes" : "No"}</td>
-                    <td>
-                      <button
-                        className="save-btn"
-                        onClick={() => handleSave1(index)}
-                      >
-                        Save
-                      </button>
-                    </td>
-                  </>
-                ) : (
-                  <>
-                    <td>{emp.empid}</td>
-                    <td>
-                      {formatCase(emp.empname)}
-                    </td>
-                    <td>{emp.email}</td>
-                    <td>{emp.role}</td>
-                    <td>
-                      {formatCase(emp.project)}
-                    </td>
-                    <td style={{ color: !emp.isActive ? "red" : "green" }}>
-                      {emp.isActive ? "Yes" : "No"}
-                    </td>{" "}
-                    <td>
-                      <button
-                        onClick={() => handleEditEmployee(index)}
-                        disabled={!emp.isActive}
-                        style={{
-                          border: "none",
-                          background: "none",
-                          marginRight:"5px",
-                          cursor: emp.isActive ? "pointer" : "not-allowed",
-                          opacity: emp.isActive ? 1 : 0.2,                        }}
-                      >
-                        <FaEdit  size={20} color="blue" />
-                      </button>
-                      <button
-                        onClick={() => handleDeactivateEmployee(emp._id)}
-                        disabled={!emp.isActive}
-                        style={{
-                          border: "none",
-                          background: "none",
-                          cursor: emp.isActive ? "pointer" : "not-allowed",
-                          opacity: emp.isActive ? 1 : 0.2,
-                        }}
-                      >
-                        <FaTrash size={20} color="red" />
-                      </button>
-                    </td>
-                  </>
-                )}
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td>No Employees Available</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+        ))
+      ) : (
+        <tr>
+          <td colSpan="9">No Employees Available</td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</div>
+
 
       <Stack spacing={2} sx={{ mt: 2, display: "flex", alignItems: "center" }}>
         <Pagination
@@ -581,129 +891,7 @@ const TotalEmployees = () => {
         />
       </Stack>
 
-      <Modal
-        open={showAddEmployeeModal}
-        onClose={handleAddEmployeeClose}
-        aria-labelledby="add-employee-modal"
-        aria-describedby="add-employee-form"
-      >
-        <Box
-          component="form"
-          onSubmit={handleSubmit}
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 400,
-            bgcolor: "background.paper",
-            borderRadius: 2,
-            boxShadow: 24,
-            p: 4,
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-            overflowY: "auto",
-            height: "100vh",
-            margin: "10px 0",
-          }}
-        >
-          <Typography
-            variant="h5"
-            id="add-employee-modal"
-            textTransform="capitalize"
-            textAlign="center"
-          >
-            Add Employee
-          </Typography>
-          <TextField
-            label="Employee Name"
-            name="empname"
-            value={empData.empname}
-            onChange={handleChange}
-            fullWidth
-          />
-          <TextField
-            label="Employee Id"
-            name="empid"
-            value={empData.empid}
-            onChange={handleChange}
-            fullWidth
-          />
-          <TextField
-            label="Email"
-            name="email"
-            value={empData.email}
-            onChange={handleChange}
-            fullWidth
-          />
-          <TextField
-            label="Password"
-            name="password"
-            value={empData.password}
-            onChange={handleChange}
-            fullWidth
-          />
-          <FormControl fullWidth>
-            <InputLabel id="gender-label">Gender</InputLabel>
-            <Select
-              labelId="gender-label"
-              id="gender"
-              name="gender"
-              value={empData.gender}
-              onChange={handleChange}
-              label="Gender"
-            >
-              <MenuItem value="Male">Male</MenuItem>
-              <MenuItem value="Female">Female</MenuItem>
-              <MenuItem value="Other">Other</MenuItem>
-            </Select>
-          </FormControl>
-          <FormControl fullWidth>
-            <InputLabel id="role-label">Role</InputLabel>
-            <Select
-              labelId="role-label"
-              id="role"
-              name="role"
-              value={empData.role}
-              onChange={handleChange}
-              label="Role"
-            >
-              <MenuItem value="Manager">Manager</MenuItem>
-              <MenuItem value="Employee">Employee</MenuItem>
-            </Select>
-          </FormControl>
-
-          {/* Show Manager Email input only if role is Employee */}
-          {empData.role === "Employee" && (
-            <TextField
-              fullWidth
-              margin="normal"
-              label="Manager Email"
-              name="managerEmail"
-              value={empData.managerEmail || ""}
-              onChange={handleChange}
-            />
-          )}
-
-          <TextField
-            label="Project"
-            name="project"
-            value={empData.project}
-            onChange={handleChange}
-            fullWidth
-          />
-
-          <Box display="flex" justifyContent="flex-end">
-            <Button onClick={handleAddEmployeeClose} sx={{ mr: 2 }}>
-              Cancel
-            </Button>
-            <Button variant="contained" type="submit">
-              Add Employee
-            </Button>
-          </Box>
-        </Box>
-      </Modal>
+    
     </div>
   );
 };

@@ -1,85 +1,107 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, MenuItem, Select, FormControl, InputLabel, Typography } from "@mui/material";
+import "./overlapping.css"; // Updated styles
 
-const OverlapReport = () => {
-  const [overlapReport, setOverlapReport] = useState([]);
-  const [projects, setProjects] = useState([]);
-  const [selectedProject, setSelectedProject] = useState("");
-
-  useEffect(() => {
-    // Fetch available projects for selection
-    const fetchProjects = async () => {
-      try {
-        const response = await axios.get("http://localhost:5001/admin/projects"); // Adjust based on your backend
-        setProjects(response.data);
-      } catch (error) {
-        console.error("Error fetching projects:", error);
-      }
-    };
-    fetchProjects();
-  }, []);
+const CalendarView = ({ year }) => {  // Receive year as prop
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [leaveData, setLeaveData] = useState({});
+  const [daysInMonth, setDaysInMonth] = useState(30);
+  const [selectedDay, setSelectedDay] = useState(null);
 
   useEffect(() => {
-    if (selectedProject) {
-      fetchOverlapReport(selectedProject);
-    }
-  }, [selectedProject]);
+    setDaysInMonth(new Date(year, selectedMonth, 0).getDate()); // Use year prop
+  }, [selectedMonth, year]);
 
-  const fetchOverlapReport = async (project) => {
+  useEffect(() => {
+    fetchReports();
+  }, [selectedMonth, year]);
+
+  const fetchReports = async () => {
     try {
-      const response = await axios.get(`http://localhost:5001/admin/leaves/overlap-report?project=${project}`);
-      setOverlapReport(response.data.overlapReport);
+      const response = await fetch(
+        `http://localhost:5001/data/leave-reports?month=${selectedMonth}&year=${year}` // Use year prop
+      );
+      if (!response.ok) throw new Error("Failed to fetch reports");
+      const data = await response.json();
+      setLeaveData(data);
     } catch (error) {
-      console.error("Error fetching overlap report:", error);
+      console.error("Error fetching reports:", error);
     }
   };
 
+  const handleDayClick = (day) => {
+    setSelectedDay(selectedDay === day ? null : day);
+  };
+
+  const getHighlightColor = (count) => {
+    if (count === 2) return "#FFD700"; // Light Yellow
+    if (count === 3) return "#FFA500"; // Orange
+    if (count === 4) return "#FF4500"; // Dark Orange
+    if (count >= 5) return "#FF0000"; // Red for 5+
+    return "white"; // No color for 1 employee
+  };
+
   return (
-    <div style={{ padding: "20px" }}>
-      <Typography variant="h5" gutterBottom>Leave Overlap Report</Typography>
+    <div className="calendar-container">
+      <h2>Leave Overlapping Calendar</h2>
 
-      <FormControl  style={{ margin: "20px",width:"50%" }}>
-        <InputLabel>Select Project</InputLabel>
-        <Select value={selectedProject} label="Select Project" onChange={(e) => setSelectedProject(e.target.value)}>
-          {projects.map((project) => (
-            <MenuItem key={project.id} value={project.name}>{project.name}</MenuItem>
+      <div className="selectors">
+        {/* Keep only the month dropdown */}
+        <select onChange={(e) => setSelectedMonth(Number(e.target.value))} value={selectedMonth}>
+          {Array.from({ length: 12 }, (_, i) => (
+            <option key={i + 1} value={i + 1}>
+              {new Date(0, i).toLocaleString("default", { month: "long" })}
+            </option>
           ))}
-        </Select>
-      </FormControl>
+        </select>
+      </div>
 
-      <TableContainer component={Paper} size="small">
-        <Table>
-          <TableHead sx={{ backgroundColor: "var(--deep-blue) !important"  }} >
-            <TableRow >
-              <TableCell><b>Employee 1</b></TableCell>
-              <TableCell><b>Employee 2</b></TableCell>
-              <TableCell><b>Overlapped Start Date</b></TableCell>
-              <TableCell><b>Overlapped End Date</b></TableCell>
-              <TableCell><b>Leave Type</b></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {overlapReport.length > 0 ? (
-              overlapReport.map((entry, index) => (
-                <TableRow key={index}>
-                  <TableCell>{entry.employee1}</TableCell>
-                  <TableCell>{entry.employee2}</TableCell>
-                  <TableCell>{new Date(entry.overlappedStart).toLocaleDateString()}</TableCell>
-                  <TableCell>{new Date(entry.overlappedEnd).toLocaleDateString()}</TableCell>
-                  <TableCell>{entry.leaveType}</TableCell>
-                </TableRow>
-              ))
+      {/* Wrapper to align calendar and leave details horizontally */}
+      <div className="calendar-wrapper">
+        {/* Calendar Box */}
+        <div className="calendar-box">
+          <h3>
+            {new Date(year, selectedMonth - 1).toLocaleString("default", { month: "long" })} {year} {/* Use year prop */}
+          </h3>
+          <div className="calendar-grid">
+            {Array.from({ length: daysInMonth }, (_, i) => {
+              const day = i + 1;
+              const employeesOnLeave = leaveData[day] || [];
+              const isOverlapping = employeesOnLeave.length > 1;
+
+              return (
+                <div
+                  key={day}
+                  className="calendar-day"
+                  style={{ backgroundColor: isOverlapping ? getHighlightColor(employeesOnLeave.length) : "white" }}
+                  onClick={() => handleDayClick(day)}
+                >
+                  <span>{day}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Leave Details Box - Show Only If a Date is Selected */}
+        {selectedDay !== null && (
+          <div className="leave-details-box">
+            <h3>
+              Leave Details - {selectedDay} {new Date(year, selectedMonth - 1).toLocaleString("default", { month: "long" })} {year} {/* Use year prop */}
+            </h3>
+            {leaveData[selectedDay]?.length > 0 ? (
+              <ul className="employee-list">
+                {leaveData[selectedDay].map((emp, index) => (
+                  <li key={index}>{emp}</li>
+                ))}
+              </ul>
             ) : (
-              <TableRow>
-                <TableCell colSpan={5} align="center">No overlapping leaves found</TableCell>
-              </TableRow>
+              <p>No leaves on this day</p>
             )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
-export default OverlapReport;
+export default CalendarView;
