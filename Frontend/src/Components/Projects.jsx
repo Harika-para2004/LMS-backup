@@ -1,16 +1,22 @@
-import { useState, useEffect } from "react";
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, TextField } from "@mui/material";
-import { IconButton } from "@mui/material";
-import {Add, Edit, Delete,Close } from "@mui/icons-material";
-const BASE_URL = "http://localhost:5001/api"; // Adjust as needed
-import { useRef } from "react";
+import { useState, useEffect, useRef } from "react";
+import {
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  IconButton,
+  Button,
+  TextField,
+  Tooltip,
+} from "@mui/material";
+import { Add, Edit, Delete, Close } from "@mui/icons-material";
 
+const BASE_URL = "http://localhost:5001/api";
 
 const ProjectManager = () => {
   const [projects, setProjects] = useState([]);
   const editFormRef = useRef(null);
   const [projectName, setProjectName] = useState("");
-  const [managerEmail, setManagerEmail] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -28,38 +34,36 @@ const ProjectManager = () => {
       console.error("Error fetching projects:", error);
     }
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!projectName || !managerEmail) {
-      setError("Both fields are required.");
+    if (!projectName) {
+      setError("Project Name is required.");
       return;
     }
-
+  
     try {
       const method = editingId ? "PUT" : "POST";
       const url = editingId ? `${BASE_URL}/projects/${editingId}` : `${BASE_URL}/projects`;
-
+  
       const response = await fetch(url, {
         method,
-        body: JSON.stringify({ projectName, managerEmail }),
+        body: JSON.stringify({ projectName }),
         headers: { "Content-Type": "application/json" },
       });
-      const data = await response.json(); // Convert response to JSON
-// ✅ Store the updated user in localStorage
-if (data.updatedUser) {
-  localStorage.setItem("userData", JSON.stringify(data.updatedUser));
-  console.log("Updated User Data:", data.updatedUser);
-}
-
+  
+      const data = await response.json();
+  
       if (!response.ok) {
-        alert(data.message || "Failed to save project.");
+        if (response.status === 400 && data.message === "Project already exists") {
+          alert("Project already exists.");
+        } else {
+          alert(data.message || "Failed to save project.");
+        }
+        return;
       }
   
-
       fetchProjects();
       setProjectName("");
-      setManagerEmail("");
       setEditingId(null);
       setError("");
       setShowForm(false);
@@ -67,6 +71,7 @@ if (data.updatedUser) {
       console.error("Error saving project:", error);
     }
   };
+  
 
   const handleDelete = async (id) => {
     try {
@@ -84,102 +89,125 @@ if (data.updatedUser) {
       }
     }, 100);
     setProjectName(project.projectName);
-    setManagerEmail(project.managerEmail);
     setEditingId(project._id);
     setShowForm(true);
   };
 
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h2>Projects & Managers</h2>
-        <Button
-  variant="contained"
-  style={{ marginTop: "20px", backgroundColor: 'var(--deep-blue)', color: "white" }}
-  onClick={() => {
-    setShowForm(!showForm);
-    if (!showForm) {
-      setProjectName(""); // Clear project name
-      setManagerEmail(""); // Clear manager email
-      setEditingId(null); // Reset editing state
-    }
-  }}
-  startIcon={showForm ? <Close /> : <Add />} // Add for "Add Project", Close for "Cancel"
->
-  {showForm ? "Cancel" : "Add Project"}
-</Button>
+    <div
+      style={{
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "20px",
+        marginTop: "20px",
+      }}
+    >
+      <h2 style={{ textAlign: "center" }}>Projects</h2>
 
-
-      </div>
+      <Button
+        variant="contained"
+        style={{ backgroundColor: 'var(--deep-blue)', color: "white" }}
+        onClick={() => {
+          setShowForm(!showForm);
+          if (!showForm) {
+            setProjectName("");
+            setEditingId(null);
+          }
+        }}
+        startIcon={showForm ? <Close /> : <Add />}
+      >
+        {showForm ? "Cancel" : "Add Project"}
+      </Button>
 
       {showForm && (
-        <div     ref={editFormRef} // Attach ref here
-        style={{ display: "flex", justifyContent: "center", alignItems: "center", marginTop: "20px" }}>
-          <form
-            onSubmit={handleSubmit}
-            style={{
-              width: "400px",
-              padding: "20px",
-              borderRadius: "10px",
-              boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.2)",
-              backgroundColor: "#fff",
-              display: "flex",
-              flexDirection: "column",
-              gap: "15px",
-            }}
-          >
-            <TextField
-              label="Project Name"
-              value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
-              required
-              fullWidth
-              margin="normal"
-            />
-            <TextField
-              label="Manager Email"
-              value={managerEmail}
-              onChange={(e) => setManagerEmail(e.target.value)}
-              required
-              fullWidth
-              margin="normal"
-            />
-            <Button type="submit" variant="contained" color="primary"  style={{ backgroundColor: 'var(--deep-blue)', color: "white" }}>
-              {editingId ? "Update" : "Add"}
-            </Button>
-          </form>
-        </div>
+        <form
+          ref={editFormRef}
+          onSubmit={handleSubmit}
+          style={{
+            width: "100%",
+            backgroundColor: "#ffffff",
+            borderRadius: "10px",
+            padding: "15px",
+            boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+          }}
+        >
+          <TextField
+            label="Project Name"
+            value={projectName}
+            onChange={(e) => setProjectName(e.target.value)}
+            required
+            fullWidth
+          />
+          <Button type="submit" variant="contained" color="primary">
+            {editingId ? "Update" : "Add"}
+          </Button>
+        </form>
       )}
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
-        <TableContainer component={Paper} style={{ marginTop: "20px" }}>
-  <Table>
-    <TableHead>
-      <TableRow sx={{ "& th": { padding: "6px 10px" } }}> {/* Reduce padding */}
-        <TableCell>Project Name</TableCell>
-        <TableCell>Manager Email</TableCell>
-        <TableCell>Actions</TableCell>
-      </TableRow>
-    </TableHead>
-    <TableBody>
-      {projects.map((project) => (
-        <TableRow key={project._id} sx={{ "& td": { padding: "6px 10px" } }}> {/* Reduce padding */}
-          <TableCell>{project.projectName}</TableCell>
-          <TableCell>{project.managerEmail}</TableCell>
-          <TableCell>
-            <IconButton color="primary" onClick={() => handleEdit(project)}>
-              <Edit />
-            </IconButton>
-            <IconButton color="error" onClick={() => handleDelete(project._id)}>
-              <Delete />
-            </IconButton>
-          </TableCell>
-        </TableRow>
-      ))}
-    </TableBody>
-  </Table>
-</TableContainer>
+<Grid container spacing={2} style={{ maxWidth: "100%" }}>
+  {projects.length > 0 ? (
+    projects.map((project) => (
+      <Grid item xs={12} sm={12} md={12} lg={12} key={project._id}>
+        <Card
+          style={{
+            backgroundColor: "#f9f9f9",
+            borderRadius: "10px",
+            boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
+            padding: "5px 10px",
+          }}
+        >
+          <CardContent
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "5px 10px",
+            }}
+          >
+           <Tooltip title={project.projectName}>
+  <Typography
+    variant="body1"
+    style={{
+      fontWeight: "bold",
+      fontSize: "14px",
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+    }}
+  >
+    {project.projectName.length > 10
+      ? project.projectName.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase()).slice(0, 10) + "..."
+      : project.projectName.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
+    }
+  </Typography>
+</Tooltip>
 
+            <div>
+              <Tooltip title="Edit">
+                <IconButton onClick={() => handleEdit(project)} size="small">
+                  <Edit color="primary" fontSize="small" />
+                </IconButton>
+              </Tooltip>
+
+              <Tooltip title="Delete">
+                <IconButton onClick={() => handleDelete(project._id)} size="small">
+                  <Delete color="error" fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </div>
+          </CardContent>
+        </Card>
+      </Grid>
+    ))
+  ) : (
+    <Typography variant="body1">No projects available</Typography>
+  )}
+</Grid>
     </div>
   );
 };

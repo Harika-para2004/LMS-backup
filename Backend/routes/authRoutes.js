@@ -9,53 +9,87 @@ require('dotenv').config();
 const formatCase = (text) => {
   return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
 };
-
-// Add Employee Route
 router.post('/addEmployee', async (req, res) => {
   let { empname, empid, email, password, gender, project, role, managerEmail } = req.body;
-
+  email=email.toLowerCase();
   try {
-    // Convert email to lowercase before checking/storing
-    email = email.toLowerCase();
-
-    // Check if email already exists
+    // ✅ Check if email already exists
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: "User already exists!" });
     }
 
-    // Check if empid already exists
+    // ✅ Check if empid already exists
     const user = await User.findOne({ empid });
     if (user) {
       return res.status(400).json({ message: "Empid already exists!" });
     }
 
-    // **For Managers Only** - Merge Projects From Project Collection
+    // ✅ Handle Manager Role (Allow Manager to have Manager)
     if (role === "Manager") {
       const projectList = await Project.find({ managerEmail: email });
-      const projectNames = projectList.map(p => p.projectName.toLowerCase()).join(",");
-      project = projectNames;
+      const projectNames = projectList.map(p => p.projectName.toLowerCase());
+
+      // ✅ Ensure the project is always an array (no mix of string/array)
+      project = projectNames.length > 0 ? projectNames : [];
     }
 
-    // Hash the password
+    // ✅ Ensure project is always an array, prevent split characters
+    if (!Array.isArray(project)) {
+      project = project ? [project] : [];
+    }
+
+    // ✅ Prevent empty strings in project
+    project = project.filter(p => p.trim() !== "");
+
+    // ✅ Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user (Manager or Employee)
+    // ✅ Create new user (Manager or Employee)
     const newUser = new User({
       empname,
       empid,
-      email,  // Stored as lowercase
+      email,
       password: hashedPassword,
       gender,
       project,
       role,
-      managerEmail
+      managerEmail  // ✅ Keep this field even for Managers now
     });
 
-    // Save the User
+    // ✅ Save the User
     await newUser.save();
 
-    // Send welcome email
+    // ✅ Step 2: Assign Employee's Project to Manager & Senior Manager (if role=Employee)
+    if (role === "Employee" && managerEmail) {
+      let currentManagerEmail = managerEmail;
+
+      // ✅ Traverse the chain of managers and assign projects
+      while (currentManagerEmail) {
+        const manager = await User.findOne({ email: currentManagerEmail });
+
+        if (manager) {
+          // ✅ Prevent duplicates in manager's project
+          const updatedProjects = Array.isArray(manager.project)
+            ? [...new Set([...manager.project, ...project])]
+            : [project];
+
+          // ✅ Update the Manager's Project
+          await User.updateOne(
+            { email: currentManagerEmail },
+            { $set: { project: updatedProjects } }
+          );
+
+          // ✅ Move to the next Senior Manager (if exists)
+          currentManagerEmail = manager.managerEmail;
+        } else {
+          // ✅ No more senior managers
+          currentManagerEmail = null;
+        }
+      }
+    }
+
+    // ✅ Step 3: Send Welcome Email
     const transporter = nodemailer.createTransport({
       service: 'Gmail',
       auth: {
@@ -87,7 +121,9 @@ router.post('/addEmployee', async (req, res) => {
   }
 });
 
-// Sign-in Route
+
+
+// Sign-in route
 router.post('/signin', async (req, res) => {
   let { email, password } = req.body;
 

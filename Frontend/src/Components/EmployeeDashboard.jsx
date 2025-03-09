@@ -40,8 +40,10 @@ const EmployeeDashboard = () => {
   const handleBack = () => {
     if (role === "Manager") {
       navigate("/manager/analytics/employees");
-    } else if (role === "Admin") {
+    } else if (role === "Admin" && managerEmail !== "dummy@gmail.com") {
       navigate(`/admin/analytics/${managerEmail}/employees`);
+    } else if(managerEmail === "dummy@gmail.com"){
+      navigate(`/admin/analytics/${managerEmail}/inactive-employees`);
     }
   };
 

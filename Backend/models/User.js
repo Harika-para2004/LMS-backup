@@ -5,15 +5,15 @@ const userSchema = new mongoose.Schema({
   empid: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  project: { type: String },
+  project: { type: [String] }, // Changed to array to store multiple projects
   gender: { type: String },
   role: {
     type: String,
-    enum: ["Employee", "Manager", "Admin"], // Ensure "Manager" is included
+    enum: ["Employee", "Manager", "Admin"],
     required: true,
   },
   managerEmail: { type: String },
-  isActive: { type: Boolean, default: true },
+  isActive:{type: Boolean, default: true},
   yearlyLeavesTaken: {
     type: Map,
     of: Number,

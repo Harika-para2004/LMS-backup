@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import Projects from './Projects';
+import { useRef } from "react";
 import {
   FaEdit,
   FaTrash,
@@ -18,10 +20,12 @@ function LeavePolicyPage() {
     policyId: "",
   });
   const showToast = useToast();
+  
   const [showForm, setShowForm] = useState(false);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [policies, setPolicies] = useState([]);
+  const formRef = useRef(null); // ✅ Ref for the form
   const [expandedPolicy, setExpandedPolicy] = useState(null);
 
   useEffect(() => {
@@ -98,7 +102,8 @@ function LeavePolicyPage() {
   };
 
   return (
-    <div className="leave-policy-page">
+    <div className="container">
+    <div className="left-section">
       <div className="header">
         <h2 className="content-heading">Leave Policies</h2>
         <button
@@ -128,7 +133,7 @@ function LeavePolicyPage() {
       )}
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="form-container styled-form">
+        <form ref={formRef} onSubmit={handleSubmit} className="form-container styled-form">
           <h3 style={{ marginBottom: "20px" }}>
             {formData.policyId ? "Edit" : "Create"} Leave Policy
           </h3>
@@ -213,6 +218,9 @@ function LeavePolicyPage() {
                           description: p.description,
                           policyId: p._id,
                         });
+                        setTimeout(() => {
+                          formRef.current.scrollIntoView({ behavior: 'smooth' });
+                        }, 100);
                       }}
                     >
                       <FaEdit />
@@ -239,7 +247,11 @@ function LeavePolicyPage() {
           )}
         </div>
       </div>
-    </div>
+      </div>
+
+      <div className="right-section">
+        <Projects />
+    </div></div>
   );
 }
 

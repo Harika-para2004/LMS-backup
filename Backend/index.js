@@ -19,7 +19,7 @@ const pdfkit = require("pdfkit");
 const fs = require("fs");
 const upload = multer({ dest: "uploads/" });
 const exceluploads = require("./routes/exceluploads")
-const forgotPasswordRoutes = require("./routes/forgotPasswordRoutes");
+const forgotPasswordRoutes = require("./routes/ForgotPasswordRoutes");
 dotenv.config();
 
 const app = express();
@@ -43,7 +43,7 @@ app.use("/excel",exceluploads);
 app.use("/admin", adminRoutes);
 app.use("/api/employees", require("./routes/empUnderMang"));
 app.use("/data",leavereports);
-app.use("/api/auth", forgotPasswordRoutes);
+app.use("/api/auth/forgot", forgotPasswordRoutes);
 const formatCase = (text) => {
   return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
 };
@@ -577,43 +577,224 @@ app.put("/holidays/:id", async (req, res) => {
   }
 });
 app.put("/updateEmployeeList/:id", async (req, res) => {
-  const { empid, empname, email, project,role,managerEmail } = req.body;
+  const { empid, empname, email, project, role, managerEmail } = req.body;
+
   try {
     if (!empid || !empname || !email || !project) {
       return res.status(400).json({ message: "All fields are required!" });
     }
+
+    // ✅ Fetch existing employee data
+    const existingEmployee = await User.findById(req.params.id);
+
+    if (!existingEmployee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    // ✅ Convert project to lowercase array
+    const updatedProjects = Array.isArray(project)
+      ? project.map(proj => proj.toLowerCase())
+      : [project.toLowerCase()];
+
+    // ✅ Preserve projects if role is Manager
+    let finalProjects = updatedProjects;
+    if (existingEmployee.role === "Manager" && role === "Manager") {
+      finalProjects = existingEmployee.project;
+    }
+
+    // ✅ Update Employee
     const updatedEmployee = await User.findByIdAndUpdate(
       req.params.id,
-      { empid, empname, email,role, project,managerEmail },
+      {
+        empid,
+        empname,
+        email,
+        role,
+        project: finalProjects,
+        managerEmail,
+      },
       { new: true }
     );
 
-    if (!updatedEmployee) {
-      return res.status(404).json({ message: "Holiday not found" });
+    // ✅ Handle Employee → Manager → Senior Manager chain (Existing Logic)
+    if (role === "Employee" && managerEmail) {
+      const manager = await User.findOne({ email: managerEmail });
+
+      if (manager) {
+        let managerProjects = manager.project || [];
+
+        // ✅ Add projects to Manager
+        updatedProjects.forEach(proj => {
+          if (!managerProjects.includes(proj)) {
+            managerProjects.push(proj);
+          }
+        });
+
+        await User.updateOne(
+          { email: managerEmail },
+          { $set: { project: managerProjects } }
+        );
+
+        // ✅ Fetch Senior Manager (if exists)
+        if (manager.managerEmail) {
+          const seniorManager = await User.findOne({
+            email: manager.managerEmail,
+          });
+
+          if (seniorManager) {
+            let seniorManagerProjects = seniorManager.project || [];
+
+            // ✅ Add projects to Senior Manager
+            updatedProjects.forEach(proj => {
+              if (!seniorManagerProjects.includes(proj)) {
+                seniorManagerProjects.push(proj);
+              }
+            });
+
+            await User.updateOne(
+              { email: manager.managerEmail },
+              { $set: { project: seniorManagerProjects } }
+            );
+          }
+        }
+      }
     }
 
-    res.json(updatedEmployee);
+    // ✅ ✅ ✅ New Logic 1: Handle Project Transfer when Manager is Demoted ✅ ✅ ✅
+    if (existingEmployee.role === "Manager" && role !== "Manager") {
+      // 🚀 If a Manager is demoted (to Employee), transfer their projects
+      if (existingEmployee.managerEmail) {
+        const seniorManager = await User.findOne({
+          email: existingEmployee.managerEmail,
+        });
+
+        if (seniorManager) {
+          let seniorManagerProjects = seniorManager.project || [];
+
+          // ✅ Transfer all projects to Senior Manager
+          existingEmployee.project.forEach(proj => {
+            if (!seniorManagerProjects.includes(proj)) {
+              seniorManagerProjects.push(proj);
+            }
+          });
+
+          // ✅ Update the Senior Manager's project list
+          await User.updateOne(
+            { email: existingEmployee.managerEmail },
+            { $set: { project: seniorManagerProjects } }
+          );
+
+          // ✅ Clear the Manager's project list since they are demoted
+          await User.updateOne(
+            { _id: req.params.id },
+            { $set: { project: [] } }
+          );
+        }
+      }
+    }
+
+    // ✅ ✅ ✅ New Logic 2: Transfer Projects when Manager's ManagerEmail Changes ✅ ✅ ✅
+    if (
+      existingEmployee.role === "Manager" &&
+      role === "Manager" &&
+      existingEmployee.managerEmail !== managerEmail
+    ) {
+      // 🚀 Transfer all projects to the NEW Senior Manager
+      const newSeniorManager = await User.findOne({ email: managerEmail });
+
+      if (newSeniorManager) {
+        let newSeniorManagerProjects = newSeniorManager.project || [];
+
+        // ✅ Transfer all projects to New Senior Manager
+        existingEmployee.project.forEach(proj => {
+          if (!newSeniorManagerProjects.includes(proj)) {
+            newSeniorManagerProjects.push(proj);
+          }
+        });
+
+        // ✅ Update the New Senior Manager's project list
+        await User.updateOne(
+          { email: managerEmail },
+          { $set: { project: newSeniorManagerProjects } }
+        );
+
+        // ✅ Clear the Old Senior Manager's projects (if no one else has it)
+        if (existingEmployee.managerEmail) {
+          const oldSeniorManager = await User.findOne({
+            email: existingEmployee.managerEmail,
+          });
+
+          if (oldSeniorManager) {
+            let oldSeniorManagerProjects = oldSeniorManager.project || [];
+
+            // ✅ Remove projects only if no one else has them
+            for (let proj of oldSeniorManagerProjects) {
+              const managersWithProject = await User.find({
+                managerEmail: existingEmployee.managerEmail,
+                project: proj,
+              });
+
+              if (managersWithProject.length === 0) {
+                oldSeniorManagerProjects = oldSeniorManagerProjects.filter(
+                  p => p !== proj
+                );
+              }
+            }
+
+            await User.updateOne(
+              { email: existingEmployee.managerEmail },
+              { $set: { project: oldSeniorManagerProjects } }
+            );
+          }
+        }
+      }
+    }
+
+    // ✅ ✅ ✅ Existing Logic: Handle Project Removal when Employee Leaves ✅ ✅ ✅
+    if (role === "Employee" && managerEmail) {
+      const manager = await User.findOne({ email: managerEmail });
+
+      if (manager) {
+        let managerProjects = manager.project || [];
+
+        // ✅ Check if any other employee has the project
+        for (let proj of managerProjects) {
+          const employeesWithProject = await User.find({
+            managerEmail,
+            project: proj,
+          });
+
+          if (employeesWithProject.length === 0) {
+            managerProjects = managerProjects.filter(p => p !== proj);
+          }
+        }
+
+        await User.updateOne(
+          { email: managerEmail },
+          { $set: { project: managerProjects } }
+        );
+      }
+    }
+
+    res.status(200).json(updatedEmployee);
   } catch (err) {
-    res
-      .status(400)
-      .json({ message: "Error updating holiday", error: err.message });
+    res.status(400).json({
+      message: "Error updating employee",
+      error: err.message,
+    });
   }
 });
+
+
 app.get("/getManagers", async (req, res) => {
   try {
-    // Fetch users where role is 'Manager'
-    const managers = await User.find({ role: "Manager" }, { email: 1, _id: 1 });
-
-    if (!managers.length) {
-      return res.status(404).json({ message: "No managers found." });
-    }
-
+    const managers = await User.find({ role: "Manager" }); // ✅ Fetch all Managers
     res.status(200).json(managers);
-  } catch (error) {
-    console.error("Error fetching managers:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching managers", error: err.message });
   }
 });
+
 
 // Delete a holiday
 app.delete("/holidays/:id", async (req, res) => {
@@ -668,7 +849,6 @@ app.put("/employee-del/:id", async (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
-
 app.get("/reports", async (req, res) => {
   try {
     const { project, search, email, year } = req.query;
@@ -883,25 +1063,28 @@ app.get("/reports/export-excel", async (req, res) => {
         if (leaves.length > 0) {
           leaves.forEach((leave, index) => {
             leave.startDate.forEach((start, i) => {
+              if (leave.status[i] === "Approved") {
               allReports.push({
                 empid: emp.empid,
                 empname: formatName(emp.empname),
                 email: emp.email || "N/A",
-                project: formatName(emp.project),
-                leaveType: formatName(leave.leaveType),
+                project: Array.isArray(emp.project)
+                ? emp.project.join(", ")  // ✅ Convert array to comma-separated string
+                : emp.project || "N/A",                leaveType: formatName(leave.leaveType),
                 startDate: new Date(start), // Convert to Date for sorting
                 endDate: formatDate(leave.endDate[i]),
                 status: formatName(leave.status[i] || "Pending"),
               });
-            });
+           } });
           });
         } else {
           allReports.push({
             empid: emp.empid,
             empname: formatName(emp.empname),
             email: emp.email || "N/A",
-            project: formatName(emp.project),
-            leaveType: "N/A",
+            project: Array.isArray(emp.project)
+            ? emp.project.join(", ")  // ✅ Convert array to comma-separated string
+            : emp.project || "N/A",            leaveType: "N/A",
             startDate: new Date(0), // Default earliest date for sorting
             endDate: "N/A",
             status: "No Leaves",
@@ -994,8 +1177,9 @@ app.post("/reports/export-excel", async (req, res) => {
                   empid: emp.empid,
                   empname: emp.empname,
                   email: emp.email || "N/A",
-                  project: emp.project,
-                  leaveType: leave.leaveType,
+                  project: Array.isArray(emp.project)
+                  ? emp.project.join(", ")  // ✅ Convert array to comma-separated string
+                  : emp.project || "N/A",                     leaveType: leave.leaveType,
                   startDate: new Date(start),
                   endDate: new Date(leave.endDate[i]),
                   status: leave.status[i],

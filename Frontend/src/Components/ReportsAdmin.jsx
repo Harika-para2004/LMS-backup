@@ -52,7 +52,7 @@ const ReportsAdmin = () => {
             empname: formatName(report.empname),
             empid: report.empid,
             email: report.email || "N/A",
-            project: formatName(report.project),
+            project: report.project,
             leaveType: formatName(leave.leaveType),
             startDate: formatDate(leave.startDate), // Convert to Date for sorting
             endDate: formatDate(leave.endDate),
@@ -62,7 +62,7 @@ const ReportsAdmin = () => {
               empname: formatName(report.empname),
               empid: report.empid,
               email: report.email || "N/A",
-              project: formatName(report.project),
+              project: report.project,
               leaveType: "N/A",
               startDate: new Date(0), // Earliest date for proper sorting
               endDate: "N/A",
@@ -79,7 +79,7 @@ const ReportsAdmin = () => {
         report.email !== "admin@gmail.com" &&
         (report.empname.toLowerCase().includes(search.toLowerCase()) ||
           report.email.toLowerCase().includes(search.toLowerCase()) ||
-          report.project.toLowerCase().includes(search.toLowerCase()) ||
+          report.project.includes(search.toLowerCase()) ||
           report.empid.toString().includes(search))
     )
     // .map((report) => ({
@@ -111,7 +111,7 @@ const ReportsAdmin = () => {
       (report) =>
         report.empname.toLowerCase().includes(search.toLowerCase()) ||
         report.email.toLowerCase().includes(search.toLowerCase()) ||
-        report.project.toLowerCase().includes(search.toLowerCase()) ||
+        report.project.includes(search.toLowerCase()) ||
         report.empid.toString().includes(search)
     );
 

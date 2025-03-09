@@ -8,9 +8,9 @@ const AdminToManager = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { email: paramEmail } = useParams();
-  const { email: contextEmail } = useManagerContext(); // role will be "admin"  
+  const { email: contextEmail } = useManagerContext(); // role will be "admin"
   const [email, setEmail] = useState(paramEmail || contextEmail);
-  console.log("admin email",email)
+  console.log("admin email", email);
 
   const role = localStorage.getItem("role");
 
@@ -21,83 +21,138 @@ const AdminToManager = () => {
   }, [email, navigate]);
 
   const handleBack = () => {
-
     if (role === "Admin") {
       navigate("/admin/all-reports/managers");
-    } 
+    }
   };
 
   return (
     <Box sx={{ width: "100%", typography: "body1", p: 2 }}>
       {/* Navigation Buttons */}
-      {    
-       <Button
-       variant="contained"
-       startIcon={
-         <ArrowBackIcon sx={{ fontSize: 18, color: "white" }} />
-       }
-       onClick={handleBack}
-       sx={{
-         textTransform: "none",
-         fontSize: "13px",
-         fontWeight: 500,
-         borderRadius: "8px",
-         height: 36,
-         minWidth: 100,
-         px: 2,
-        //  background: "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)", // Elegant gradient
-         color: "white",
-        //  "&:hover": {
-        //   //  background: "transparent",
-        //     //  "linear-gradient(135deg, #83289A 0%, #5A1780 100%)", // Slightly darker hover effect
-        //  },
-        //  boxShadow: "0px 3px 6px rgba(159, 50, 178, 0.3)", // Subtle glow effect
-         transition: "all 0.3s ease-in-out", // Smooth animation
-       }}
-     >
-       Back
-     </Button>
-        }
+      {
+        <Button
+          variant="contained"
+          startIcon={<ArrowBackIcon sx={{ fontSize: 18, color: "white" }} />}
+          onClick={handleBack}
+          sx={{
+            textTransform: "none",
+            fontSize: "13px",
+            fontWeight: 500,
+            borderRadius: "8px",
+            height: 36,
+            minWidth: 100,
+            px: 2,
+            //  background: "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)", // Elegant gradient
+            color: "white",
+            //  "&:hover": {
+            //   //  background: "transparent",
+            //     //  "linear-gradient(135deg, #83289A 0%, #5A1780 100%)", // Slightly darker hover effect
+            //  },
+            //  boxShadow: "0px 3px 6px rgba(159, 50, 178, 0.3)", // Subtle glow effect
+            transition: "all 0.3s ease-in-out", // Smooth animation
+          }}
+        >
+          Back
+        </Button>
+      }
       <Stack direction="row" spacing={2} justifyContent="center" sx={{ mb: 3 }}>
         <Button
-          variant={location.pathname.includes(`/admin/analytics/${email}/self`) ? "contained" : "outlined"}
+          variant={
+            location.pathname.includes(`/admin/analytics/${email}/self`)
+              ? "contained"
+              : "outlined"
+          }
           onClick={() => navigate(`/admin/analytics/${email}/self`)}
           sx={{
             backgroundColor:
-            [`/admin/analytics`,`/admin/analytics/${email}/self`].some(path => location.pathname.includes(path)) && !location.pathname.includes("/reports") &&  !location.pathname.includes("/employees") ? "var(--deep-blue)" : "transparent",
-            color:  [`/admin/analytics`,`/admin/analytics/${email}/self`].some(path => location.pathname.includes(path)) && !location.pathname.includes("/reports")  && !location.pathname.includes("/employees") ? "white" : "var(--deep-blue)",
+              [`/admin/analytics`, `/admin/analytics/${email}/self`].some(
+                (path) => location.pathname.includes(path)
+              ) &&
+              !location.pathname.includes("/reports") &&
+              !location.pathname.includes("/employees") &&
+              !location.pathname.includes("/inactive-employees") 
+                ? "var(--deep-blue)"
+                : "transparent",
+            color:
+              [`/admin/analytics`, `/admin/analytics/${email}/self`].some(
+                (path) => location.pathname.includes(path)
+              ) &&
+              !location.pathname.includes("/reports") &&
+              !location.pathname.includes("/employees") &&
+              !location.pathname.includes("/inactive-employees") 
+
+                ? "white"
+                : "var(--deep-blue)",
             //location.pathname.includes(`/admin/analytics/${email}/self`) ? "var(--deep-blue)" : "transparent",
             //color: location.pathname.includes(`/admin/analytics/${email}/self`) ? "white" : "var(--deep-blue)",
             minWidth: "200px",
-            textTransform:"none",
+            textTransform: "none",
           }}
         >
           Personal Dashboard
         </Button>
         <Button
-          variant={location.pathname.includes(`/analytics/${email}/reports`) ? "contained" : "outlined"}
+          variant={
+            location.pathname.includes(`/analytics/${email}/reports`)
+              ? "contained"
+              : "outlined"
+          }
           onClick={() => navigate(`/admin/analytics/${email}/reports`)}
           sx={{
-            backgroundColor: location.pathname.includes(`/analytics/${email}/reports`) ? "var(--deep-blue)" : "transparent",
-            color: location.pathname.includes(`/analytics/${email}/reports`) ? "white" : "var(--deep-blue)",
+            backgroundColor: location.pathname.includes(
+              `/analytics/${email}/reports`
+            )
+              ? "var(--deep-blue)"
+              : "transparent",
+            color: location.pathname.includes(`/analytics/${email}/reports`)
+              ? "white"
+              : "var(--deep-blue)",
             minWidth: "200px",
-            textTransform:"none",
+            textTransform: "none",
           }}
         >
           Reports
         </Button>
         <Button
-          variant={location.pathname.includes(`/admin/analytics/${email}/employees`) ? "contained" : "outlined"}
-          onClick={() => 
-            navigate(email === "dummy@gmail.com" 
-              ? `/admin/analytics/${email}/inactive-employees` 
-              : `/admin/analytics/${email}/employees`
+          variant={
+            [
+              `/admin/analytics/${email}/employees`,
+              `/admin/analytics/${email}/inactive-employees`,
+            ].some((path) => location.pathname.includes(path)) &&
+            !location.pathname.includes("/reports") &&
+            !location.pathname.includes("/self")
+              ? // location.pathname.includes(`/admin/analytics/${email}/employees`)
+                "contained"
+              : "outlined"
+          }
+          onClick={() =>
+            navigate(
+              email === "dummy@gmail.com"
+                ? `/admin/analytics/${email}/inactive-employees`
+                : `/admin/analytics/${email}/employees`
             )
-          }          sx={{
-            backgroundColor: location.pathname.includes(`/admin/analytics/${email}/employees`) ? "var(--deep-blue)" : "transparent",
-            color: location.pathname.includes(`/admin/analytics/${email}/employees`) ? "white" : "var(--deep-blue)",
+          }
+          sx={{
+            backgroundColor:
+              [
+                `/admin/analytics/${email}/employees`,
+                `/admin/analytics/${email}/inactive-employees`,
+              ].some((path) => location.pathname.includes(path)) &&
+              !location.pathname.includes("/reports") &&
+              !location.pathname.includes("/self")
+                ? "var(--deep-blue)"
+                : "transparent",
+            color:
+              [
+                `/admin/analytics/${email}/employees`,
+                `/admin/analytics/${email}/inactive-employees`,
+              ].some((path) => location.pathname.includes(path)) &&
+              !location.pathname.includes("/reports") &&
+              !location.pathname.includes("/self")
+                ? "white"
+                : "var(--deep-blue)",
             minWidth: "200px",
-            textTransform:"none",
+            textTransform: "none",
           }}
         >
           Employee Dashboards

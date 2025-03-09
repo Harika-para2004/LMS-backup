@@ -114,7 +114,7 @@ import {
                   <TableRow key={emp.empid}>
                     <TableCell>{emp.empid}</TableCell>
                     <TableCell>{formatCase(emp.empname)}</TableCell>
-                    <TableCell>{formatCase(emp.project)}</TableCell>
+                    <TableCell>{emp.project}</TableCell>
                     <TableCell>{emp.gender}</TableCell>
                     <TableCell style={{ color: !emp.isActive ? "red" : "green" }}>
                       {emp.isActive ? "Yes" : "No"}

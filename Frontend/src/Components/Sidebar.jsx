@@ -88,7 +88,7 @@ const Sidebar = ({
              to="/admin/leave-policies"
              className={location.pathname.includes("/admin/leave-policies") ? "active-tab" : ""}
            >
-             <FontAwesomeIcon icon={faClipboardList} /> Leave Policy
+             <FontAwesomeIcon icon={faClipboardList} /> Configurations
            </Link>
          </li>
          <li>
@@ -100,15 +100,7 @@ const Sidebar = ({
              <FontAwesomeIcon icon={faEnvelopeOpenText} /> Leave Requests
            </Link>
          </li>
-         <li>
-           <Link
-             to="/admin/projects"
-             className={location.pathname.includes("/admin/projects") ? "active-tab" : ""}
-           >
-             <FaListAlt style={{ marginRight: "8px" }} />
-             Projects
-           </Link>
-         </li>
+        
          </ul>
        </div>
      );

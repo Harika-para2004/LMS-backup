@@ -49,7 +49,6 @@ const TotalEmployees = () => {
   const [loading, setLoading] = useState(false);
   const excludeEmail = "admin@gmail.com"; // Email to exclude from the list
   // const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
-  
   const [empData, setEmpData] = useState({
     empname: "",
     empid: "",
@@ -69,14 +68,11 @@ const TotalEmployees = () => {
     }));
   };
   
-  const handleProjectChange = (e) => {
-    const selectedValue = e.target.value;
-    setSelectedProject(selectedValue);
-    setEmpData((prevData) => ({
-      ...prevData,
-      project: selectedValue,
-    }));
+  const handleProjectChange = (event) => {
+    setSelectedProject(event.target.value);
+    setEmpData((prev) => ({ ...prev, project: event.target.value })); // ✅ Replace, not append
   };
+  
   const filteredEmployees = employeeList
     .slice() // Create a shallow copy to avoid mutating original data
     .sort((a, b) =>
@@ -97,15 +93,16 @@ const TotalEmployees = () => {
     fetchProjects();
   }, []);
 
-  const fetchProjects = async () => {
+ ;const fetchProjects = async () => {
     try {
       const response = await fetch(`${BASE_URL}api/projects`);
       const data = await response.json();
-      setProjectDetails(data);
+      setProjects(data);
     } catch (error) {
-      console.error("Error fetching projects:", error);
+      console.error("Error fetching projects", error);
     }
   };
+  
   useEffect(() => {
     const fetchProjectsAndManagers = async () => {
       try {
@@ -127,21 +124,22 @@ const TotalEmployees = () => {
 
 
   useEffect(() => {
-    const fetchManagers = async () => {
-      try {
-        const response = await fetch(`${BASE_URL}getManagers`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch managers.");
-        }
-        const data = await response.json();
-        setManagers(data); // Assuming API returns an array of managers
-      } catch (error) {
-        console.error("Error fetching managers:", error);
-      }
-    };
+   
   
     fetchManagers();
   }, []);
+  const fetchManagers = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}getManagers`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch managers.");
+      }
+      const data = await response.json();
+      setManagers(data); // Assuming API returns an array of managers
+    } catch (error) {
+      console.error("Error fetching managers:", error);
+    }
+  };
   // Calculate the indexes for slicing the data
   const indexOfLastEmployee = currentPage * employeesPerPage;
   const indexOfFirstEmployee = indexOfLastEmployee - employeesPerPage;
@@ -184,71 +182,51 @@ const TotalEmployees = () => {
       setError("Failed to fetch employees. Please try again later."); // Update error state for UI
     }
   };
-
   const handleSave1 = async (id) => {
-    // Validate all required fields
     if (
       !empData.email ||
       !empData.empid ||
       !empData.empname ||
-      !empData.project ||
+      (empData.role === "Employee" && (!empData.project || empData.project.length === 0)) || 
       !empData.role
     ) {
       setError("All fields are required.");
       return;
     }
   
-    // Find the employee index based on _id
-    const index = employeeList.findIndex((emp) => emp._id === id);
-    if (index === -1) {
-      setError("Employee not found.");
-      return;
-    }
+    const requestBody = {
+      ...empData,
+      project: empData.role === "Manager" ? [] : Array.isArray(empData.project) ? empData.project : [empData.project],
+      managerEmail: empData.managerEmail
+    };
+  
+    console.log("Request Payload:", requestBody); // ✅ Debugging Line
   
     try {
-      // API call to update employee details
       const response = await fetch(`${BASE_URL}updateEmployeeList/${id}`, {
         method: "PUT",
-        body: JSON.stringify(empData),
+        body: JSON.stringify(requestBody),
         headers: {
           "Content-Type": "application/json",
         },
       });
   
       if (!response.ok) {
-        throw new Error("Failed to update employee.");
+        const errorMessage = await response.text(); // Read the error message
+        throw new Error(`Failed to update employee. Server Response: ${errorMessage}`);
       }
   
-      // Update the employee in the list
-      const updatedEmployeeList = [...employeeList];
-      updatedEmployeeList[index] = { ...empData, _id: id };
-  
-      // Sort the updated list by employee ID (or any other criteria)
-      const sortedEmployeeList = updatedEmployeeList.sort((a, b) =>
-        a.empid.localeCompare(b.empid)
-      );
-  
-      // Update the state with the sorted list
-      setEmpList(sortedEmployeeList);
-      fetchEmployees(); // Refresh data from API
-  
-      // Reset form data and exit edit mode
-      setEmpData({
-        empname: "",
-        empid: "",
-        email: "",
-        password: "",
-        project: "",
-        role: "",
-        managerEmail: "",
-      });
+      fetchEmployees();
       setEditingRow(null);
-      setError(null); // Clear errors
+      setError(null);
+      setEmpData({});
+      setSelectedProject("");
     } catch (error) {
       console.error("Error updating employee:", error);
-      setError("Failed to update employee. Please try again later.");
+      setError(error.message);
     }
   };
+  
   
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -274,19 +252,14 @@ const TotalEmployees = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { empname, empid, email, password, project, gender, role,managerEmail } = empData;
-      if(!empname || !empid || !email || !password || !role || !gender){
+    const { empname, empid, email, password, project, gender, role } = empData;
+      if(!empname || !empid){
         alert("Please Enter Required Fields *")
         return
       }
 
 
-      if (role === "Employee") {
-        if (!managerEmail || !project) {
-          alert("For Employees, Manager Email and Project are required *");
-          return;
-        }
-      }
+
     try {
       const response = await fetch(`${BASE_URL}api/auth/addEmployee`, {
         method: "POST",
@@ -308,6 +281,7 @@ const TotalEmployees = () => {
             const userData = await userDataResponse.json();
             setEmpList((prevList) => [...prevList, userData]);
             fetchEmployees();
+            fetchManagers();
             // Update employee list immediately
             // Set active category to "employee-list" (to navigate to the employee list view)
             setSelectedCategory("employee-list");
@@ -318,7 +292,6 @@ const TotalEmployees = () => {
             alert("Failed to fetch user data");
           }
         }
-
         // Clear the form and close the modal
         setEmpData({
           empname: "",
@@ -574,7 +547,7 @@ const TotalEmployees = () => {
       </div>
 
       {message && <p>{message}</p>}
-      {showAddEmployeeModal && (
+      {showAddEmployeeModal  && !editingRow && (
   <div style={{ display: "flex", justifyContent: "center", alignItems: "center", marginTop: "20px" }}>
     <form
       onSubmit={handleSubmit}
@@ -619,7 +592,18 @@ const TotalEmployees = () => {
         </FormControl>
         <FormControl fullWidth>
           <InputLabel id="role-label" sx={{ backgroundColor: "white", paddingX: "4px" }}>Role *</InputLabel>
-          <Select labelId="role-label" id="role" name="role" value={empData.role} onChange={handleChange}>
+          <Select 
+            labelId="role-label" 
+            id="role" 
+            name="role" 
+            value={empData.role} 
+            onChange={(e) => {
+              handleChange(e);
+              if (e.target.value === "Employee") {
+                fetchProjects();
+              }
+            }}
+          >
             <MenuItem value="Manager">Manager</MenuItem>
             <MenuItem value="Employee">Employee</MenuItem>
           </Select>
@@ -627,30 +611,33 @@ const TotalEmployees = () => {
       </div>
       <div style={{ display: "flex", gap: "16px" }}>
         <FormControl fullWidth>
-        <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>managerEmail</InputLabel>
-        <Select value={selectedManager || ""} onChange={handleManagerChange}>
-            <MenuItem value="">All Managers</MenuItem>
-            {managers.map((manager) => (
-              <MenuItem key={manager} value={manager}>
-                {manager}
-              </MenuItem>
-            ))}
-          </Select>
+          <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>managerEmail</InputLabel>
+          <Select value={selectedManager} onChange={handleManagerChange}>
+  <MenuItem value="">All Managers</MenuItem>
+  {managers.map((manager) => (
+    <MenuItem key={manager._id} value={manager.email}>
+      {manager.empname} {manager.email}
+    </MenuItem>
+  ))}
+</Select>
+
         </FormControl>
-        <FormControl fullWidth>
-          <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>Project</InputLabel>
-          <Select value={selectedProject || ""} onChange={handleProjectChange}>
-            {projects.length > 0 ? (
-              projects.map((project) => (
-                <MenuItem key={project._id} value={project.projectName}>
-                  {project.projectName}
-                </MenuItem>
-              ))
-            ) : (
-              <MenuItem disabled>No projects available</MenuItem>
-            )}
-          </Select>
-        </FormControl>
+        {empData.role === "Employee" && (
+          <FormControl fullWidth>
+            <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>Project</InputLabel>
+            <Select value={selectedProject || ""} onChange={handleProjectChange}>
+              {projects.length > 0 ? (
+                projects.map((project) => (
+                  <MenuItem key={project._id} value={project.projectName}>
+                    {project.projectName}
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem disabled>No projects available</MenuItem>
+              )}
+            </Select>
+          </FormControl>
+        )}
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
         <Button variant="contained" type="submit">
@@ -663,9 +650,10 @@ const TotalEmployees = () => {
     </form>
   </div>
 )}
+
 {editingRow && (
   <div
-  ref={editFormRef} // Attach ref here
+    ref={editFormRef}
     style={{
       display: "flex",
       justifyContent: "center",
@@ -682,30 +670,18 @@ const TotalEmployees = () => {
         width: "700px",
       }}
     >
-          <Typography
+      <Typography
         variant="h5"
-        id="add-employee-form"
         textTransform="capitalize"
         textAlign="center"
       >
-        Update Employee 
+        Update Employee
+      </Typography>
+      <br/>
+
+      {/* Employee ID and Name */}
+      <div style={{ display: "flex", gap: "16px", marginBottom: "16px" }}>
         
-      </Typography><br/>
-      <div
-        style={{
-          display: "flex",
-          gap: "16px",
-          marginBottom: "16px",
-        }}
-      >
-      
-        <TextField
-          label="Employee ID"
-          name="empid"
-          value={empData.empid}
-          onChange={handleEmployeeData}
-          fullWidth
-        />
         <TextField
           label="Employee Name"
           name="empname"
@@ -713,14 +689,17 @@ const TotalEmployees = () => {
           onChange={handleEmployeeData}
           fullWidth
         />
+        <TextField
+          label="Employee ID"
+          name="empid"
+          value={empData.empid}
+          onChange={handleEmployeeData}
+          fullWidth
+        />
       </div>
-      <div
-        style={{
-          display: "flex",
-          gap: "16px",
-          marginBottom: "16px",
-        }}
-      >
+
+      {/* Email and Role */}
+      <div style={{ display: "flex", gap: "16px", marginBottom: "16px" }}>
         <TextField
           label="Email"
           name="email"
@@ -728,78 +707,75 @@ const TotalEmployees = () => {
           onChange={handleEmployeeData}
           fullWidth
         />
-       <FormControl fullWidth variant="outlined">
-  <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>Role</InputLabel>
-  <Select
-    name="role"
-    value={empData.role}
-    onChange={handleEmployeeData}
-  >
-    <MenuItem value="Manager">Manager</MenuItem>
-    <MenuItem value="Employee">Employee</MenuItem>
-  </Select>
-</FormControl>
-
+        <FormControl fullWidth variant="outlined">
+          <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>Role</InputLabel>
+          <Select
+            name="role"
+            value={empData.role}
+            onChange={(e) => {
+              handleEmployeeData(e);
+              if (e.target.value === "Employee") {
+                fetchProjects(); // ✅ Fetch projects only if role is Employee
+              }
+            }}
+          >
+            <MenuItem value="Manager">Manager</MenuItem>
+            <MenuItem value="Employee">Employee</MenuItem>
+          </Select>
+        </FormControl>
       </div>
-      <div
-        style={{
-          display: "flex",
-          gap: "16px",
-          marginBottom: "16px",
-        }}
-      >
-       <FormControl fullWidth>
-  <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>Manager Email</InputLabel>
-  <Select 
-    value={selectedManager || empData.managerEmail} 
-    onChange={handleManagerChange}
-  >
-    <MenuItem value="">All Managers</MenuItem>
-    {managers.map((manager) => (
-      <MenuItem key={manager} value={manager}>
-        {manager}
-      </MenuItem>
-    ))}
-  </Select>
-</FormControl>
 
-<FormControl fullWidth>
-  <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>Project</InputLabel>
-  <Select 
-    value={selectedProject || empData.project} 
-    onChange={handleProjectChange}
-  >
-    {projects.length > 0 ? (
-      projects
-        .filter(project => 
-          selectedManager !== ""  // Check if any manager is selected
-            ? project.managerEmail === selectedManager // Show only selected manager's projects
-            : empData.managerEmail  // If no manager selected, use database value
-              ? project.managerEmail === empData.managerEmail
-              : true // Show all projects if "All Managers" is selected
-        )
-        .map((project) => (
-          <MenuItem key={project._id} value={project.projectName}>
+      {/* Manager Email */}
+      <div style={{ display: "flex", gap: "16px", marginBottom: "16px" }}>
+        <FormControl fullWidth>
+          <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>Manager Email</InputLabel>
+          <Select 
+            value={selectedManager || empData.managerEmail} 
+            onChange={handleManagerChange}
+          >
+            <MenuItem value="">All Managers</MenuItem>
+            {managers.map((manager) => (
+              <MenuItem key={manager._id} value={manager.email}>
+                {manager.empname} {manager.email}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        {empData.role === "Employee" && (
+  <FormControl fullWidth>
+    <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>
+      Project
+    </InputLabel>
+    <Select
+      value={selectedProject || empData.project[0]?.toLowerCase()}
+      onChange={handleProjectChange}
+    >
+      {projects.length > 0 ? (
+        projects.map((project) => (
+          <MenuItem 
+            key={project._id} 
+            value={project.projectName.toLowerCase()}
+          >
             {project.projectName}
           </MenuItem>
         ))
-    ) : (
-      <MenuItem disabled>No projects available</MenuItem>
-    )}
-  </Select>
-</FormControl>
+      ) : (
+        <MenuItem disabled>No projects available</MenuItem>
+      )}
+    </Select>
+  </FormControl>
+)}
 
 
       </div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: "16px",
-          marginTop: "20px",
-        }}
-      >
-        <Button variant="contained" color="primary" onClick={() => handleSave1(editingRow)}>
+
+      {/* Submit and Cancel Buttons */}
+      <div style={{ display: "flex", justifyContent: "center", gap: "16px", marginTop: "20px" }}>
+        <Button 
+          variant="contained" 
+          color="primary" 
+          onClick={() => handleSave1(editingRow)}
+        >
           Update Employee
         </Button>
         <Button onClick={handleCancel} style={{ marginRight: "8px" }}>
@@ -828,17 +804,25 @@ const TotalEmployees = () => {
     </thead>
     <tbody>
       {currentEmployees.length > 0 ? (
-        currentEmployees.map((emp) => (
+        currentEmployees
+        .filter(emp => emp.email !== "dummy@gmail.com")
+        .map((emp) => (
           <tr key={emp._id} className="employee-row">
             <td>{emp.empid}</td>
             <td>{emp.empname.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())}</td>
             <td>{emp.email}</td>
             <td>{emp.role}</td>
-            <td>
-  {typeof emp.project === "string" 
-    ? emp.project.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase()) 
-    : "No Project Assigned"}
+     
+            <td title={emp.project.join(", ")}>
+  {Array.isArray(emp.project) && emp.project.length > 0
+    ? emp.project.length > 1
+      ? `${emp.project[0].toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())}...`
+      : emp.project[0].toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
+    : "-"}
 </td>
+
+
+
             <td style={{ color: !emp.isActive ? "red" : "green" }}>
               {emp.isActive ? "Yes" : "No"}
             </td>
@@ -847,18 +831,13 @@ const TotalEmployees = () => {
       ? "Not Assigned"
       : emp.managerName || "-"
     : emp.managerName || "-"}</td>
-<td>
+            <td>
   {emp.role === "Employee"
     ? emp.managerEmail === "dummy@gmail.com"
-      ? emp.isActive === "Yes"
-        ? "Not Assigned"
-        : "Not Assigned"
+      ? "Not Assigned"
       : emp.managerEmail || "-"
     : emp.managerEmail || "-"}
 </td>
-
-
-
             <td>
               <button
                 onClick={() => handleEditEmployee(emp._id)}

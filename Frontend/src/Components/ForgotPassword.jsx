@@ -21,7 +21,7 @@ const ForgotPassword = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:5001/api/auth/forgot-password", { email });
+      const response = await axios.post("http://localhost:5001/api/auth/forgot/forgot-password", { email });
 
       setNumbers(response.data.numbers); // Store random numbers
       setCorrectNumber(response.data.correctNumber); // Store correct number
