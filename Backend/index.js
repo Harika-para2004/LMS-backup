@@ -19,7 +19,7 @@ const pdfkit = require("pdfkit");
 const fs = require("fs");
 const upload = multer({ dest: "uploads/" });
 const exceluploads = require("./routes/exceluploads")
-
+const forgotPasswordRoutes = require("./routes/forgotPasswordRoutes");
 dotenv.config();
 
 const app = express();
@@ -43,6 +43,7 @@ app.use("/excel",exceluploads);
 app.use("/admin", adminRoutes);
 app.use("/api/employees", require("./routes/empUnderMang"));
 app.use("/data",leavereports);
+app.use("/api/auth", forgotPasswordRoutes);
 const formatCase = (text) => {
   return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
 };
@@ -418,7 +419,7 @@ app.get("/leaverequests", async (req, res) => {
       );
     }
 
-    console.log("Final Processed Data:", processedLeaves); // Debugging log
+   // console.log("Final Processed Data:", processedLeaves); // Debugging log
 
     res.json(processedLeaves);
   } catch (error) {
@@ -695,7 +696,7 @@ app.get("/reports", async (req, res) => {
           leave.startDate
             .map((start, index) => ({
               leaveType: leave.leaveType,
-              startDate: new Date(start).toLocaleDateString(),
+              startDate: new Date(start).toISOString().split("T")[0],
               endDate: leave.endDate[index]
               ? new Date(new Date(leave.endDate[index]).setDate(new Date(leave.endDate[index]).getDate() - 1)).toLocaleDateString()
               : "N/A",  
@@ -712,7 +713,7 @@ app.get("/reports", async (req, res) => {
                 new Date(leave.startDate).getFullYear() === parseInt(year) // ✅ Filter by year
             )
         );
-        console.log(approvedLeaves);
+      //  console.log(approvedLeaves);
 
         // Only return employees who have at least one approved leave in the selected year
         if (approvedLeaves.length > 0) {
@@ -731,7 +732,7 @@ app.get("/reports", async (req, res) => {
       })
     );
 
-    console.log(reports);
+   // console.log(reports);
 
     // Remove null values (employees with no approved leaves)
     const filteredReports = reports.filter((report) => report !== null);
@@ -808,7 +809,7 @@ app.get("/reports-admin", async (req, res) => {
         return null; // Ignore employees with no approved leaves in the selected year
       })
     );
-    console.log(reports);
+    
 
     // Remove null values (employees with no approved leaves)
     const filteredReports = reports.filter((report) => report !== null);
@@ -909,7 +910,7 @@ app.get("/reports/export-excel", async (req, res) => {
       }
     }
 
-    console.log("allReports",allReports);
+   
 
     // **Sorting logic: First by name (A-Z), then by startDate (earliest first)**
     allReports.sort((a, b) => {
@@ -1149,7 +1150,7 @@ app.get("/reports/export-pdf", async (req, res) => {
 // --------------------Dahboard------------
 app.get("/admin-leave-trends/:year", async (req, res) => {
   try {
-    console.log("year",year);
+    
     const leaves = await Leave.aggregate([
       { $match: { year: { $in: [parseInt(year)] } } },
       { $unwind: "$month" },
@@ -1201,7 +1202,7 @@ app.get("/leave-trends/:email/:year", async (req, res) => {
       });
     });
 
-    console.log("Leave Trends Data:", JSON.stringify(leaveTrends, null, 2)); // Log data before sending
+   // console.log("Leave Trends Data:", JSON.stringify(leaveTrends, null, 2)); // Log data before sending
     res.json(leaveTrends);
   } catch (error) {
     console.error("Error fetching leave trends:", error);
@@ -1448,7 +1449,7 @@ app.get("/leave-trends/:email/:year", async (req, res) => {
       });
     });
 
-    console.log("Leave Trends Data:", JSON.stringify(leaveTrends, null, 2)); // Logging the data
+   // console.log("Leave Trends Data:", JSON.stringify(leaveTrends, null, 2)); // Logging the data
     res.json(leaveTrends);
   } catch (error) {
     console.error("Error fetching leave trends:", error);
@@ -1622,7 +1623,7 @@ app.get('/leave-approval-rate', async (req, res) => {
           }
       });
 
-      console.log("Leave Approval Rate Data:", stats);
+    //  console.log("Leave Approval Rate Data:", stats);
       res.json(stats);
   } catch (error) {
       console.error("Error fetching approval rate:", error);
@@ -1650,7 +1651,7 @@ app.get('/leave-types', async (req, res) => {
           });
       });
 
-      console.log("Leave Types Data:", types); // ✅ Debugging log
+     // console.log("Leave Types Data:", types); // ✅ Debugging log
       res.json(Object.entries(types).map(([leaveType, counts]) => ({ leaveType, ...counts })));
     } catch (error) {
       console.error("Error fetching leave types:", error);

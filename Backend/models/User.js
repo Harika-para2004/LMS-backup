@@ -1,4 +1,5 @@
-const mongoose=require("mongoose")
+const mongoose = require("mongoose");
+
 const userSchema = new mongoose.Schema({
   empname: { type: String, required: true },
   empid: { type: String, required: true, unique: true },
@@ -6,21 +7,24 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   project: { type: String },
   gender: { type: String },
-  role: { type: String, required: true },
-  managerEmail: { type: String, },
-  isActive:{type: Boolean, default: true},
   role: {
     type: String,
     enum: ["Employee", "Manager", "Admin"], // Ensure "Manager" is included
     required: true,
-  },  managerEmail: { type: String },
+  },
+  managerEmail: { type: String },
+  isActive: { type: Boolean, default: true },
   yearlyLeavesTaken: {
     type: Map,
-    of: Number, 
+    of: Number,
     default: {},
   },
+
+  // 🔹 Add these fields for Forgot Password feature
+  resetCode: { type: Number }, // Temporary reset code
+  resetCodeExpires: { type: Date }, // Expiration time for the reset code
 });
 
-const User = mongoose.model('signups_cols', userSchema);
+const User = mongoose.model("signups_cols", userSchema);
 
 module.exports = User;

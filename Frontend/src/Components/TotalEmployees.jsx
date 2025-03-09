@@ -834,7 +834,11 @@ const TotalEmployees = () => {
             <td>{emp.empname.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())}</td>
             <td>{emp.email}</td>
             <td>{emp.role}</td>
-            <td>{emp.project.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())}</td>
+            <td>
+  {typeof emp.project === "string" 
+    ? emp.project.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase()) 
+    : "No Project Assigned"}
+</td>
             <td style={{ color: !emp.isActive ? "red" : "green" }}>
               {emp.isActive ? "Yes" : "No"}
             </td>

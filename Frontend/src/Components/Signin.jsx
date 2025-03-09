@@ -6,6 +6,7 @@ import "./../assets/css/styles.css";
 import logo from "./../assets/img/logo.jpg";
 import authImage from "./../assets/img/authentication.svg";
 import { useManagerContext } from "../context/ManagerContext";
+
 const LoginForm = () => {
   const [formData, setFormData] = useState({
     email: "",
@@ -13,15 +14,13 @@ const LoginForm = () => {
   });
   const [passwordVisible, setPasswordVisible] = useState(false); // State for password visibility
   const navigate = useNavigate();
-  const {
-    showToast,
-  } = useManagerContext();
+  const { showToast } = useManagerContext();
 
-  useEffect( () => {
+  useEffect(() => {
     localStorage.removeItem("userData");
     localStorage.removeItem("admin");
     localStorage.clear();
-  },[]);
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -29,182 +28,117 @@ const LoginForm = () => {
   };
 
   const togglePasswordVisibility = () => {
-    setPasswordVisible(!passwordVisible); // Toggle password visibility
+    setPasswordVisible(!passwordVisible);
   };
 
-  //handle submit
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (formData.email === "admin@gmail.com" && formData.password === "1234") {
-      localStorage.setItem("role", "Admin");
-      localStorage.setItem("admin", JSON.stringify(formData.email));
-      navigate(`/admin`);
-    } else {
-      try {
-        const apiUrl = "http://localhost:5001/api/auth/signin";
-        const response = await axios.post(apiUrl, formData);
+  // Handle login
+ // Handle login
+ const handleSubmit = async (e) => {
+  e.preventDefault();
 
-        if (response.status === 200 || response.status === 201) {
-          const userDataResponse = await axios.get(
-            `http://localhost:5001/api/auth/user/${response.data.userId}`
-          );
-          const userData = userDataResponse.data;
+  const normalizedEmail = formData.email.toLowerCase();
 
-          localStorage.setItem("role", userData.role);
-          localStorage.setItem("userData", JSON.stringify(userData));
-          
-          if (
-            userData.role === "Manager"
-          ) {
-            navigate(`/manager`, { state: { userData } });
-          } else {
-            navigate(`/employee`, { state: { userData } });
-          }
-        }
-      } catch (error) {
-        showToast(error.response?.data?.message || "Something went wrong","error");
+  try {
+    const apiUrl = "http://localhost:5001/api/auth/signin";
+    const response = await axios.post(apiUrl, {
+      email: normalizedEmail,
+      password: formData.password,
+    });
+
+    if (response.status === 200 || response.status === 201) {
+      const userDataResponse = await axios.get(
+        `http://localhost:5001/api/auth/user/${response.data.userId}`
+      );
+      const userData = userDataResponse.data;
+
+      localStorage.setItem("role", userData.role);
+      localStorage.setItem("userData", JSON.stringify(userData));
+
+      // Redirect based on role
+      if (userData.role === "Admin") {
+        localStorage.setItem("admin", JSON.stringify(userData.email));
+        navigate(`/admin`);
+      } else if (userData.role === "Manager") {
+        navigate(`/manager`, { state: { userData } });
+      } else {
+        navigate(`/employee`, { state: { userData } });
       }
     }
-  };
+  } catch (error) {
+    showToast(error.response?.data?.message || "Something went wrong", "error");
+  }
+};
+  
 
   return (
-    // <div className="l-form">
-    //   <div className="shape2"></div>
-    //   <div className="shape1"></div>
-
-    //   <div className="form">
-    //     <div className="circle"></div>
-    //     <img src={logo} alt="Quadface Logo" className="logo1" />
-    //     <img src={authImage} alt="Authentication" className="form__img" />
-
-    //     <form onSubmit={handleSubmit} className="form__content">
-    //       <div>
-    //         {" "}
-    //         <h2 style={{ textAlign: "center" }}>Welcome</h2>
-    //         <br />
-    //       </div>
-    //       <div className="form__div form__div-one">
-    //         <div className="form__icon">
-    //           <i className="bx bx-user-circle"></i>
-    //         </div>
-
-    //         <div className="form__div-input">
-    //           <input
-    //             type="email"
-    //             id="email"
-    //             name="email"
-    //             className="form__input"
-    //             value={formData.email}
-    //             onChange={handleInputChange}
-    //             placeholder=" "
-    //             required
-    //           />
-    //           <label htmlFor="email" className="form__label">
-    //             Email
-    //           </label>
-    //         </div>
-    //       </div>
-
-    //       <div className="form__div">
-    //         <div className="form__icon">
-    //           <i className="bx bx-lock"></i>
-    //         </div>
-
-    //         <div className="form__div-input">
-    //           <input
-    //             type={passwordVisible ? "text" : "password"} // Toggle input type based on visibility
-    //             id="password"
-    //             name="password"
-    //             className="form__input"
-    //             value={formData.password}
-    //             onChange={handleInputChange}
-    //             placeholder=" "
-    //             required
-    //           />
-    //           <label htmlFor="password" className="form__label">
-    //             Password
-    //           </label>
-    //           <span className="eye-icon" onClick={togglePasswordVisibility}>
-    //             {passwordVisible ? <AiFillEyeInvisible /> : <AiFillEye />}
-    //           </span>
-    //         </div>
-    //       </div>
-
-    //       <a href="#" className="form__forgot">
-    //         Forgot Password?
-    //       </a>
-
-    //       <input type="submit" className="form__button" value="Sign In" />
-    //     </form>
-    //   </div>
-    // </div>
     <div className="l-form">
-  <div className="shape2"></div>
-  <div className="shape1"></div>
+      <div className="shape2"></div>
+      <div className="shape1"></div>
 
+      <div className="form">
+        <div className="circle"></div>
+        <img src={logo} alt="Quadface Logo" className="logo1" />
+        <h2 style={{ textAlign: "center", marginRight: "-70%", color: "var(--deep-blue)", fontSize: "36px" }}>
+          Leave Management System
+        </h2>
+        <br /><br />
 
-  <div className="form">
-    <div className="circle"></div>
-    <img src={logo} alt="Quadface Logo" className="logo1" />
-    <h2 style={{ textAlign:"center",marginRight:"-70%" ,color:'var(--deep-blue)',fontSize:"36px"}}>Leave Management System</h2><br/><br/>
+        <img src={authImage} alt="Authentication" className="form__img" />
 
-    <img src={authImage} alt="Authentication" className="form__img" />
+        <form onSubmit={handleSubmit} className="form__content">
+          <div>
+            <h2 className="welcome-text">Welcome</h2>
+            <br />
+          </div>
 
-    <form onSubmit={handleSubmit} className="form__content">
-      <div>
-        <h2 className="welcome-text">Welcome</h2>
-        <br />
+          <div className="form__div form__div-one">
+            <div className="form__icon">
+              <i className="bx bx-user-circle"></i>
+            </div>
+
+            <div className="form__div-input">
+              <input
+                type="email"
+                id="email"
+                name="email"
+                className="form__input"
+                value={formData.email}
+                onChange={handleInputChange}
+                placeholder=" "
+                required
+              />
+              <label htmlFor="email" className="form__label">Email</label>
+            </div>
+          </div>
+
+          <div className="form__div">
+            <div className="form__icon">
+              <i className="bx bx-lock"></i>
+            </div>
+
+            <div className="form__div-input">
+              <input
+                type={passwordVisible ? "text" : "password"}
+                id="password"
+                name="password"
+                className="form__input"
+                value={formData.password}
+                onChange={handleInputChange}
+                placeholder=" "
+                required
+              />
+              <label htmlFor="password" className="form__label">Password</label>
+              <span className="eye-icon" onClick={togglePasswordVisibility}>
+                {passwordVisible ? <AiFillEyeInvisible /> : <AiFillEye />}
+              </span>
+            </div>
+          </div>
+
+          <a href="/forgot-password" className="form__forgot">Forgot Password?</a>
+          <input type="submit" className="form__button" value="Sign In" />
+        </form>
       </div>
-
-      <div className="form__div form__div-one">
-        <div className="form__icon">
-          <i className="bx bx-user-circle"></i>
-        </div>
-
-        <div className="form__div-input">
-          <input
-            type="email"
-            id="email"
-            name="email"
-            className="form__input"
-            value={formData.email}
-            onChange={handleInputChange}
-            placeholder=" "
-            required
-          />
-          <label htmlFor="email" className="form__label">Email</label>
-        </div>
-      </div>
-
-      <div className="form__div">
-        <div className="form__icon">
-          <i className="bx bx-lock"></i>
-        </div>
-
-        <div className="form__div-input">
-          <input
-            type={passwordVisible ? "text" : "password"}
-            id="password"
-            name="password"
-            className="form__input"
-            value={formData.password}
-            onChange={handleInputChange}
-            placeholder=" "
-            required
-          />
-          <label htmlFor="password" className="form__label">Password</label>
-          <span className="eye-icon" onClick={togglePasswordVisibility}>
-            {passwordVisible ? <AiFillEyeInvisible /> : <AiFillEye />}
-          </span>
-        </div>
-      </div>
-
-      {/* <a href="#" className="form__forgot">Forgot Password?</a> */}
-      <input type="submit" className="form__button" value="Sign In" />
-    </form>
-  </div>
-</div>
-
+    </div>
   );
 };
 

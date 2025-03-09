@@ -3,14 +3,21 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const nodemailer = require('nodemailer');
 const router = express.Router();
-const Project=require('../models/Project')
+const Project = require('../models/Project');
 require('dotenv').config();
+
 const formatCase = (text) => {
   return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
 };
+
+// Add Employee Route
 router.post('/addEmployee', async (req, res) => {
   let { empname, empid, email, password, gender, project, role, managerEmail } = req.body;
+
   try {
+    // Convert email to lowercase before checking/storing
+    email = email.toLowerCase();
+
     // Check if email already exists
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -25,25 +32,19 @@ router.post('/addEmployee', async (req, res) => {
 
     // **For Managers Only** - Merge Projects From Project Collection
     if (role === "Manager") {
-      // ✅ Fetch all projects from the Project Collection based on managerEmail
       const projectList = await Project.find({ managerEmail: email });
-console.log("p",projectList)
-      // ✅ Convert all projects to comma-separated string
       const projectNames = projectList.map(p => p.projectName.toLowerCase()).join(",");
-      project=projectNames
-console.log("p1",projectNames)
-      // ✅ Append the newly added project to the existing project list
-     
+      project = projectNames;
     }
 
-    // ✅ Hash the password
+    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // ✅ Create new user (Manager or Employee)
+    // Create new user (Manager or Employee)
     const newUser = new User({
       empname,
       empid,
-      email,
+      email,  // Stored as lowercase
       password: hashedPassword,
       gender,
       project,
@@ -51,10 +52,10 @@ console.log("p1",projectNames)
       managerEmail
     });
 
-    // ✅ Save the User
+    // Save the User
     await newUser.save();
 
-    // ✅ Send welcome email
+    // Send welcome email
     const transporter = nodemailer.createTransport({
       service: 'Gmail',
       auth: {
@@ -86,14 +87,15 @@ console.log("p1",projectNames)
   }
 });
 
-
-// Sign-in route
+// Sign-in Route
 router.post('/signin', async (req, res) => {
-  const { email, password } = req.body;
+  let { email, password } = req.body;
 
   try {
-    const user = await User.findOne({ email });
-    if (!user ) {
+    // Convert entered email to lowercase for case-insensitive comparison
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
       return res.status(400).json({ message: "User not found!" });
     }
 
@@ -103,17 +105,19 @@ router.post('/signin', async (req, res) => {
     }
 
     res.status(200).json({ message: 'User signed in successfully!', userId: user._id });
+
   } catch (err) {
     res.status(500).json({ message: 'Error signing in user' });
   }
 });
 
+// Get User Route
 router.get('/user/:userId', async (req, res) => {
   const { userId } = req.params;
 
   try {
     const user = await User.findById(userId);
-    // console.log("USER>>",user)
+
     if (!user && !user.isActive) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -121,19 +125,18 @@ router.get('/user/:userId', async (req, res) => {
     res.status(200).json({
       empname: user.empname,
       empid: user.empid,
-      email: user.email,
-      password:user.password,
-      gender:user.gender,
+      email: user.email,  // Returns email in lowercase (stored as lowercase)
+      password: user.password,
+      gender: user.gender,
       project: user.project,
-      role: user.role, // Add role here
-      managerEmail:user.managerEmail,
-      isActive:user.isActive,
-      
+      role: user.role,
+      managerEmail: user.managerEmail,
+      isActive: user.isActive,
     });
+
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
-
 
 module.exports = router;

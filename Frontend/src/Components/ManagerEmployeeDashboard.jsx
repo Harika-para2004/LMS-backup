@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import ReactECharts from "echarts-for-react";
 import fallbackImage from "../assets/img/no_data.jpg";
-
+import Overlap from "./ManagerOverlap";
 const ManagerDashboard = ({ email, selectedYear }) => {
   const currentYear = new Date().getFullYear();
   const [yearData, setYearData] = useState([]);
@@ -334,6 +334,10 @@ const ManagerDashboard = ({ email, selectedYear }) => {
                 <ReactECharts option={getYearlyLeaveChart()} />
               </CardContent>
             </Card>
+          <div>
+            
+          < Overlap year={selectedYear} managerEmail={email} />
+          </div>
           </Grid>
         </>
       ) : (

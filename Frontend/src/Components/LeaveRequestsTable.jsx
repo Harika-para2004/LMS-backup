@@ -89,7 +89,7 @@ const LeaveRequestsTable = () => {
 
   const fetchLeaveRequestsAdmin = async () => {
     const userDataResponse = await fetch(
-      `${BASE_URL}api/auth/user/${responseData.userId}`
+      `${BASE_URL}api/auth/user/${userData.userId}`
     );
     const excludeEmail = "admin@gmail.com"; // Replace with the email to exclude
     try {

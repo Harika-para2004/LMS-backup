@@ -64,6 +64,22 @@ select:focus {
     color: #222;
 }
 
+/* Weekday Headers */
+.weekday-row {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    font-weight: bold;
+    background-color: #eaeaea;
+    padding: 8px 0;
+    text-align: center;
+    border-radius: 6px;
+}
+
+.weekday {
+    font-size: 14px;
+    color: #333;
+}
+
 /* Calendar Grid */
 .calendar-grid {
     display: grid;
@@ -88,7 +104,26 @@ select:focus {
     background-color: #fff;
 }
 
-.calendar-day:hover {
+/* Highlight workdays dynamically */
+.calendar-day[data-leave-count="2"] { background-color: #FFD700; } /* Light Yellow */
+.calendar-day[data-leave-count="3"] { background-color: #FFA500; } /* Orange */
+.calendar-day[data-leave-count="4"] { background-color: #FF4500; } /* Dark Orange */
+.calendar-day[data-leave-count="5"] { background-color: #FF0000; } /* Red */
+
+/* Disable Weekend Highlighting */
+.calendar-day.weekend {
+    background-color: #f0f0f0 !important;
+    color: hsl(0, 20%, 98%);
+    cursor: not-allowed;
+    border: 1px solid #ddd;
+}
+.calendar-day:nth-child(1) {
+    grid-column-start: var(--first-day-start);
+}
+
+
+/* Hover Effect (Excluding Weekends) */
+.calendar-day:not(.weekend):hover {
     background-color: #e6f7ff;
 }
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./overlapping.css";
 
-const Overlap = ({ year }) => {
+const Overlap = ({ year ,managerEmail}) => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [leaveData, setLeaveData] = useState({});
   const [daysInMonth, setDaysInMonth] = useState(30);
@@ -13,20 +13,26 @@ const Overlap = ({ year }) => {
 
   useEffect(() => {
     fetchReports();
-  }, [selectedMonth, year]);
-
+  }, [selectedMonth, year, managerEmail]); // Include managerEmail as a dependency
+  
   const fetchReports = async () => {
     try {
+        console.log(managerEmail);
+      if (!managerEmail) return; // Prevent fetch if managerEmail is not available
+  
       const response = await fetch(
-        `http://localhost:5001/data/leave-reports?month=${selectedMonth}&year=${year}`
+        `http://localhost:5001/data/manager-leave-reports?email=${managerEmail}&month=${selectedMonth}&year=${year}`
       );
+  
       if (!response.ok) throw new Error("Failed to fetch reports");
+  
       const data = await response.json();
       setLeaveData(data);
     } catch (error) {
       console.error("Error fetching reports:", error);
     }
   };
+  
 
   const handleDayClick = (day) => {
     setSelectedDay(selectedDay === day ? null : day);

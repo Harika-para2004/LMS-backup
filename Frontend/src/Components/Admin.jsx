@@ -38,6 +38,21 @@ import HolidayCalendar from "./HolidayCalendar";
 import TotalEmployees from "./TotalEmployees";
 
 function AdminDashboard() {
+  const [Email,setEmail] = useState("");
+  useEffect(() => {
+      const storedUserData = localStorage.getItem("userData");
+      if (storedUserData) {
+        try {
+          const parsedUserData = JSON.parse(storedUserData);
+          if (parsedUserData && parsedUserData.role === "Admin") {
+            setEmail(parsedUserData.email || "");
+          }
+          console.log("admin email is :",Email);
+        } catch (error) {
+          console.error("Error parsing userData from localStorage:", error);
+        }
+      }
+    }, []);
   const [selectedCategory, setSelectedCategory] = useState("holiday-calendar");
   const [holidays, setHolidays] = useState([]);
   const [leaveRequests, setLeaveRequests] = useState([]);
@@ -59,7 +74,7 @@ function AdminDashboard() {
   const [modalOpen, setModalOpen] = useState(false);
   const year = new Date().getFullYear();
   const [searchTerm, setSearchTerm] = useState("");
-  const excludeEmail = "admin@gmail.com"; // Email to exclude from the list
+  const excludeEmail = Email; // Email to exclude from the list
   // const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
   const [empData, setEmpData] = useState({
     empname: "",
@@ -76,18 +91,6 @@ function AdminDashboard() {
     holidayName: "",
     holidayType: "Mandatory",
   });
-
-  // const location = useLocation();
-  // const currentYear = new Date().getFullYear();
-  // const [selectedYear, setSelectedYear] = useState(currentYear);
-  // const [userData, setUserData] = useState(() => {
-  //   const storedAdmin = localStorage.getItem("admin");
-  //   return (
-  //     (storedAdmin ? { email: JSON.parse(storedAdmin), role: "Admin" } : {}) ||
-  //     location.state?.userData ||
-  //     {}
-  //   );
-  // });
   
   const filteredEmployees = employeeList.filter((emp)=> emp.empname.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -477,18 +480,7 @@ function AdminDashboard() {
   
       const wasApproved = leave.status[selectedIndex]?.toLowerCase() === "approved"; // Add optional chaining
   
-      // const updatedLeave = {
-      //   ...leave,
-      //   status: leave.status.map((stat, index) =>
-      //     index === selectedIndex && (stat.toLowerCase() === "pending" || stat.toLowerCase() === "approved")
-      //       ? "Rejected"
-      //       : stat
-      //   ),
-      //   availableLeaves: wasApproved ? leave.availableLeaves + leaveDuration : leave.availableLeaves,
-      //   usedLeaves: wasApproved ? leave.usedLeaves - leaveDuration : leave.usedLeaves,
-      // };
-
-      //updated available leaves
+      
       const updatedLeave = {
         ...leave,
         status: leave.status.map((stat, index) =>
@@ -840,6 +832,7 @@ function AdminDashboard() {
             handleFilterChange={handleFilterChange}
             handleRowClick={handleRowClick}
             getDownloadLink={getDownloadLink}
+            Email={Email}
           />
     
           {/* Modal for Approve/Reject */}
