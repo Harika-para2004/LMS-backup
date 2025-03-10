@@ -104,7 +104,7 @@ function LeavePolicyPage() {
   };
 
   return (
-    <div className="leave-policy-container">
+    <div className="leave-policy-container1">
       <div className="left-section">
         <div className="header">
           <h2 className="content-heading">Leave Policies</h2>

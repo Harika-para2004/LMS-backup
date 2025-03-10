@@ -196,9 +196,10 @@ const TotalEmployees = () => {
   
     const requestBody = {
       ...empData,
-      project: empData.role === "Manager" ? [] : Array.isArray(empData.project) ? empData.project : [empData.project],
+      project: empData.role === "Manager" ? empData.project : empData.project,
       managerEmail: empData.managerEmail
     };
+    
   
     console.log("Request Payload:", requestBody); // ✅ Debugging Line
   
@@ -220,6 +221,7 @@ const TotalEmployees = () => {
       setEditingRow(null);
       setError(null);
       setEmpData({});
+      setSelectedManager("");
       setSelectedProject("");
     } catch (error) {
       console.error("Error updating employee:", error);
@@ -459,7 +461,14 @@ const TotalEmployees = () => {
       setLoading(false);
     }
   };
-
+  const toCamelCase = (str) => {
+    return str
+      .toLowerCase()
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
+  
   const formatCase = (text) => {
     return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
   };
@@ -547,7 +556,7 @@ const TotalEmployees = () => {
       </div>
 
       {message && <p>{message}</p>}
-      {showAddEmployeeModal  && !editingRow && (
+      {showAddEmployeeModal && !editingRow && (
   <div style={{ display: "flex", justifyContent: "center", alignItems: "center", marginTop: "20px" }}>
     <form
       onSubmit={handleSubmit}
@@ -564,18 +573,13 @@ const TotalEmployees = () => {
         margin: "10px auto",
       }}
     >
-      <Typography
-        variant="h5"
-        id="add-employee-form"
-        textTransform="capitalize"
-        textAlign="center"
-      >
-        Add Employee
+      <Typography variant="h5" id="add-employee-form" textTransform="capitalize" textAlign="center">
+      Add Employee / Manager
       </Typography>
-    
+
       <div style={{ display: "flex", gap: "16px" }}>
-        <TextField label="Employee Name *" name="empname" value={empData.empname} onChange={handleChange} fullWidth />
-        <TextField label="Employee Id *" name="empid" value={empData.empid} onChange={handleChange} fullWidth />
+        <TextField label="Name *" name="empname" value={empData.empname} onChange={handleChange} fullWidth />
+        <TextField label="Id *" name="empid" value={empData.empid} onChange={handleChange} fullWidth />
       </div>
       <div style={{ display: "flex", gap: "16px" }}>
         <TextField label="Email *" name="email" value={empData.email} onChange={handleChange} fullWidth />
@@ -610,34 +614,47 @@ const TotalEmployees = () => {
         </FormControl>
       </div>
       <div style={{ display: "flex", gap: "16px" }}>
-        <FormControl fullWidth>
-          <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>managerEmail</InputLabel>
-          <Select value={selectedManager} onChange={handleManagerChange}>
-  <MenuItem value="">All Managers</MenuItem>
-  {managers.map((manager) => (
-    <MenuItem key={manager._id} value={manager.email}>
-      {manager.empname} {manager.email}
-    </MenuItem>
-  ))}
-</Select>
-
-        </FormControl>
         {empData.role === "Employee" && (
           <FormControl fullWidth>
-            <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>Project</InputLabel>
-            <Select value={selectedProject || ""} onChange={handleProjectChange}>
-              {projects.length > 0 ? (
-                projects.map((project) => (
-                  <MenuItem key={project._id} value={project.projectName}>
-                    {project.projectName}
-                  </MenuItem>
-                ))
-              ) : (
-                <MenuItem disabled>No projects available</MenuItem>
-              )}
+            <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>Manager Email *</InputLabel>
+            <Select value={selectedManager} onChange={handleManagerChange}>
+              <MenuItem value="">All Managers</MenuItem>
+              {managers.map((manager) => (
+                <MenuItem key={manager._id} value={manager.email}>
+                  {manager.empname} ({manager.email})
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
         )}
+
+{empData.role === "Manager" && (
+  <FormControl fullWidth>
+    <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>
+      Project
+    </InputLabel>
+    <Select
+      value={empData.project || ""}
+      onChange={(e) =>
+        setEmpData({ ...empData, project: e.target.value })
+      }
+    >
+      {projects.length > 0 ? (
+        projects.map((project) => (
+          <MenuItem
+            key={project._id}
+            value={project.projectName.toLowerCase()} // ✅ Store in lowercase
+          >
+            {toCamelCase(project.projectName)} {/* ✅ Display in camel case */}
+          </MenuItem>
+        ))
+      ) : (
+        <MenuItem disabled>No projects available</MenuItem>
+      )}
+    </Select>
+  </FormControl>
+)}
+
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
         <Button variant="contained" type="submit">
@@ -650,7 +667,6 @@ const TotalEmployees = () => {
     </form>
   </div>
 )}
-
 {editingRow && (
   <div
     ref={editFormRef}
@@ -681,7 +697,6 @@ const TotalEmployees = () => {
 
       {/* Employee ID and Name */}
       <div style={{ display: "flex", gap: "16px", marginBottom: "16px" }}>
-        
         <TextField
           label="Employee Name"
           name="empname"
@@ -715,7 +730,7 @@ const TotalEmployees = () => {
             onChange={(e) => {
               handleEmployeeData(e);
               if (e.target.value === "Employee") {
-                fetchProjects(); // ✅ Fetch projects only if role is Employee
+                fetchProjects(); // ✅ Fetch projects for Employees
               }
             }}
           >
@@ -726,7 +741,7 @@ const TotalEmployees = () => {
       </div>
 
       {/* Manager Email */}
-      <div style={{ display: "flex", gap: "16px", marginBottom: "16px" }}>
+      {empData.role === "Employee" && (
         <FormControl fullWidth>
           <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>Manager Email</InputLabel>
           <Select 
@@ -736,27 +751,32 @@ const TotalEmployees = () => {
             <MenuItem value="">All Managers</MenuItem>
             {managers.map((manager) => (
               <MenuItem key={manager._id} value={manager.email}>
-                {manager.empname} {manager.email}
+                {manager.empname} ({manager.email})
               </MenuItem>
             ))}
           </Select>
         </FormControl>
-        {empData.role === "Employee" && (
+      )}
+
+      {/* ✅ Project Dropdown for Manager */}
+      {empData.role === "Manager" && (
   <FormControl fullWidth>
     <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>
       Project
     </InputLabel>
     <Select
-      value={selectedProject || empData.project[0]?.toLowerCase()}
-      onChange={handleProjectChange}
+      value={empData.project || ""}
+      onChange={(e) =>
+        setEmpData({ ...empData, project: e.target.value })
+      }
     >
       {projects.length > 0 ? (
         projects.map((project) => (
-          <MenuItem 
-            key={project._id} 
-            value={project.projectName.toLowerCase()}
+          <MenuItem
+            key={project._id}
+            value={project.projectName.toLowerCase()} // ✅ Store in lowercase
           >
-            {project.projectName}
+            {toCamelCase(project.projectName)} {/* ✅ Display in camel case */}
           </MenuItem>
         ))
       ) : (
@@ -767,9 +787,6 @@ const TotalEmployees = () => {
 )}
 
 
-      </div>
-
-      {/* Submit and Cancel Buttons */}
       <div style={{ display: "flex", justifyContent: "center", gap: "16px", marginTop: "20px" }}>
         <Button 
           variant="contained" 
@@ -785,6 +802,7 @@ const TotalEmployees = () => {
     </div>
   </div>
 )}
+
 
 
 <div className="employee-container">
@@ -813,14 +831,7 @@ const TotalEmployees = () => {
             <td>{emp.email}</td>
             <td>{emp.role}</td>
      
-            <td title={emp.project.join(", ")}>
-  {Array.isArray(emp.project) && emp.project.length > 0
-    ? emp.project.length > 1
-      ? `${emp.project[0].toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())}...`
-      : emp.project[0].toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
-    : "-"}
-</td>
-
+            <td>{emp.project.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())}</td>
 
 
             <td style={{ color: !emp.isActive ? "red" : "green" }}>

@@ -77,7 +77,7 @@ const Reports = () => {
             empname: formatName(report.empname),
             empid: report.empid,
             email: report.email || "N/A",
-            project: report.project,
+            project: formatName(report.project),
             leaveType: formatName(leave.leaveType),
             startDate: formatDate(leave.startDate),
             endDate: formatDate(leave.endDate),
@@ -87,7 +87,7 @@ const Reports = () => {
               empname: formatName(report.empname),
               empid: report.empid,
               email: report.email || "N/A",
-              project: report.project,
+              project: formatName(report.project),
               leaveType: "N/A",
               startDate: "N/A",
               endDate: "N/A",
@@ -220,7 +220,7 @@ const Reports = () => {
                 <input
                   type="text"
                   className="search-input"
-                  placeholder="Search by name, project or ID"
+                  placeholder="Search by name, ID"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
@@ -253,7 +253,7 @@ const Reports = () => {
                     <tr key={index}>
                       <td>{formatCase(report.empname)}</td>
                       <td>{report.empid}</td>
-                      <td>{report.project}</td>
+                      <td>{formatCase(report.project)}</td>
                       <td>{formatCase(report.leaveType)}</td>
                       <td>{report.startDate}</td>
                       <td>{report.endDate}</td>

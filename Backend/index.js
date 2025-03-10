@@ -580,7 +580,7 @@ app.put("/updateEmployeeList/:id", async (req, res) => {
   const { empid, empname, email, project, role, managerEmail } = req.body;
 
   try {
-    if (!empid || !empname || !email || !project) {
+    if (!empid || !empname || !email) {
       return res.status(400).json({ message: "All fields are required!" });
     }
 
@@ -591,190 +591,71 @@ app.put("/updateEmployeeList/:id", async (req, res) => {
       return res.status(404).json({ message: "Employee not found" });
     }
 
-    // ✅ Convert project to lowercase array
-    const updatedProjects = Array.isArray(project)
-      ? project.map(proj => proj.toLowerCase())
-      : [project.toLowerCase()];
+    let assignedProject = existingEmployee.project;
 
-    // ✅ Preserve projects if role is Manager
-    let finalProjects = updatedProjects;
-    if (existingEmployee.role === "Manager" && role === "Manager") {
-      finalProjects = existingEmployee.project;
+    // ✅ Handle Project Assignment When Role Changes to Employee
+    if (role === "Employee" && existingEmployee.role !== "Employee") {
+      if (managerEmail) {
+        const manager = await User.findOne({ email: managerEmail });
+
+        if (manager && manager.project) {
+          assignedProject = manager.project;
+        }
+      }
     }
 
-    // ✅ Update Employee
+    // ✅ Handle Project Assignment When Role Changes to Manager
+    if (role === "Manager") {
+      assignedProject = project;
+    }
+
+    // ✅ Handle Project Transfer if Manager Changes
+    if (role === "Employee" && existingEmployee.managerEmail !== managerEmail) {
+      const newManager = await User.findOne({ email: managerEmail });
+
+      if (newManager && newManager.project) {
+        assignedProject = newManager.project;
+      }
+    }
+
+    // ✅ Handle Project Transfer if Manager is Demoted
+    if (existingEmployee.role === "Manager" && role === "Employee") {
+      const seniorManager = await User.findOne({ email: existingEmployee.managerEmail });
+
+      if (seniorManager) {
+        const seniorProject = seniorManager.project;
+        assignedProject = seniorProject;
+      }
+    }
+
+    // ✅ Automatically update all Employees if Manager's Project Changes
+    if (existingEmployee.role === "Manager" && project !== existingEmployee.project) {
+      // ✅ Update Manager's project
+      assignedProject = project;
+
+      // ✅ Now update all Employees having managerEmail = Manager's email
+      await User.updateMany(
+        { managerEmail: email },
+        { $set: { project: project } }
+      );
+    }
+
+    // ✅ Prepare the update payload
+    const updatePayload = {
+      empid,
+      empname,
+      email,
+      role,
+      managerEmail: role === "Manager" ? "" : managerEmail,
+      project: assignedProject,
+    };
+
+    // ✅ Update Employee (Manager or Employee)
     const updatedEmployee = await User.findByIdAndUpdate(
       req.params.id,
-      {
-        empid,
-        empname,
-        email,
-        role,
-        project: finalProjects,
-        managerEmail,
-      },
+      updatePayload,
       { new: true }
     );
-
-    // ✅ Handle Employee → Manager → Senior Manager chain (Existing Logic)
-    if (role === "Employee" && managerEmail) {
-      const manager = await User.findOne({ email: managerEmail });
-
-      if (manager) {
-        let managerProjects = manager.project || [];
-
-        // ✅ Add projects to Manager
-        updatedProjects.forEach(proj => {
-          if (!managerProjects.includes(proj)) {
-            managerProjects.push(proj);
-          }
-        });
-
-        await User.updateOne(
-          { email: managerEmail },
-          { $set: { project: managerProjects } }
-        );
-
-        // ✅ Fetch Senior Manager (if exists)
-        if (manager.managerEmail) {
-          const seniorManager = await User.findOne({
-            email: manager.managerEmail,
-          });
-
-          if (seniorManager) {
-            let seniorManagerProjects = seniorManager.project || [];
-
-            // ✅ Add projects to Senior Manager
-            updatedProjects.forEach(proj => {
-              if (!seniorManagerProjects.includes(proj)) {
-                seniorManagerProjects.push(proj);
-              }
-            });
-
-            await User.updateOne(
-              { email: manager.managerEmail },
-              { $set: { project: seniorManagerProjects } }
-            );
-          }
-        }
-      }
-    }
-
-    // ✅ ✅ ✅ New Logic 1: Handle Project Transfer when Manager is Demoted ✅ ✅ ✅
-    if (existingEmployee.role === "Manager" && role !== "Manager") {
-      // 🚀 If a Manager is demoted (to Employee), transfer their projects
-      if (existingEmployee.managerEmail) {
-        const seniorManager = await User.findOne({
-          email: existingEmployee.managerEmail,
-        });
-
-        if (seniorManager) {
-          let seniorManagerProjects = seniorManager.project || [];
-
-          // ✅ Transfer all projects to Senior Manager
-          existingEmployee.project.forEach(proj => {
-            if (!seniorManagerProjects.includes(proj)) {
-              seniorManagerProjects.push(proj);
-            }
-          });
-
-          // ✅ Update the Senior Manager's project list
-          await User.updateOne(
-            { email: existingEmployee.managerEmail },
-            { $set: { project: seniorManagerProjects } }
-          );
-
-          // ✅ Clear the Manager's project list since they are demoted
-          await User.updateOne(
-            { _id: req.params.id },
-            { $set: { project: [] } }
-          );
-        }
-      }
-    }
-
-    // ✅ ✅ ✅ New Logic 2: Transfer Projects when Manager's ManagerEmail Changes ✅ ✅ ✅
-    if (
-      existingEmployee.role === "Manager" &&
-      role === "Manager" &&
-      existingEmployee.managerEmail !== managerEmail
-    ) {
-      // 🚀 Transfer all projects to the NEW Senior Manager
-      const newSeniorManager = await User.findOne({ email: managerEmail });
-
-      if (newSeniorManager) {
-        let newSeniorManagerProjects = newSeniorManager.project || [];
-
-        // ✅ Transfer all projects to New Senior Manager
-        existingEmployee.project.forEach(proj => {
-          if (!newSeniorManagerProjects.includes(proj)) {
-            newSeniorManagerProjects.push(proj);
-          }
-        });
-
-        // ✅ Update the New Senior Manager's project list
-        await User.updateOne(
-          { email: managerEmail },
-          { $set: { project: newSeniorManagerProjects } }
-        );
-
-        // ✅ Clear the Old Senior Manager's projects (if no one else has it)
-        if (existingEmployee.managerEmail) {
-          const oldSeniorManager = await User.findOne({
-            email: existingEmployee.managerEmail,
-          });
-
-          if (oldSeniorManager) {
-            let oldSeniorManagerProjects = oldSeniorManager.project || [];
-
-            // ✅ Remove projects only if no one else has them
-            for (let proj of oldSeniorManagerProjects) {
-              const managersWithProject = await User.find({
-                managerEmail: existingEmployee.managerEmail,
-                project: proj,
-              });
-
-              if (managersWithProject.length === 0) {
-                oldSeniorManagerProjects = oldSeniorManagerProjects.filter(
-                  p => p !== proj
-                );
-              }
-            }
-
-            await User.updateOne(
-              { email: existingEmployee.managerEmail },
-              { $set: { project: oldSeniorManagerProjects } }
-            );
-          }
-        }
-      }
-    }
-
-    // ✅ ✅ ✅ Existing Logic: Handle Project Removal when Employee Leaves ✅ ✅ ✅
-    if (role === "Employee" && managerEmail) {
-      const manager = await User.findOne({ email: managerEmail });
-
-      if (manager) {
-        let managerProjects = manager.project || [];
-
-        // ✅ Check if any other employee has the project
-        for (let proj of managerProjects) {
-          const employeesWithProject = await User.find({
-            managerEmail,
-            project: proj,
-          });
-
-          if (employeesWithProject.length === 0) {
-            managerProjects = managerProjects.filter(p => p !== proj);
-          }
-        }
-
-        await User.updateOne(
-          { email: managerEmail },
-          { $set: { project: managerProjects } }
-        );
-      }
-    }
 
     res.status(200).json(updatedEmployee);
   } catch (err) {
@@ -1040,14 +921,14 @@ app.get("/reports/export-excel", async (req, res) => {
     const worksheet = workbook.addWorksheet("Reports");
 
     worksheet.columns = [
-      { header: "Employee ID", key: "empid", width: 15 },
+      { header: "Employee ID", key: "empid", width: 10 },
       { header: "Name", key: "empname", width: 25 },
       { header: "Email", key: "email", width: 30 },
       { header: "Project", key: "project", width: 25 },
       { header: "Leave Type", key: "leaveType", width: 20 },
       { header: "Start Date", key: "startDate", width: 15 },
       { header: "End Date", key: "endDate", width: 15 },
-      { header: "Status", key: "status", width: 15 },
+      { header: "Duration", key: "duration", width: 15 },
     ];
 
     let allReports = [];
@@ -1064,17 +945,21 @@ app.get("/reports/export-excel", async (req, res) => {
           leaves.forEach((leave, index) => {
             leave.startDate.forEach((start, i) => {
               if (leave.status[i] === "Approved") {
+                const correctEndDate = new Date(leave.endDate[i]);
+                correctEndDate.setDate(correctEndDate.getDate() - 1);
+                const totalDuration = Array.isArray(leave.duration[i])
+  ? leave.duration[i].flat().reduce((sum, num) => sum + num, 0)
+  : 0;
+
               allReports.push({
                 empid: emp.empid,
                 empname: formatName(emp.empname),
                 email: emp.email || "N/A",
-                project: Array.isArray(emp.project)
-                ? emp.project.join(", ")  // ✅ Convert array to comma-separated string
-                : emp.project || "N/A",                leaveType: formatName(leave.leaveType),
+                project: formatName(emp.project) || "N/A",   
+               leaveType: formatName(leave.leaveType),
                 startDate: new Date(start), // Convert to Date for sorting
-                endDate: formatDate(leave.endDate[i]),
-                status: formatName(leave.status[i] || "Pending"),
-              });
+                endDate: formatDate(correctEndDate),
+                duration:totalDuration                    });
            } });
           });
         } else {
@@ -1082,12 +967,11 @@ app.get("/reports/export-excel", async (req, res) => {
             empid: emp.empid,
             empname: formatName(emp.empname),
             email: emp.email || "N/A",
-            project: Array.isArray(emp.project)
-            ? emp.project.join(", ")  // ✅ Convert array to comma-separated string
-            : emp.project || "N/A",            leaveType: "N/A",
+            project: formatName(emp.project) || "N/A",
+            leaveType: "N/A",
             startDate: new Date(0), // Default earliest date for sorting
             endDate: "N/A",
-            status: "No Leaves",
+            duration: "No Leaves",
           });
         }
       }
@@ -1129,6 +1013,10 @@ app.get("/reports/export-excel", async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 });
+function subtractOneDay(date) {
+  date.setDate(date.getDate() - 1);
+  return date;
+}
 app.post("/reports/export-excel", async (req, res) => {
   try {
     let { project, reports, year } = req.body;
@@ -1154,7 +1042,7 @@ app.post("/reports/export-excel", async (req, res) => {
       { header: "Leave Type", key: "leaveType", width: 20 },
       { header: "Start Date", key: "startDate", width: 15 },
       { header: "End Date", key: "endDate", width: 15 },
-      { header: "Status", key: "status", width: 15 },
+      { header: "Duration", key: "duration", width: 15 },
     ];
 
     let allReports = [];
@@ -1173,17 +1061,19 @@ app.post("/reports/export-excel", async (req, res) => {
           leaves.forEach((leave) => {
             leave.startDate.forEach((start, i) => {
               if (leave.status[i] === "Approved") {
+               
+                const totalDuration = Array.isArray(leave.duration[i])
+  ? leave.duration[i].flat().reduce((sum, num) => sum + num, 0)
+  : 0;
                 empLeaves.push({
                   empid: emp.empid,
                   empname: emp.empname,
                   email: emp.email || "N/A",
-                  project: Array.isArray(emp.project)
-                  ? emp.project.join(", ")  // ✅ Convert array to comma-separated string
-                  : emp.project || "N/A",                     leaveType: leave.leaveType,
+                  project: formatName(emp.project) || "N/A",
+                  leaveType: leave.leaveType,
                   startDate: new Date(start),
-                  endDate: new Date(leave.endDate[i]),
-                  status: leave.status[i],
-                });
+                  endDate: subtractOneDay(new Date(leave.endDate[i])), 
+                  duration:totalDuration                });
               }
             });
           });
@@ -1585,7 +1475,7 @@ app.get('/leave-type-status/:email/:year', async (req, res) => {
 
     const formattedResponse = {};
 
-    leaveStats.forEach(({ leaveType, status, year: leaveYears }) => {
+    leaveStats.forEach(({ leaveType, status, year: leaveYears, duration }) => {
       if (!formattedResponse[leaveType]) {
         formattedResponse[leaveType] = { Pending: 0, Approved: 0, Rejected: 0 };
       }
@@ -1593,7 +1483,8 @@ app.get('/leave-type-status/:email/:year', async (req, res) => {
       // Iterate through each set of years and statuses
       leaveYears.forEach((yearGroup, i) => {
         if (Array.isArray(yearGroup) && yearGroup.includes(parseInt(year))) {
-          formattedResponse[leaveType][status[i]] = (formattedResponse[leaveType][status[i]] || 0) + 1;
+          // ✅ Now instead of adding 1, add the duration[i]
+          formattedResponse[leaveType][status[i]] += duration[i][0] || 0;
         }
       });
     });
@@ -1604,6 +1495,7 @@ app.get('/leave-type-status/:email/:year', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 app.get("/leave-trends/:email/:year", async (req, res) => {
   const { email, year } = req.params;
 

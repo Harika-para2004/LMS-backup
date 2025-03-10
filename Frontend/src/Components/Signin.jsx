@@ -50,7 +50,10 @@ const LoginForm = () => {
         `http://localhost:5001/api/auth/user/${response.data.userId}`
       );
       const userData = userDataResponse.data;
-
+      if(userData.isActive === false){
+        showToast("Your account is deactivated","error")
+        return;
+      }
       localStorage.setItem("role", userData.role);
       localStorage.setItem("userData", JSON.stringify(userData));
 

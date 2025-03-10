@@ -10,11 +10,13 @@ import {
   Tooltip,
 } from "@mui/material";
 import { Add, Edit, Delete, Close } from "@mui/icons-material";
+import { useManagerContext } from "../context/ManagerContext";
 
 const BASE_URL = "http://localhost:5001/api";
 
 const ProjectManager = () => {
   const [projects, setProjects] = useState([]);
+  const { showToast } = useManagerContext();
   const editFormRef = useRef(null);
   const [projectName, setProjectName] = useState("");
   const [editingId, setEditingId] = useState(null);
@@ -54,8 +56,8 @@ const ProjectManager = () => {
       const data = await response.json();
   
       if (!response.ok) {
-        if (response.status === 400 && data.message === "Project already exists") {
-          alert("Project already exists.");
+        if (response.status === 400 && data.message === "Project") {
+          showToast("Project already exists.","warning");
         } else {
           alert(data.message || "Failed to save project.");
         }

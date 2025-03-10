@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema({
   empid: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  project: { type: [String] }, // Changed to array to store multiple projects
+  project: { type: String}, 
   gender: { type: String },
   role: {
     type: String,

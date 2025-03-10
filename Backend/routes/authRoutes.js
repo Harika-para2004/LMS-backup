@@ -11,7 +11,8 @@ const formatCase = (text) => {
 };
 router.post('/addEmployee', async (req, res) => {
   let { empname, empid, email, password, gender, project, role, managerEmail } = req.body;
-  email=email.toLowerCase();
+  email = email.toLowerCase();
+
   try {
     // ✅ Check if email already exists
     const userExists = await User.findOne({ email });
@@ -25,71 +26,38 @@ router.post('/addEmployee', async (req, res) => {
       return res.status(400).json({ message: "Empid already exists!" });
     }
 
-    // ✅ Handle Manager Role (Allow Manager to have Manager)
+    let assignedProject = "";
+
+    // ✅ Handle Project Assignment from Senior → Manager → Employee
+    if (role === "Employee" && managerEmail) {
+      const manager = await User.findOne({ email: managerEmail });
+
+      if (manager && manager.project) {
+        assignedProject = manager.project; // Get project from Manager
+      }
+    }
+
     if (role === "Manager") {
-      const projectList = await Project.find({ managerEmail: email });
-      const projectNames = projectList.map(p => p.projectName.toLowerCase());
-
-      // ✅ Ensure the project is always an array (no mix of string/array)
-      project = projectNames.length > 0 ? projectNames : [];
+      assignedProject = project;
     }
-
-    // ✅ Ensure project is always an array, prevent split characters
-    if (!Array.isArray(project)) {
-      project = project ? [project] : [];
-    }
-
-    // ✅ Prevent empty strings in project
-    project = project.filter(p => p.trim() !== "");
 
     // ✅ Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // ✅ Create new user (Manager or Employee)
+    // ✅ Create new user
     const newUser = new User({
       empname,
       empid,
       email,
       password: hashedPassword,
       gender,
-      project,
+      project: assignedProject,
       role,
-      managerEmail  // ✅ Keep this field even for Managers now
+      managerEmail: role === "Manager" ? "" : managerEmail
     });
 
-    // ✅ Save the User
     await newUser.save();
 
-    // ✅ Step 2: Assign Employee's Project to Manager & Senior Manager (if role=Employee)
-    if (role === "Employee" && managerEmail) {
-      let currentManagerEmail = managerEmail;
-
-      // ✅ Traverse the chain of managers and assign projects
-      while (currentManagerEmail) {
-        const manager = await User.findOne({ email: currentManagerEmail });
-
-        if (manager) {
-          // ✅ Prevent duplicates in manager's project
-          const updatedProjects = Array.isArray(manager.project)
-            ? [...new Set([...manager.project, ...project])]
-            : [project];
-
-          // ✅ Update the Manager's Project
-          await User.updateOne(
-            { email: currentManagerEmail },
-            { $set: { project: updatedProjects } }
-          );
-
-          // ✅ Move to the next Senior Manager (if exists)
-          currentManagerEmail = manager.managerEmail;
-        } else {
-          // ✅ No more senior managers
-          currentManagerEmail = null;
-        }
-      }
-    }
-
-    // ✅ Step 3: Send Welcome Email
     const transporter = nodemailer.createTransport({
       service: 'Gmail',
       auth: {
@@ -114,13 +82,11 @@ router.post('/addEmployee', async (req, res) => {
         res.status(201).json({ message: 'Employee Added successfully!', userId: newUser._id });
       }
     });
-
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: 'Error registering user' });
   }
 });
-
 
 
 // Sign-in route
