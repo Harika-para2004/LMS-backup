@@ -88,6 +88,9 @@ const LeaveRequestsTable = () => {
   // }, [userData.email, selectedYear,userData.role]);
 
   const fetchLeaveRequestsAdmin = async () => {
+    const userDataResponse = await fetch(
+      `${BASE_URL}api/auth/user/${userData.userId}`
+    );
     const excludeEmail = "admin@gmail.com"; // Replace with the email to exclude
     try {
       const response = await fetch("http://localhost:5001/leaverequests");
@@ -411,6 +414,14 @@ const LeaveRequestsTable = () => {
   const handlePageChange = (event, value) => {
     setCurrentPage(value);
   };
+
+  useEffect(() => {
+    setCurrentPage((prevPage) => {
+      const totalPages = Math.ceil(sortedItems.length / itemsPerPage);
+      return prevPage > totalPages ? 1 : prevPage;
+    });
+  }, [sortedItems]);
+  
 
   return (
     <div>

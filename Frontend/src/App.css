@@ -645,7 +645,7 @@ body, html {
   border-radius: 8px;
 }
 
-.apply-leave-section, .holiday-container, .leave-policy-container {
+.apply-leave-section, .holiday-container {
   background-color: #ffffff;
   border: 1px solid #ddd;
   border-radius: 8px;

@@ -101,12 +101,11 @@ const ProjectManager = () => {
         flexDirection: "column",
         alignItems: "center",
         gap: "20px",
-        marginTop: "20px",
       }}
     >
-      <h2 style={{ textAlign: "center" }}>Projects</h2>
-
-      <Button
+      <div className="header">
+          <h2 className="content-heading">Projects</h2>
+          <Button
         variant="contained"
         style={{ backgroundColor: 'var(--deep-blue)', color: "white" }}
         onClick={() => {
@@ -120,6 +119,9 @@ const ProjectManager = () => {
       >
         {showForm ? "Cancel" : "Add Project"}
       </Button>
+        </div>
+
+
 
       {showForm && (
         <form
