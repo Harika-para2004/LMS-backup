@@ -60,7 +60,7 @@ const ManagersList = () => {
                 Gender
               </TableCell>
               <TableCell sx={{ fontWeight: "bold", color: "#fff" }}>
-                is Active
+                Is Active
               </TableCell>
               <TableCell sx={{ fontWeight: "bold", color: "#fff" }}>
                 Dashboard
@@ -68,7 +68,13 @@ const ManagersList = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {[...employees]
+            {employees.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} align="center">
+                No employees available
+              </TableCell>
+            </TableRow>
+          ) : ([...employees]
               .filter((emp) => emp.email.toLowerCase() !== "dummy@gmail.com" && emp.isActive)
               .sort((a, b) =>
                 a.empid.localeCompare(b.empid, undefined, { numeric: true })
@@ -77,8 +83,8 @@ const ManagersList = () => {
                 <TableRow key={emp.empid}>
                   <TableCell>{emp.empid}</TableCell>
                   <TableCell>{formatCase(emp.empname)}</TableCell>
-                  <TableCell>{emp.project}</TableCell>
-                  <TableCell>{emp.gender}</TableCell>
+                  <TableCell>{formatCase(emp.project)}</TableCell>
+                  <TableCell>{formatCase(emp.gender)}</TableCell>
                   <TableCell style={{ color: !emp.isActive ? "red" : "green" }}>
                     {emp.isActive ? "Yes" : "No"}
                   </TableCell>
@@ -92,7 +98,7 @@ const ManagersList = () => {
                     </IconButton>
                   </TableCell>
                 </TableRow>
-              ))}
+              )))}
           </TableBody>
         </Table>
       </TableContainer>
@@ -124,7 +130,7 @@ const ManagersList = () => {
                 Gender
               </TableCell>
               <TableCell sx={{ fontWeight: "bold", color: "#fff" }}>
-                is Active
+                Is Active
               </TableCell>
               <TableCell sx={{ fontWeight: "bold", color: "#fff" }}>
                 Dashboard
@@ -135,10 +141,10 @@ const ManagersList = () => {
             {[...employees]
               .filter((emp) => emp.email.toLowerCase() === "dummy@gmail.com")
               .map((emp) => (
-                <TableRow key={emp.empid}>
-                  <TableCell>{emp.empid}</TableCell>
+                <TableRow key={emp.empid }>
+                  <TableCell>{emp.empid || "N/A"}</TableCell>
                   <TableCell>{formatCase(emp.empname)}</TableCell>
-                  <TableCell>{emp.project}</TableCell>
+                  <TableCell>{emp.project || "N/A"}</TableCell>
                   <TableCell>{emp.gender || "N/A"}</TableCell>
                   <TableCell style={{ color: !emp.isActive ? "red" : "green" }}>
                     {emp.isActive ? "Yes" : "No"}

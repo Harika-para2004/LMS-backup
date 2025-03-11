@@ -31,6 +31,7 @@ import {
 } from "@mui/material";
 import Sidebar from "./Sidebar";
 import { Delete, Edit } from "@mui/icons-material";
+import useToast from "./useToast";
 
 const HolidayCalendar = () => {
   const [holidays, setHolidays] = useState([]);
@@ -55,6 +56,7 @@ const HolidayCalendar = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const excludeEmail = "admin@gmail.com"; // Email to exclude from the list
   // const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
+  const showToast = useToast();
   const [formData, setFormData] = useState({
     date: "",
     holidayName: "",
@@ -142,7 +144,7 @@ const HolidayCalendar = () => {
       setHolidays((prevHolidays) =>
         prevHolidays.filter((holiday) => holiday._id !== id)
       );
-      alert("Holiday deleted successfully!");
+      showToast("Holiday deleted successfully!");
     } catch (error) {
       console.error("Error deleting employee:", error);
       setError("Failed to delete employee. Please try again later.");
@@ -277,7 +279,7 @@ const HolidayCalendar = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.message); //  Show alert if holiday already exists
+        showToast(data.message); //  Show showToast if holiday already exists
         return;
       }
 
@@ -291,7 +293,7 @@ const HolidayCalendar = () => {
       setShowModal(false);
     } catch (error) {
       console.error("Error adding holiday:", error);
-      alert("Failed to add holiday. Please try again later."); //  Show alert on error
+      showToast("Failed to add holiday. Please try again later."); //  Show alert on error
     }
   };
 

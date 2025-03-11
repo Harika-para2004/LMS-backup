@@ -102,7 +102,13 @@ const EmployeesUnderManager = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {[...employees]
+            {employees.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} align="center">
+                No employees available
+              </TableCell>
+            </TableRow>
+          ) : ([...employees]
               .filter(
                 (emp) =>
                   emp.email.toLowerCase() !== "dummy@gmail.com" && emp.isActive
@@ -114,8 +120,8 @@ const EmployeesUnderManager = () => {
                 <TableRow key={emp.empid}>
                   <TableCell>{emp.empid}</TableCell>
                   <TableCell>{formatCase(emp.empname)}</TableCell>
-                  <TableCell>{emp.project}</TableCell>
-                  <TableCell>{emp.gender}</TableCell>
+                  <TableCell>{formatCase(emp.project)}</TableCell>
+                  <TableCell>{formatCase(emp.gender)}</TableCell>
                   <TableCell style={{ color: !emp.isActive ? "red" : "green" }}>
                     {emp.isActive ? "Yes" : "No"}
                   </TableCell>
@@ -129,7 +135,7 @@ const EmployeesUnderManager = () => {
                     </IconButton>
                   </TableCell>
                 </TableRow>
-              ))}
+              )))}
           </TableBody>
         </Table>
       </TableContainer>

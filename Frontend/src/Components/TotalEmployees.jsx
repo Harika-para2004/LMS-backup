@@ -36,6 +36,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { Edit } from "@mui/icons-material";
+import useToast from "./useToast";
 
 const TotalEmployees = () => {
   const editFormRef = useRef(null);
@@ -58,6 +59,7 @@ const TotalEmployees = () => {
   // const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
+  const showToast = useToast();
   const [empData, setEmpData] = useState({
     empname: "",
     empid: "",
@@ -271,7 +273,7 @@ const TotalEmployees = () => {
     e.preventDefault();
     const { empname, empid, email, password, project, gender, role } = empData;
     if (!empname || !empid) {
-      alert("Please Enter Required Fields *");
+      showToast("Please Enter Required Fields *");
       return;
     }
 
@@ -285,7 +287,7 @@ const TotalEmployees = () => {
       const responseData = await response.json(); // Parse JSON response
 
       if (response.ok) {
-        alert(responseData.message);
+        showToast(responseData.message);
 
         if (response.status === 200 || response.status === 201) {
           const userDataResponse = await fetch(
@@ -304,7 +306,7 @@ const TotalEmployees = () => {
             // Store user data in local storage
             localStorage.setItem("userData", JSON.stringify(userData));
           } else {
-            alert("Failed to fetch user data");
+            showToast("Failed to fetch user data");
           }
         }
         // Clear the form and close the modal
@@ -321,10 +323,10 @@ const TotalEmployees = () => {
         handleAddEmployeeClose();
       } else {
         // Display specific error message from the backend
-        alert(responseData.message || "Failed to add employee");
+        showToast(responseData.message || "Failed to add employee");
       }
     } catch (error) {
-      alert("Error: " + error.message);
+      showToast("Error: " + error.message);
     }
   };
 
@@ -364,7 +366,7 @@ const TotalEmployees = () => {
         throw new Error("Failed to deactivate employee.");
       }
 
-      alert("Employee deactivated successfully!");
+      showToast("Employee deactivated successfully!");
 
       // Update UI state to reflect the deactivation
       setEmpList((prevEmployees) =>
@@ -448,7 +450,7 @@ const TotalEmployees = () => {
 
   const handleUpload = async () => {
     if (!file) {
-      alert("Please select a file first!");
+      showToast("Please select a file first!");
       return;
     }
 
@@ -469,7 +471,7 @@ const TotalEmployees = () => {
           .map((entry) => `• ${entry.email}: ${entry.reason}`)
           .join("\n");
 
-        alert(`Some entries were skipped:\n${failureMessages}`);
+          showToast(`Some entries were skipped:\n${failureMessages}`);
       }
       setFile(null);
       document.getElementById("file-input").value = null;
@@ -484,7 +486,7 @@ const TotalEmployees = () => {
         error.response &&
         error.response.data.message.includes("Missing required columns")
       ) {
-        alert(error.response.data.message); // Alert user about missing columns
+        showToast(error.response.data.message); // Alert user about missing columns
       } else {
         setMessage("Error uploading file");
       }
@@ -917,13 +919,7 @@ const TotalEmployees = () => {
                         />
                       </button>
                     </td> */}
-                    <td
-                      style={{
-                        display: "flex",
-                        gap: "10px",
-                        justifyContent: "center",
-                      }}
-                    >
+                    <td>
                       {/* Edit Button */}
                       <button
                         onClick={() => handleEditEmployee(emp._id)}
@@ -936,6 +932,7 @@ const TotalEmployees = () => {
                           cursor: emp.isActive ? "pointer" : "not-allowed",
                           opacity: emp.isActive ? 1 : 0.5,
                           transition: "0.3s",
+                          marginRight: "5px",
                         }}
                         onMouseOver={(e) =>
                           (e.currentTarget.style.backgroundColor = "#BBDEFB")

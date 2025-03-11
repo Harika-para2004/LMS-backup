@@ -308,11 +308,11 @@ function LeavePolicyPage() {
 
                       <IconButton onClick={() => toggleDescription(p._id)}>
                         {expandedPolicy === p._id ? (
-                          <Tooltip title="collapse">
+                          <Tooltip title="Collapse">
                             <ExpandLess />
                           </Tooltip>
                         ) : (
-                          <Tooltip title="expand">
+                          <Tooltip title="Expand">
                             <ExpandMore />
                           </Tooltip>
                         )}

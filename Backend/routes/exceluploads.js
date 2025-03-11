@@ -12,46 +12,61 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 // Route to handle bulk employee upload
 router.post('/uploadEmployees', upload.single('file'), async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ message: "Please upload an Excel file!" });
-        }
-  
-        // Read Excel file
-        const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
-        const sheetName = workbook.SheetNames[0];
-        const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-  
-        if (!sheetData.length) {
-            return res.status(400).json({ message: "Excel file is empty!" });
-        }
-        // Extract column names from the first row
-        const expectedColumns = ["EmployeeID", "EmployeeName", "Email", "Password", "Role", "Gender", "Project", "ManagerEmail"];
-        const fileColumns = Object.keys(sheetData[0]); 
-    
-        // Check if the uploaded file has the correct columns
-        const hasCorrectFormat = expectedColumns.every(col => fileColumns.includes(col));
-    
-     
-        const newUsers = [];
-        const failedEntries = [];
-        for (let row of sheetData) {
-            const { EmployeeID, EmployeeName, Email, Password, Role, Gender, Project, ManagerEmail } = row;
-            if (!Email || !Password) {
-                failedEntries.push({ email: Email || "Unknown", reason: "Missing required fields" });
-                continue;
-            }
-            // Check if email already exists
-            const userExists = await User.findOne({ email: Email });
-            if (userExists) {
-                failedEntries.push({ email: Email, reason: "User already exists!" });
-                continue;
-            }
-            if (String(Role).toLowerCase() === "manager") {
-              const existingManager = await User.findOne({ role: "manager", project:Project  });
-              if (existingManager) {
-                 
-                  failedEntries.push({ email: Email, reason: `Manager already exists for project '${Project}'` });
+  try {
+      if (!req.file) {
+          return res.status(400).json({ message: "Please upload an Excel file!" });
+      }
+
+      // Read Excel file
+      const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+      const sheetName = workbook.SheetNames[0];
+      const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+      if (!sheetData.length) {
+          return res.status(400).json({ message: "Excel file is empty!" });
+      }
+
+      // Extract column names from the first row
+      const expectedColumns = ["EmployeeID", "EmployeeName", "Email", "Password", "Role", "Gender", "Project", "ManagerEmail"];
+      const fileColumns = Object.keys(sheetData[0]); 
+
+      // Check if the uploaded file has the correct columns
+      const hasCorrectFormat = expectedColumns.every(col => fileColumns.includes(col));
+
+      const newUsers = [];
+      const failedEntries = [];
+      for (let row of sheetData) {
+          const { EmployeeID, EmployeeName, Email, Password, Role, Gender, Project, ManagerEmail } = row;
+          const email = Email.toLowerCase();
+
+          if (!email || !Password) {
+              failedEntries.push({ email: email || "Unknown", reason: "Missing required fields" });
+              continue;
+          }
+
+          // Check if email or empid already exists
+          const userExists = await User.findOne({ email });
+          const empidExists = await User.findOne({ empid: EmployeeID });
+
+          if (userExists) {
+              failedEntries.push({ email, reason: "User already exists!" });
+              continue;
+          }
+
+          if (empidExists) {
+              failedEntries.push({ email, reason: "Empid already exists!" });
+              continue;
+          }
+
+          let assignedProject = "";
+
+          // ✅ Handle Project Assignment from Senior → Manager → Employee
+          if (String(Role).toLowerCase() === "employee" && ManagerEmail) {
+              const manager = await User.findOne({ email: ManagerEmail.toLowerCase() });
+              if (manager && manager.project) {
+                  assignedProject = manager.project;
+              } else {
+                  failedEntries.push({ email, reason: "Invalid manager email or project not assigned" });
                   continue;
               }
           }

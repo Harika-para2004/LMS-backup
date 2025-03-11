@@ -23,6 +23,10 @@ const ProjectManager = () => {
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
 
+  const formatCase = (text) => {
+    return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
   useEffect(() => {
     fetchProjects();
   }, []);
@@ -59,7 +63,7 @@ const ProjectManager = () => {
         if (response.status === 400 && data.message === "Project") {
           showToast("Project already exists.","warning");
         } else {
-          alert(data.message || "Failed to save project.");
+          showToast(data.message || "Failed to save project.");
         }
         return;
       }
@@ -138,6 +142,7 @@ const ProjectManager = () => {
             display: "flex",
             flexDirection: "column",
             gap: "10px",
+            marginBottom: "10px",
           }}
         >
           <TextField
