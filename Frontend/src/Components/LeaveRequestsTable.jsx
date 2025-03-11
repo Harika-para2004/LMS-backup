@@ -6,6 +6,7 @@ import {
   FormControl,
   Stack,
   Pagination,
+  Tooltip,
 } from "@mui/material";
 import { MdCheckCircle, MdCancel, MdWatchLater } from "react-icons/md";
 import { useManagerContext } from "../context/ManagerContext";
@@ -345,11 +346,17 @@ const LeaveRequestsTable = () => {
   const truncateReason = (reason) => {
     if (!reason) return "";
     const words = reason.split(" ");
-    if (words.length > 2) {
-      return words.slice(0, 2).join(" ") + "...";
+    if (words.length > 3) {
+      return words.slice(0, 3).join(" ") + "...";
     }
     return reason;
   };
+
+  const formatReason = (text) => {
+    if (!text) return "";
+    return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+  };
+
   const filteredData = filteredLeaves.flatMap((leave) =>
     leave.startDate.map((startDate, index) => ({
       id: `${leave._id}-${index}`,
@@ -531,7 +538,7 @@ const LeaveRequestsTable = () => {
                     sx={{
                       fontSize: "12px",
                       px: 1.2,
-                      "&:hover": { bgcolor: "#f5e9f7" }, // Subtle hover effect
+                      "&:hover": { bgcolor: "#f5e9f7" },
                     }}
                   >
                     {year}
@@ -564,7 +571,7 @@ const LeaveRequestsTable = () => {
                 <tr key={leave.id}>
                   <td>{leave.empid}</td>
                   <td>{formatCase(leave.empname)}</td>
-                  <td>{leave.leaveType}</td>
+                  <td>{formatCase(leave.leaveType)}</td>
                   <td>{leave.duration}</td>
                   <td>{leave.startDate}</td>
                   <td>{leave.endDate}</td>
@@ -581,7 +588,9 @@ const LeaveRequestsTable = () => {
                       />
                     )}
                   </td>
-                  <td>{truncateReason(leave.reason)}</td>
+                  <td> <Tooltip title={formatReason(leave.reason)} arrow>
+    <span>{truncateReason(formatReason(leave.reason))}</span>
+  </Tooltip></td>
                   <td>
                     {leave.status === "approved" && (
                       <button

@@ -27,8 +27,10 @@ import {
   Typography,
   Modal,
   CircularProgress,
+  Tooltip,
 } from "@mui/material";
 import Sidebar from "./Sidebar";
+import { Delete, Edit } from "@mui/icons-material";
 
 const HolidayCalendar = () => {
   const [holidays, setHolidays] = useState([]);
@@ -439,10 +441,9 @@ const HolidayCalendar = () => {
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <Button
             id="file-input"
-            variant="contained"
+            variant="text"
             component="label"
             sx={{
-              backgroundColor: "steelblue",
               borderRadius: "5px",
               "&:focus": { outline: "none" },
               textTransform: "none",
@@ -465,11 +466,19 @@ const HolidayCalendar = () => {
             variant="contained"
             onClick={() => setShowModal(true)}
             sx={{
-              textTransform: "capitalize",
-              backgroundColor: "#006400", // Align the button absolutely
-              // marginTop: "-40px", // Push it to the right edge
-              "&:focus": {
-                outline: "none",
+              fontSize: "13px",
+              fontWeight: 500,
+              color: "#fff",
+              background:
+                "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)", // Elegant gradient
+              borderRadius: 1,
+              bgcolor: "#fafafa", // Softer background
+              transition: "all 0.3s ease-in-out",
+              "&:hover": { bgcolor: "#f0f0f0" },
+              "&.Mui-focused": {
+                background:
+                  "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)", // Elegant gradient
+                boxShadow: "0px 3px 8px rgba(159, 50, 178, 0.3)", // Elegant focused effect
               },
             }}
           >
@@ -498,7 +507,7 @@ const HolidayCalendar = () => {
           </tr>
         </thead>
         <tbody>
-          {holidays ? (
+          {holidays.length > 0 ? (
             holidays.map((holiday, index) => (
               <tr key={holiday._id}>
                 {editingRow === index ? (
@@ -555,7 +564,11 @@ const HolidayCalendar = () => {
                     <td>{holiday.type}</td>
                     <td>
                       <button onClick={() => handleEdit(index)}>
-                        <FaEdit className="edit-icon" size={20} color="blue" />
+                        <Tooltip title="Edit">
+                          <IconButton size="small" >
+                            <Edit color="primary" fontSize="small" />
+                          </IconButton>
+                        </Tooltip>{" "}
                       </button>
                       <button
                         onClick={() => handleDeleteHoliday(holiday._id)}
@@ -565,7 +578,11 @@ const HolidayCalendar = () => {
                           cursor: "pointer",
                         }}
                       >
-                        <FaTrash className="del-icon" size={20} color="red" />
+                        <Tooltip title="Delete">
+                          <IconButton size="small">
+                            <Delete color="error" fontSize="small" />
+                          </IconButton>
+                        </Tooltip>{" "}
                       </button>
                     </td>
                   </>
@@ -574,7 +591,9 @@ const HolidayCalendar = () => {
             ))
           ) : (
             <tr>
-              <td>No Holidays available</td>
+              <td colSpan="5" style={{ textAlign: "center", padding: "10px" }}>
+                No holidays available
+              </td>
             </tr>
           )}
         </tbody>

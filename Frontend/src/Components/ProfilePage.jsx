@@ -77,7 +77,7 @@ const ProfilePage = () => {
   useEffect(() => {
     const fetchLeaveData = async () => {
       try {
-        console.log("email in emp",email);
+        // console.log("email in emp",email);
         console.log("user email",userData.email)
         const response = await fetch(
           `http://localhost:5001/leavesummary?email=${email}`
@@ -123,7 +123,7 @@ const ProfilePage = () => {
         console.error("Error fetching leave policies:", error);
       }
     };
-    console.log("1st email",email);
+    // console.log("1st email",email);
     if(email)
     fetchLeavePolicies();
   }, [leaveData,email]);

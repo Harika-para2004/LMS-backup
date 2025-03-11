@@ -445,9 +445,9 @@ const ApplyLeave = () =>
                           value={leaveType}
                           disabled={
                             (gender === "Male" &&
-                              leaveType.toLowerCase() === "maternity leave") ||
+                              leaveType.toLowerCase().includes("maternity")) ||
                             (gender === "Female" &&
-                              leaveType.toLowerCase() === "paternity leave")
+                              leaveType.toLowerCase().includes("paternity leave"))
                           }
                         >
                           {formatCase(leaveType)}
@@ -709,8 +709,8 @@ const ApplyLeave = () =>
                             {holiday.date.split("-").slice(0, 2).join("-")}
                           </td>
                           <td>{holiday.day}</td>
-                          <td>{holiday.name}</td>
-                          <td>{holiday.type}</td>
+                          <td>{formatCase(holiday.name)}</td>
+                          <td>{formatCase(holiday.type)}</td>
                         </tr>
                       ))
                     ) : (

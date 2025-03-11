@@ -4,10 +4,11 @@ import { MdCheckCircle, MdCancel, MdWatchLater } from "react-icons/md";
 import { FaTrash } from "react-icons/fa";
 import { formatDate } from "../utils/dateUtlis";
 import { useManagerContext } from "../context/ManagerContext";
-import { Button, Select, MenuItem, FormControl, Stack, Pagination } from "@mui/material";
+import { Button, Select, MenuItem, FormControl, Stack, Pagination, Tooltip } from "@mui/material";
 
 const LeaveHistory = () => {
-  const { leaveHistory, setLeaveHistory, email, setEmail, showToast } =
+  const { leaveHistory, setLeaveHistory, email, setEmail, showToast,selectedFilter,
+    setSelectedFilter, } =
     useManagerContext();
 
   const currentYear = new Date().getFullYear();
@@ -21,6 +22,24 @@ const LeaveHistory = () => {
     () => Array.from({ length: 18 }, (_, i) => currentYear + 1 - i),
     [currentYear]
   );
+
+  const truncateReason = (reason) => {
+    if (!reason) return "";
+    const words = reason.split(" ");
+    if (words.length > 3) {
+      return words.slice(0, 3).join(" ") + "...";
+    }
+    return reason;
+  };
+
+  const formatCase = (text) => {
+    return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
+  const formatReason = (text) => {
+    if (!text) return "";
+    return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+  };
 
   // ✅ Correct Year Filtering: Ensure year is properly compared
   const filteredLeaves = leaveHistory.filter(
@@ -36,6 +55,10 @@ const LeaveHistory = () => {
     // so b comes before a, which sorts in descending order.
     return dateB - dateA;
   });
+
+  const handleFilterChange = (e) => {
+    setSelectedFilter(e.target.value);
+  };
   
   // Pagination logic
   // const itemsPerPage = 15;
@@ -61,6 +84,13 @@ const LeaveHistory = () => {
   const handlePageChange = (event, value) => {
     setCurrentPage(value);
   };
+
+  useEffect(() => {
+    setCurrentPage((prevPage) => {
+      const totalPages = Math.ceil(filteredLeaves.length / itemsPerPage);
+      return prevPage > totalPages ? 1 : prevPage;
+    });
+  }, [filteredLeaves]);
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -124,20 +154,70 @@ const LeaveHistory = () => {
       {/* Year Filter Dropdown */}
       <div className="history-header">
         <h2 className="content-heading">Leave History</h2>
-        <div className="legend-container">
-          <div className="legend-item">
-            <MdWatchLater size={20} color="blue" /> <span>Pending</span>
+        <div className="legend-container" style={{ marginLeft: "10px" }}>
+            <div className="legend-item">
+              <MdWatchLater size={20} color="blue" /> <span>Pending</span>
+            </div>
+            <div className="legend-item">
+              <MdCheckCircle size={20} color="green" /> <span>Approved</span>
+            </div>
+            <div className="legend-item">
+              <MdCancel size={20} color="red" /> <span>Rejected</span>
+            </div>
           </div>
-          <div className="legend-item">
-            <MdCheckCircle size={20} color="green" /> <span>Approved</span>
-          </div>
-          <div className="legend-item">
-            <MdCancel size={20} color="red" /> <span>Rejected</span>
-          </div>
-        </div>
 
         {/* Year Filter Dropdown (Top Right) */}
         <div className="year-filter">
+        <div className="filter-container">
+              <FormControl
+                sx={{
+                  minWidth: 120,
+                  bgcolor: "white",
+                  borderRadius: 1,
+                  boxShadow: "0px 2px 6px rgba(0, 0, 0, 0.1)",
+                }}
+              >
+                <Select
+                  value={selectedFilter}
+                  onChange={handleFilterChange}
+                  displayEmpty
+                  sx={{
+                    fontSize: "14px",
+                    fontWeight: 500,
+                    color: "#333",
+                    borderRadius: 1,
+                    height: 40,
+                    px: 1.2,
+                    bgcolor: "#fafafa",
+                    transition: "all 0.3s ease-in-out",
+                    "&:hover": { bgcolor: "#f0f0f0" },
+                    "&.Mui-focused": {
+                      boxShadow: "0px 3px 8px rgba(0, 0, 0, 0.2)",
+                    },
+                  }}
+                >
+                  {["All", "Pending", "Approved", "Rejected"].map((status) => (
+                    <MenuItem
+                      key={status}
+                      value={status}
+                      sx={{
+                        fontSize: "14px",
+                        px: 1.2,
+                        color:
+                          status === "Approved"
+                            ? "green"
+                            : status === "Rejected"
+                            ? "red"
+                            : "#333",
+                        "&:hover": { bgcolor: "#f5f5f5" },
+                      }}
+                    >
+                      {status}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </div>
           <FormControl
             sx={{
               minWidth: 85,
@@ -205,11 +285,13 @@ const LeaveHistory = () => {
               .sort((a, b) => new Date(b.startDate) - new Date(a.startDate))
               .map((leave, index) => (
                 <tr key={index}>
-                  <td>{leave.leaveType || "N/A"}</td>
+                  <td>{formatCase(leave.leaveType) || "N/A"}</td>
                   <td>{formatDate(leave.startDate) || "N/A"}</td>
                   <td>{formatDate(leave.endDate) || "N/A"}</td>
                   <td>{leave.duration}</td>
-                  <td>{leave.reason || "N/A"}</td>
+                  <td> <Tooltip title={formatReason(leave.reason)} arrow>
+    <span>{truncateReason(formatReason(leave.reason))}</span>
+  </Tooltip></td>
                   <td>
                     {leave.attachments ? (
                       <a href={leave.attachments} download>

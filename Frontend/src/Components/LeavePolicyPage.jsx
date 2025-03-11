@@ -11,8 +11,14 @@ import {
 } from "react-icons/fa";
 import "./LeavePolicyPage.css";
 import useToast from "./useToast";
-import { Button } from "@mui/material";
-import { Add } from "@mui/icons-material";
+import {
+  Button,
+  CardActions,
+  IconButton,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+import { Add, Delete, Edit, ExpandLess, ExpandMore } from "@mui/icons-material";
 
 function LeavePolicyPage() {
   const [formData, setFormData] = useState({
@@ -104,13 +110,13 @@ function LeavePolicyPage() {
   };
 
   return (
-    <div className="leave-policy-container1">
-      <div className="left-section">
+    <div className="leave-policy-page-container">
+      <div className="lp-left-section">
         <div className="header">
           <h2 className="content-heading">Leave Policies</h2>
           <Button
             className="create-policy-btn"
-            sx={{bgcolor:"#313896",color:"white"}}
+            sx={{ bgcolor: "#313896", color: "white" }}
             onClick={() => {
               setShowForm(true);
               setFormData({
@@ -120,9 +126,9 @@ function LeavePolicyPage() {
                 policyId: "",
               }); // ✅ Clears form
             }}
-            startIcon = {<Add />}
+            startIcon={<Add />}
           >
-             Add Policy
+            Add Policy
           </Button>
         </div>
 
@@ -146,7 +152,7 @@ function LeavePolicyPage() {
               {formData.policyId ? "Edit" : "Create"} Leave Policy
             </h3>
             <div className="form-group">
-              <label>Leave Type</label> <br/>
+              <label>Leave Type</label> <br />
               <input
                 type="text"
                 name="leaveType"
@@ -158,7 +164,7 @@ function LeavePolicyPage() {
               />
             </div>
             <div className="form-group">
-              <label>Max Leaves</label> <br/>
+              <label>Max Leaves</label> <br />
               <input
                 type="number"
                 name="maxLeaves"
@@ -171,7 +177,7 @@ function LeavePolicyPage() {
               />
             </div>
             <div className="form-group">
-              <label>Description</label> <br/>
+              <label>Description</label> <br />
               <textarea
                 name="description"
                 value={formData.description}
@@ -209,12 +215,23 @@ function LeavePolicyPage() {
                   key={p._id}
                   className={`policy-item ${
                     expandedPolicy === p._id ? "expanded" : ""
-                  }`} // ✅ Add class for expansion
+                  }`}
                 >
                   <div className="policy-header">
-                    <h4>{formatCase(p.leaveType)}</h4>
+                    <Typography
+                      variant="body1"
+                      style={{
+                        fontWeight: "bold",
+                        fontSize: "14px",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {formatCase(p.leaveType)}
+                    </Typography>
 
-                    <div className="policy-actions">
+                    {/* <div className="policy-actions">
                       <p>
                         Total Leaves:{" "}
                         {p.maxAllowedLeaves !== null
@@ -237,7 +254,7 @@ function LeavePolicyPage() {
                           }, 100);
                         }}
                       >
-                        <FaEdit />
+                        <Edit />
                       </button>
                       <button onClick={() => handleDelete(p._id)}>
                         <FaTrash />
@@ -249,10 +266,60 @@ function LeavePolicyPage() {
                           <FaChevronDown />
                         )}
                       </button>
-                    </div>
+                    </div> */}
+
+                    <CardActions disableSpacing>
+                      <p variant="small">
+                        Total Leaves:{" "}
+                        {p.maxAllowedLeaves !== null
+                          ? p.maxAllowedLeaves
+                          : "N/A"}
+                      </p>
+                      <Tooltip title="Edit">
+                        <IconButton
+                          color="primary"
+                          onClick={() => {
+                            setShowForm(true);
+                            setFormData({
+                              leaveType: p.leaveType,
+                              maxLeaves: p.maxAllowedLeaves,
+                              description: p.description,
+                              policyId: p._id,
+                            });
+                            setTimeout(() => {
+                              formRef.current.scrollIntoView({
+                                behavior: "smooth",
+                              });
+                            }, 100);
+                          }}
+                        >
+                          <Edit />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip title="Delete">
+                        <IconButton
+                          color="error"
+                          onClick={() => handleDelete(p._id)}
+                        >
+                          <Delete />
+                        </IconButton>
+                      </Tooltip>
+
+                      <IconButton onClick={() => toggleDescription(p._id)}>
+                        {expandedPolicy === p._id ? (
+                          <Tooltip title="collapse">
+                            <ExpandLess />
+                          </Tooltip>
+                        ) : (
+                          <Tooltip title="expand">
+                            <ExpandMore />
+                          </Tooltip>
+                        )}
+                      </IconButton>
+                    </CardActions>
                   </div>
 
-                  {/* ✅ Move description outside .policy-header */}
                   {expandedPolicy === p._id && (
                     <p className="policy-description">{p.description}</p>
                   )}
@@ -263,7 +330,7 @@ function LeavePolicyPage() {
         </div>
       </div>
 
-      <div className="right-section">
+      <div className="lp-right-section">
         <Projects />
       </div>
     </div>

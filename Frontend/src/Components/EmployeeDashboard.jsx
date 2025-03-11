@@ -10,6 +10,7 @@ import {
   FormControl,
   InputLabel,
   Button,
+  Box,
 } from "@mui/material";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useManagerContext } from "../context/ManagerContext";
@@ -42,7 +43,7 @@ const EmployeeDashboard = () => {
       navigate("/manager/analytics/employees");
     } else if (role === "Admin" && managerEmail !== "dummy@gmail.com") {
       navigate(`/admin/analytics/${managerEmail}/employees`);
-    } else if(managerEmail === "dummy@gmail.com"){
+    } else if (managerEmail === "dummy@gmail.com") {
       navigate(`/admin/analytics/${managerEmail}/inactive-employees`);
     }
   };
@@ -151,11 +152,19 @@ const EmployeeDashboard = () => {
       </Grid>
 
       <Grid container spacing={3} sx={{ mt: 3 }}>
-        <Grid item xs={12} md={6}>
-          <LeaveStatusChart email={email} year={selectedYear} />
+        <Grid
+          item
+          xs={12}
+          md={6}
+        >
+            <LeaveStatusChart email={email} year={selectedYear} />
         </Grid>
-        <Grid item xs={12} md={6}>
-          <LeaveBalanceChart email={email} year={selectedYear} />
+        <Grid
+          item
+          xs={12}
+          md={6}
+        >
+            <LeaveBalanceChart email={email} year={selectedYear} />
         </Grid>
       </Grid>
     </Grid>

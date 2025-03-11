@@ -80,7 +80,7 @@ const LeaveBalanceChart = ({ email,year }) => {
   }));
 
   return (
-    <Card sx={{ maxWidth: 800, margin: "auto", padding: 3, boxShadow: 3, borderRadius: 2,backgroundColor: "#F4F5F7" }}>
+    <Card sx={{ maxWidth: 800,maxHeight:460,overflowY:"auto", margin: "auto", padding: 3, boxShadow: 3, borderRadius: 2,backgroundColor: "#F4F5F7" }}>
       <CardContent>
         {/* <Typography variant="h5" align="center" sx={{ fontWeight: "bold", mb: 2 }}>
           Leave Balance Overview

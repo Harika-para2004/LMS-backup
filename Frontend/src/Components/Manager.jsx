@@ -301,9 +301,9 @@ function LeaveRequests() {
         console.error("Error fetching leave data:", error);
       }
     };
-
+    if(email)
     fetchLeaveData();
-  }, []); 
+  }, [email]); 
   
   //   // if (email) {
   //     const fetchLeaveData = async () => {

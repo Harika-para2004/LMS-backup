@@ -4,12 +4,18 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { BASE_URL } from "../Config";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import axios from "axios";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { FaEdit, FaTrash, FaUserSlash } from "react-icons/fa";
 import { Outlet, useNavigate } from "react-router-dom";
 import { AiOutlineClose } from "react-icons/ai";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import Pagination from "@mui/material/Pagination";
 import Stack from "@mui/material/Stack";
+import {
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+} from "@mui/material";
 import { useRef } from "react";
 import {
   Box,
@@ -29,6 +35,7 @@ import {
   CircularProgress,
   Tooltip,
 } from "@mui/material";
+import { Edit } from "@mui/icons-material";
 
 const TotalEmployees = () => {
   const editFormRef = useRef(null);
@@ -49,6 +56,8 @@ const TotalEmployees = () => {
   const [loading, setLoading] = useState(false);
   const excludeEmail = "admin@gmail.com"; // Email to exclude from the list
   // const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
   const [empData, setEmpData] = useState({
     empname: "",
     empid: "",
@@ -67,12 +76,12 @@ const TotalEmployees = () => {
       managerEmail: selectedValue, // Assuming manager is identified by email
     }));
   };
-  
+
   const handleProjectChange = (event) => {
     setSelectedProject(event.target.value);
     setEmpData((prev) => ({ ...prev, project: event.target.value })); // ✅ Replace, not append
   };
-  
+
   const filteredEmployees = employeeList
     .slice() // Create a shallow copy to avoid mutating original data
     .sort((a, b) =>
@@ -88,12 +97,12 @@ const TotalEmployees = () => {
   const [projects, setProjects] = useState([]);
   const [selectedManager, setSelectedManager] = useState(""); // Default to empty string
   const [selectedProject, setSelectedProject] = useState(""); // Default empty value
-  const [projectDetails,setProjectDetails]=useState([]);
+  const [projectDetails, setProjectDetails] = useState([]);
   useEffect(() => {
     fetchProjects();
   }, []);
 
- ;const fetchProjects = async () => {
+  const fetchProjects = async () => {
     try {
       const response = await fetch(`${BASE_URL}api/projects`);
       const data = await response.json();
@@ -102,7 +111,7 @@ const TotalEmployees = () => {
       console.error("Error fetching projects", error);
     }
   };
-  
+
   useEffect(() => {
     const fetchProjectsAndManagers = async () => {
       try {
@@ -122,10 +131,7 @@ const TotalEmployees = () => {
     fetchProjectsAndManagers();
   }, [selectedManager]); // Refetch projects when manager changes
 
-
   useEffect(() => {
-   
-  
     fetchManagers();
   }, []);
   const fetchManagers = async () => {
@@ -152,6 +158,13 @@ const TotalEmployees = () => {
   const handlePageChange = (event, value) => {
     setCurrentPage(value);
   };
+
+  useEffect(() => {
+    setCurrentPage((prevPage) => {
+      const totalPages = Math.ceil(filteredEmployees.length / employeesPerPage);
+      return prevPage > totalPages ? 1 : prevPage;
+    });
+  }, [filteredEmployees]);
 
   useEffect(() => {
     fetchEmployees();
@@ -187,13 +200,14 @@ const TotalEmployees = () => {
       !empData.email ||
       !empData.empid ||
       !empData.empname ||
-      (empData.role === "Employee" && (!empData.project || empData.project.length === 0)) || 
+      (empData.role === "Employee" &&
+        (!empData.project || empData.project.length === 0)) ||
       !empData.role
     ) {
       setError("All fields are required.");
       return;
     }
-  
+
     const requestBody = {
       ...empData,
       project: empData.role === "Manager" ? empData.project : empData.project,
@@ -202,7 +216,7 @@ const TotalEmployees = () => {
     
   
     console.log("Request Payload:", requestBody); // ✅ Debugging Line
-  
+
     try {
       const response = await fetch(`${BASE_URL}updateEmployeeList/${id}`, {
         method: "PUT",
@@ -211,12 +225,14 @@ const TotalEmployees = () => {
           "Content-Type": "application/json",
         },
       });
-  
+
       if (!response.ok) {
         const errorMessage = await response.text(); // Read the error message
-        throw new Error(`Failed to update employee. Server Response: ${errorMessage}`);
+        throw new Error(
+          `Failed to update employee. Server Response: ${errorMessage}`
+        );
       }
-  
+
       fetchEmployees();
       setEditingRow(null);
       setError(null);
@@ -228,39 +244,36 @@ const TotalEmployees = () => {
       setError(error.message);
     }
   };
-  
-  
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-  
+
     setEmpData((prevData) => {
       const updatedData = { ...prevData, [name]: value };
-  
+
       // If role is "Manager" and managerEmail is empty, auto-assign project
       if (name === "role" && value === "Manager" && !prevData.managerEmail) {
         const assignedProject = projectDetails.find(
-          (project) => project.managerEmail === prevData.email && !project.managerAssigned
+          (project) =>
+            project.managerEmail === prevData.email && !project.managerAssigned
         );
-  
+
         if (assignedProject) {
           updatedData.project = assignedProject.projectName;
         }
       }
-  
+
       return updatedData;
     });
   };
-  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const { empname, empid, email, password, project, gender, role } = empData;
-      if(!empname || !empid){
-        alert("Please Enter Required Fields *")
-        return
-      }
-
-
+    if (!empname || !empid) {
+      alert("Please Enter Required Fields *");
+      return;
+    }
 
     try {
       const response = await fetch(`${BASE_URL}api/auth/addEmployee`, {
@@ -315,12 +328,28 @@ const TotalEmployees = () => {
     }
   };
 
-  const handleDeactivateEmployee = async (id) => {
-    const isConfirmed = window.confirm(
-      "Are you sure you want to deactivate this employee?"
-    );
+  const handleOpenDialog = (id) => {
+    setSelectedEmployeeId(id);
+    setOpenDialog(true);
+  };
 
-    if (!isConfirmed) return;
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+  };
+
+  const handleConfirmDeactivation = async () => {
+    if (selectedEmployeeId) {
+      await handleDeactivateEmployee(selectedEmployeeId);
+    }
+    setOpenDialog(false);
+  };
+
+  const handleDeactivateEmployee = async (id) => {
+    // const isConfirmed = window.confirm(
+    //   "Are you sure you want to deactivate this employee?"
+    // );
+
+    // if (!isConfirmed) return;
 
     try {
       const response = await fetch(`${BASE_URL}employee-del/${id}`, {
@@ -351,15 +380,18 @@ const TotalEmployees = () => {
   };
   const handleEditEmployee = (id) => {
     // Find the employee using _id
-    console.log("id",id)
+    console.log("id", id);
     const selectedEmployee = employeeList.find((emp) => emp._id === id);
-  
+
     if (selectedEmployee) {
       // Set editing row to the found employee's _id
       setEditingRow(id);
       setTimeout(() => {
         if (editFormRef.current) {
-          editFormRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+          editFormRef.current.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
         }
       }, 100);
       // Populate the form data with the selected employee's details
@@ -371,7 +403,7 @@ const TotalEmployees = () => {
         role: selectedEmployee.role,
         managerEmail: selectedEmployee.managerEmail,
       });
-      handleSave1(id)
+      handleSave1(id);
     }
   };
   const handleCancel = () => {
@@ -380,7 +412,6 @@ const TotalEmployees = () => {
     setSelectedManager("");
     setSelectedProject("");
   };
-  
 
   const handleEmployeeData = (e) => {
     const { name, value } = e.target;
@@ -504,8 +535,7 @@ const TotalEmployees = () => {
             <Tooltip title="Upload Employees" arrow>
               <Button
                 component="label"
-                variant="contained"
-                color="primary"
+                variant="text"
                 startIcon={<CloudUploadIcon />}
                 sx={{ textTransform: "none" }}
               >
@@ -541,12 +571,19 @@ const TotalEmployees = () => {
             onClick={() => handleAddEmployeeClick()}
             // onClick={() => setShowModal(true)}
             sx={{
-              textTransform: "capitalize",
-              backgroundColor: "#006400", // Align the button absolutely
-              // marginTop: "-40px", // Push it to the right edge
-              // marginRight: "35px", // Optional: Add some spacing from the right edge
-              "&:focus": {
-                outline: "none",
+              fontSize: "13px",
+              fontWeight: 500,
+              color: "#fff",
+              background:
+                "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)", // Elegant gradient
+              borderRadius: 1,
+              bgcolor: "#fafafa", // Softer background
+              transition: "all 0.3s ease-in-out",
+              "&:hover": { bgcolor: "#f0f0f0" },
+              "&.Mui-focused": {
+                background:
+                  "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)", // Elegant gradient
+                boxShadow: "0px 3px 8px rgba(159, 50, 178, 0.3)", // Elegant focused effect
               },
             }}
           >
@@ -834,47 +871,152 @@ const TotalEmployees = () => {
             <td>{emp.project.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())}</td>
 
 
-            <td style={{ color: !emp.isActive ? "red" : "green" }}>
-              {emp.isActive ? "Yes" : "No"}
-            </td>
-            <td> {emp.role === "Employee"
-    ? emp.managerEmail === "dummy@gmail.com"
-      ? "Not Assigned"
-      : emp.managerName || "-"
-    : emp.managerName || "-"}</td>
-            <td>
-  {emp.role === "Employee"
-    ? emp.managerEmail === "dummy@gmail.com"
-      ? "Not Assigned"
-      : emp.managerEmail || "-"
-    : emp.managerEmail || "-"}
-</td>
-            <td>
-              <button
-                onClick={() => handleEditEmployee(emp._id)}
-                style={{ border: "none", background: "none", cursor: "pointer" }}
-              >
-                <FaEdit className="edit-icon" size={20} color="blue" />
-              </button>
-              <button
-                onClick={() => handleDeactivateEmployee(emp._id)}
-                disabled={!emp.isActive}
-                style={{ border: "none", background: "none", cursor: emp.isActive ? "pointer" : "not-allowed", opacity: emp.isActive ? 1 : 0.2 }}
-              >
-                <FaTrash className="del-icon" size={20} color="red" />
-              </button>
-            </td>
-          </tr>
-        ))
-      ) : (
-        <tr>
-          <td colSpan="9">No Employees Available</td>
-        </tr>
-      )}
-    </tbody>
-  </table>
-</div>
+                    <td style={{ color: !emp.isActive ? "red" : "green" }}>
+                      {emp.isActive ? "Yes" : "No"}
+                    </td>
+                    <td>
+                      {" "}
+                      {emp.role === "Employee"
+                        ? emp.managerEmail === "dummy@gmail.com"
+                          ? "Not Assigned"
+                          : emp.managerName || "-"
+                        : emp.managerName || "-"}
+                    </td>
+                    <td>
+                      {emp.role === "Employee"
+                        ? emp.managerEmail === "dummy@gmail.com"
+                          ? "Not Assigned"
+                          : emp.managerEmail || "-"
+                        : emp.managerEmail || "-"}
+                    </td>
+                    {/* <td>
+                      <button
+                        onClick={() => handleEditEmployee(emp._id)}
+                        style={{
+                          border: "none",
+                          background: "none",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <Edit className="edit-icon" size={20} color="blue" />
+                      </button>
+                      <button
+                        onClick={() => handleDeactivateEmployee(emp._id)}
+                        disabled={!emp.isActive}
+                        style={{
+                          border: "none",
+                          background: "none",
+                          cursor: emp.isActive ? "pointer" : "not-allowed",
+                          opacity: emp.isActive ? 1 : 0.2,
+                        }}
+                      >
+                        <FaUserSlash
+                          className="deactivate-icon"
+                          size={20}
+                          color="black"
+                        />
+                      </button>
+                    </td> */}
+                    <td
+                      style={{
+                        display: "flex",
+                        gap: "10px",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {/* Edit Button */}
+                      <button
+                        onClick={() => handleEditEmployee(emp._id)}
+                        disabled={!emp.isActive}
+                        style={{
+                          border: "none",
+                          backgroundColor: "#E3F2FD",
+                          padding: "6px",
+                          borderRadius: "6px",
+                          cursor: emp.isActive ? "pointer" : "not-allowed",
+                          opacity: emp.isActive ? 1 : 0.5,
+                          transition: "0.3s",
+                        }}
+                        onMouseOver={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#BBDEFB")
+                        }
+                        onMouseOut={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#E3F2FD")
+                        }
+                      >
+                        <Tooltip title="Edit">
+                          <IconButton
+                            size="small"
+                          >
+                            <Edit color="primary" fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </button>
 
+                      {/* Deactivate Button */}
+                      <button
+                        onClick={() => handleOpenDialog(emp._id)}
+                        disabled={!emp.isActive}
+                        style={{
+                          border: "none",
+                          backgroundColor: emp.isActive ? "#FFEBEE" : "#F5F5F5",
+                          padding: "6px",
+                          borderRadius: "6px",
+                          cursor: emp.isActive ? "pointer" : "not-allowed",
+                          opacity: emp.isActive ? 1 : 0.5,
+                          transition: "0.3s",
+                        }}
+                      >
+                        
+                        <Tooltip title="Deactivate">
+                          <IconButton
+                            size="small"
+                          >
+                            <FaUserSlash
+                          size={20}
+                          color={emp.isActive ? "red" : "gray"}
+                        />
+                          </IconButton>
+                        </Tooltip>
+                      </button>
+                    </td>
+                  </tr>
+                ))
+            ) : (
+              <tr>
+                <td
+                  colSpan="9"
+                  style={{ textAlign: "center", padding: "10px" }}
+                >
+                  No employee available
+                </td>{" "}
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <Dialog open={openDialog} onClose={handleCloseDialog}>
+        <DialogTitle>Confirm Deactivation</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to deactivate this employee? This action
+            cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmDeactivation}
+            color="error"
+            variant="contained"
+          >
+            Deactivate
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Stack spacing={2} sx={{ mt: 2, display: "flex", alignItems: "center" }}>
         <Pagination
@@ -884,8 +1026,6 @@ const TotalEmployees = () => {
           color="primary"
         />
       </Stack>
-
-    
     </div>
   );
 };

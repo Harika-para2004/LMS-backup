@@ -137,7 +137,7 @@ const LeaveStatusChart = ({ email,year }) => {
   
 
   return (
-    <Card sx={{ maxWidth: 700, margin: "auto", padding: 3, boxShadow: 3,backgroundColor: "#F4F5F7" }}>
+    <Card sx={{ maxWidth: 700,maxHeight:460,overflowY:"auto", margin: "auto", padding: 3, boxShadow: 3,backgroundColor: "#F4F5F7" }}>
       <CardContent>
         <Typography variant="h6" align="center">
           Leave Status Overview

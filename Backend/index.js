@@ -341,32 +341,79 @@ app.get("/leave-history", async (req, res) => {
     res.status(500).json({ message: "An error occurred" });
   }
 });
+// app.get("/leavesummary", async (req, res) => {
+//   const { email } = req.query; // Get the email from the query parameters
+//   if (!email) {
+//     return res.status(400).json({ message: "Email is required" });
+//   }
+
+//   const currentYear = new Date().getFullYear(); // Get the current year
+
+//   try {
+//     const leaveData = await Leave.find({
+//       email,
+//       year: { $in: [[currentYear]] } // Match the year field
+//     });
+
+//     if (!leaveData || leaveData.length === 0) {
+//       return res
+//         .status(404)
+//         .json({ message: "No leave records found for the specified email in the current year" });
+//     }
+
+//     res.json(leaveData);
+//   } catch (err) {
+//     console.error("Error fetching leave summary:", err);
+//     res.status(500).send("Server Error");
+//   }
+// });
+
 app.get("/leavesummary", async (req, res) => {
-  const { email } = req.query; // Get the email from the query parameters
+  const { email } = req.query;
   if (!email) {
     return res.status(400).json({ message: "Email is required" });
   }
 
-  const currentYear = new Date().getFullYear(); // Get the current year
+  const currentYear = new Date().getFullYear();
 
   try {
+    // Fetch leave records for the user
     const leaveData = await Leave.find({
       email,
-      year: { $in: [[currentYear]] } // Match the year field
+      year: { $in: [[currentYear]] }, // Fetches leave records for the current year
     });
 
     if (!leaveData || leaveData.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No leave records found for the specified email in the current year" });
+      return res.status(404).json({
+        message: "No leave records found for the specified email in the current year",
+      });
     }
 
-    res.json(leaveData);
+    // Fetch all leave policies (Not present in the second version)
+    const leavePolicies = await LeavePolicy.find();
+    
+    // Create a map of leave policies for quick lookup
+    const policyMap = new Map(leavePolicies.map(policy => [policy.leaveType, policy.maxAllowedLeaves || 0]));
+
+    // Update totalLeaves and availableLeaves dynamically (Not done in the second version)
+    const updatedLeaveData = leaveData.map(leave => {
+      const maxLeaves = policyMap.get(leave.leaveType) || 0; // Get max allowed leaves from policy
+      const availableLeaves = Math.max(0, maxLeaves - leave.usedLeaves); // Calculate available leaves
+
+      return {
+        ...leave.toObject(),
+        totalLeaves: maxLeaves, // Adding dynamically calculated total leaves
+        availableLeaves: availableLeaves, // Adding dynamically calculated available leaves
+      };
+    });
+
+    res.json(updatedLeaveData); // Returns the updated leave data with policy adjustments
   } catch (err) {
     console.error("Error fetching leave summary:", err);
     res.status(500).send("Server Error");
   }
 });
+
 
 app.get("/leaverequests", async (req, res) => {
   try {

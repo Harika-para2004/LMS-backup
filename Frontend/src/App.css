@@ -645,7 +645,7 @@ body, html {
   border-radius: 8px;
 }
 
-.apply-leave-section, .holiday-container {
+.apply-leave-section, .holiday-container,.leave-policy-container {
   background-color: #ffffff;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -1304,10 +1304,10 @@ body {
 
 
 .content-heading {
-  font-size: 30px;
+  font-size: 24px;
   font-weight: bold;
   text-align: center;
-  margin-bottom: 10px;
+  /* margin-bottom: 10px; */
   color: #384959;
 }
 
@@ -1688,13 +1688,13 @@ body {
   border-radius: 8px;
 }
 
-.left-section {
+.leave-management-container .left-section {
   display: flex;
   flex-direction: column;
   gap: 20px; /* Space between Holiday Calendar & Apply Leave */
 }
 
-.right-section {
+.leave-management-container .right-section {
   display: flex;
   flex-direction: column;
   gap: 20px;
