@@ -170,3 +170,9 @@ select:focus {
 .employee-list li:last-child {
     margin-bottom: 0;
 }
+/* Ensure holidays appear in red text */
+/* Ensure holidays appear in red text */
+.calendar-day.holiday {
+    color: red !important;
+    font-weight: bold;
+}

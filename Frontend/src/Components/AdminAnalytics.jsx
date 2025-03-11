@@ -978,7 +978,7 @@ const leaveStatusOptions = {
                 {noDeptData ? (
                   <div>
                     <Typography variant="h6" sx={{ mb: 3 }}>
-                      {`Project wise Leave Trends - ${year}`}
+                      {`Project wise Leave Trends `}
                     </Typography>
                     <p>No leave data available.</p>
                   </div>
@@ -993,7 +993,7 @@ const leaveStatusOptions = {
                 {noTypesData ? (
                   <div>
                     <Typography variant="h6" sx={{ mb: 3 }}>
-                      {`Leave Status Trends - ${year}`}
+                      {`Leave Status Trends `}
                     </Typography>
                     <p>No leave data available</p>
                   </div>
@@ -1008,7 +1008,7 @@ const leaveStatusOptions = {
                 {noTopEmployeesData ? (
                   <div>
                     <Typography variant="h6" sx={{ mb: 3 }}>
-                      {`Top 10 leave takers - ${year}`}
+                      {`Top 10 leave takers `}
                     </Typography>
                     <p>No leave data available.</p>
                   </div>

@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const LeaveData = require("../models/Leave");
 const User = require("../models/User");
+const Holiday = require("../models/Holiday");
 // Route to fetch leave reports for a given month
 router.get("/leave-reports", async (req, res) => {
   try {
@@ -94,6 +95,35 @@ router.get("/manager-leave-reports", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+// GET holidays for a specific month and year
+router.get("/holidays", async (req, res) => {
+  try {
+      const { month, year } = req.query;
+      if (!month || !year) {
+          return res.status(400).json({ error: "Month and year are required" });
+      }
+
+      // Convert numeric month to short-form text (e.g., "03" → "Mar")
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const monthIndex = parseInt(month, 10) - 1; // Convert "03" to 2 (March)
+      if (monthIndex < 0 || monthIndex > 11) {
+          return res.status(400).json({ error: "Invalid month value" });
+      }
+      const monthText = monthNames[monthIndex]; // "Mar"
+
+      // Find holidays where the date contains the selected month and year
+      const holidays = await Holiday.find({
+          date: { $regex: `-${monthText}-${year}$` } // Matches "26-Feb-2025"
+      });
+
+      res.json(holidays);
+  } catch (error) {
+      console.error("Error fetching holidays:", error);
+      res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
 
 
 module.exports = router;

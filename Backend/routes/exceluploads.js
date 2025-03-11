@@ -37,7 +37,6 @@ router.post('/uploadEmployees', upload.single('file'), async (req, res) => {
         const failedEntries = [];
         for (let row of sheetData) {
             const { EmployeeID, EmployeeName, Email, Password, Role, Gender, Project, ManagerEmail } = row;
-            Project.toLowerCase();
             if (!Email || !Password) {
                 failedEntries.push({ email: Email || "Unknown", reason: "Missing required fields" });
                 continue;

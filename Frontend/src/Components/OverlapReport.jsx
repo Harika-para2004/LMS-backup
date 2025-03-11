@@ -6,6 +6,8 @@ const Overlap = ({ year }) => {
   const [leaveData, setLeaveData] = useState({});
   const [daysInMonth, setDaysInMonth] = useState(30);
   const [selectedDay, setSelectedDay] = useState(null);
+  const [holidayName, setHolidayName] = useState("");
+  const [holidays, setHolidays] = useState({});
 
   useEffect(() => {
     setDaysInMonth(new Date(year, selectedMonth, 0).getDate());
@@ -13,8 +15,10 @@ const Overlap = ({ year }) => {
 
   useEffect(() => {
     fetchReports();
+    fetchHolidays();
   }, [selectedMonth, year]);
 
+  // Fetch leave reports
   const fetchReports = async () => {
     try {
       const response = await fetch(
@@ -28,9 +32,49 @@ const Overlap = ({ year }) => {
     }
   };
 
-  const handleDayClick = (day) => {
-    setSelectedDay(selectedDay === day ? null : day);
-  };
+  // Fetch holidays from backend
+  const fetchHolidays = async () => {
+    try {
+        // Ensure selectedMonth is a string before using padStart
+        const monthStr = String(selectedMonth).padStart(2, "0");
+
+        const response = await fetch(
+            `http://localhost:5001/data/holidays?month=${monthStr}&year=${year}`
+        );
+        if (!response.ok) throw new Error("Failed to fetch holidays");
+
+        const data = await response.json();
+        console.log("Raw Holiday Data:", data); // Debugging
+
+        // Process the data into a lookup object
+        const holidayMap = {};
+        data.forEach((holiday) => {
+            const [dayStr] = holiday.date.split("-"); // Extract "26" from "26-Feb-2025"
+            const dayNumber = parseInt(dayStr, 10);
+            if (!isNaN(dayNumber)) {
+                holidayMap[dayNumber] = holiday.name;
+            } else {
+                console.warn("Skipping invalid holiday date:", holiday.date);
+            }
+        });
+
+        console.log("Processed Holidays Map:", holidayMap); // Debugging
+        setHolidays(holidayMap);
+    } catch (error) {
+        console.error("Error fetching holidays:", error);
+    }
+};
+
+const handleDayClick = (day) => {
+  if (selectedDay === day) {
+    setSelectedDay(null); // If the same day is clicked again, close the details box
+    setHolidayName("");
+  } else {
+    setSelectedDay(day);
+    setHolidayName(holidays[day] || ""); // Show holiday name if it exists
+  }
+};
+
 
   const getHighlightColor = (count, dayOfWeek) => {
     if (dayOfWeek === 0 || dayOfWeek === 6) return "#f9f9f9"; // No highlight for weekends
@@ -40,6 +84,7 @@ const Overlap = ({ year }) => {
     if (count >= 5) return "#FF0000";
     return "white";
   };
+
   const firstDayOfMonth = new Date(year, selectedMonth - 1, 1).getDay(); // Get the starting weekday index
 
   return (
@@ -67,39 +112,44 @@ const Overlap = ({ year }) => {
             ))}
           </div>
           <div className="calendar-grid">
-  {Array.from({ length: firstDayOfMonth }, (_, i) => (
-    <div key={`empty-${i}`} className="calendar-day"></div> // Empty placeholders
-  ))}
-  {Array.from({ length: daysInMonth }, (_, i) => {
-    const day = i + 1;
-    const date = new Date(year, selectedMonth - 1, day);
-    const dayOfWeek = date.getDay();
-    const employeesOnLeave = leaveData[day] || [];
+            {Array.from({ length: firstDayOfMonth }, (_, i) => (
+              <div key={`empty-${i}`} className="calendar-day"></div> // Empty placeholders
+            ))}
+            {Array.from({ length: daysInMonth }, (_, i) => {
+              const day = i + 1;
+              const date = new Date(year, selectedMonth - 1, day);
+              const dayOfWeek = date.getDay();
+              const employeesOnLeave = leaveData[day] || [];
 
-    return (
-      <div
-        key={day}
-        className="calendar-day"
-        style={{
-          backgroundColor: getHighlightColor(employeesOnLeave.length, dayOfWeek),
-          color: dayOfWeek === 0 || dayOfWeek === 6 ? "#aaa" : "#000",
-          cursor: dayOfWeek === 0 || dayOfWeek === 6 ? "default" : "pointer",
-        }}
-        onClick={() => (dayOfWeek === 0 || dayOfWeek === 6 ? null : handleDayClick(day))}
-      >
-        <span>{day}</span>
-      </div>
-    );
-  })}
+              return (
+                <div
+  key={day}
+  className={`calendar-day ${holidays[day] ? "holiday" : ""}`}
+  style={{
+    backgroundColor: holidays[day] ? "transparent" : getHighlightColor(employeesOnLeave.length, dayOfWeek),
+    color: holidays[day] ? "red" : dayOfWeek === 0 || dayOfWeek === 6 ? "#aaa" : "#000",
+    cursor: dayOfWeek === 0 || dayOfWeek === 6 ? "default" : "pointer",
+  }}
+  onClick={() => (dayOfWeek === 0 || dayOfWeek === 6 ? null : handleDayClick(day))}
+>
+  <span>{day}</span>
+  {holidays[day] && <div className="holiday-marker">🎉</div>}
 </div>
 
+              
+              
+              );
+            })}
+          </div>
         </div>
         {selectedDay !== null && (
           <div className="leave-details-box">
             <h3>
-              Leave Details - {selectedDay} {new Date(year, selectedMonth - 1).toLocaleString("default", { month: "long" })} {year}
+              {selectedDay} {new Date(year, selectedMonth - 1).toLocaleString("default", { month: "long" })} {year}
             </h3>
-            {leaveData[selectedDay]?.length > 0 ? (
+            {holidayName ? (
+              <p><strong>Holiday:</strong> {holidayName}</p>
+            ) : leaveData[selectedDay]?.length > 0 ? (
               <ul className="employee-list">
                 {leaveData[selectedDay].map((emp, index) => (
                   <li key={index}>{emp}</li>

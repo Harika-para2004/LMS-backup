@@ -1,4 +1,4 @@
-import React from "react";
+import React,{useState} from "react";
 import { Link, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -15,7 +15,8 @@ import {
   faFileLines,
 } from "@fortawesome/free-solid-svg-icons";
 import { FaListAlt } from "react-icons/fa";
-
+import AdminProfileModal from "./Adminresetpassword";
+//import "./sidebar.css"
 const Sidebar = ({
   userType,
   selectedCategory,
@@ -25,12 +26,18 @@ const Sidebar = ({
   handleLogout,
   logo,
   Profile,
+  email,
 }) => {
   const location = useLocation(); 
   const isEmployee = userType === "employee";
   const isAdmin = userType === "admin";
   const isManager = userType === "manager";
-  // console.log("location.pathname",location.pathname);
+
+  const [isProfileOpen, setIsProfileOpen] = useState(false); // Modal state
+
+  const handleResetPassword = () => {
+    alert("Reset Password clicked! Implement password reset logic.");
+  };
 
   const generateLinks = () => {
     if (isEmployee) {
@@ -78,8 +85,7 @@ const Sidebar = ({
          <li>
            <Link
              to="/admin/all-reports"
-             className={["/admin/all-reports", "/admin/analytics", "/admin/dashboard"].some(path => location.pathname.includes(path)) ? "active-tab" : ""}
-             >
+             className={["/admin/all-reports", "/admin/analytics", "/admin/dashboard"].some(path => location.pathname.includes(path)) ? "active-tab" : ""}>
              <FontAwesomeIcon icon={faFileLines} /> Reports
            </Link>
          </li>
@@ -94,13 +100,16 @@ const Sidebar = ({
          <li>
            <Link
              to="/admin/leave-requests"
-             className={location.pathname === "/admin/leave-requests" ? "active-tab" : ""
-             }
+             className={location.pathname === "/admin/leave-requests" ? "active-tab" : ""}
            >
              <FontAwesomeIcon icon={faEnvelopeOpenText} /> Leave Requests
            </Link>
          </li>
-        
+         <li>
+      <Link to="#" onClick={() => setIsProfileOpen(true)} className="admin-profile-link">
+        <FontAwesomeIcon icon={faUser} /> Profile
+      </Link>
+    </li>
          </ul>
        </div>
      );
@@ -114,8 +123,7 @@ const Sidebar = ({
           </li>
           <li>
             <Link to="/manager/analytics" 
-            className={["/manager/all-reports", "/manager/analytics", "/manager/dashboard"].some(path => location.pathname.includes(path)) ? "active-tab" : ""}
-            >
+            className={["/manager/all-reports", "/manager/analytics", "/manager/dashboard"].some(path => location.pathname.includes(path)) ? "active-tab" : ""}>
               <FontAwesomeIcon icon={faChartLine} /> Dashboard
             </Link>
           </li>
@@ -141,21 +149,18 @@ const Sidebar = ({
         <img src={logo} alt="Quadface Logo" className="logo_das" />
       </div>
       <div className="sidebar-comps">
-        {(isEmployee) && (
-          <Link to="/employee/profile" className={selectedCategory === "profile" ? "active-tab" : ""}>
-            <div className="profile-section">
-              <div className="profile-pic" style={{ marginTop: "10%" }}>
-                <img src={Profile} alt="Profile" />
-              </div>
-              <div className="profile-details">
-                <p className="emp-name" data-fullname={username}>{username}</p>
-                <p className="emp-id">Emp ID: {empid}</p>
-              </div>
-            </div>
-          </Link>
-        )}
-        {(isManager) && (
-          <Link to="/manager/profile" className={selectedCategory === "profile" ? "active-tab" : ""}>
+
+
+      <AdminProfileModal
+  isOpen={isProfileOpen}
+  onClose={() => setIsProfileOpen(false)}
+  adminEmail={email}
+  onResetPassword={handleResetPassword}
+/>
+
+
+        {(isEmployee || isManager) && (
+          <Link to={`/${userType}/profile`} className={selectedCategory === "profile" ? "active-tab" : ""}>
             <div className="profile-section">
               <div className="profile-pic" style={{ marginTop: "10%" }}>
                 <img src={Profile} alt="Profile" />

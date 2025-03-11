@@ -42,21 +42,19 @@ const ProjectManager = () => {
       setError("Project Name is required.");
       return;
     }
-
+  
     try {
       const method = editingId ? "PUT" : "POST";
-      const url = editingId
-        ? `${BASE_URL}/projects/${editingId}`
-        : `${BASE_URL}/projects`;
-
+      const url = editingId ? `${BASE_URL}/projects/${editingId}` : `${BASE_URL}/projects`;
+  
       const response = await fetch(url, {
         method,
         body: JSON.stringify({ projectName }),
         headers: { "Content-Type": "application/json" },
       });
-
+  
       const data = await response.json();
-
+  
       if (!response.ok) {
         if (response.status === 400 && data.message === "Project") {
           showToast("Project already exists.","warning");
@@ -65,7 +63,7 @@ const ProjectManager = () => {
         }
         return;
       }
-
+  
       fetchProjects();
       setProjectName("");
       setEditingId(null);
@@ -75,6 +73,7 @@ const ProjectManager = () => {
       console.error("Error saving project:", error);
     }
   };
+  
 
   const handleDelete = async (id) => {
     try {
@@ -88,10 +87,7 @@ const ProjectManager = () => {
   const handleEdit = (project) => {
     setTimeout(() => {
       if (editFormRef.current) {
-        editFormRef.current.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
+        editFormRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     }, 100);
     setProjectName(project.projectName);
@@ -106,26 +102,28 @@ const ProjectManager = () => {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        // gap: "20px",
+        gap: "20px",
       }}
     >
       <div className="header">
-        <h2 className="content-heading">Projects</h2>
-        <Button
-          variant="contained"
-          style={{ backgroundColor: "var(--deep-blue)", color: "white" }}
-          onClick={() => {
-            setShowForm(!showForm);
-            if (!showForm) {
-              setProjectName("");
-              setEditingId(null);
-            }
-          }}
-          startIcon={showForm ? <Close /> : <Add />}
-        >
-          {showForm ? "Cancel" : "Add Project"}
-        </Button>
-      </div>
+          <h2 className="content-heading">Projects</h2>
+          <Button
+        variant="contained"
+        style={{ backgroundColor: 'var(--deep-blue)', color: "white" }}
+        onClick={() => {
+          setShowForm(!showForm);
+          if (!showForm) {
+            setProjectName("");
+            setEditingId(null);
+          }
+        }}
+        startIcon={showForm ? <Close /> : <Add />}
+      >
+        {showForm ? "Cancel" : "Add Project"}
+      </Button>
+        </div>
+
+
 
       {showForm && (
         <form
@@ -155,75 +153,66 @@ const ProjectManager = () => {
         </form>
       )}
 
-      <Grid container spacing={2} style={{ maxWidth: "100%" }}>
-        {projects.length > 0 ? (
-          projects.map((project) => (
-            <Grid item xs={12} sm={12} md={12} lg={12} key={project._id}>
-              <Card
-                style={{
-                  backgroundColor: "#f9f9f9",
-                  borderRadius: "10px",
-                  boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
-                  padding: "5px 10px",
-                }}
-              >
-                <CardContent
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "5px 10px",
-                  }}
-                >
-                  <Tooltip title={project.projectName}>
-                    <Typography
-                      variant="body1"
-                      style={{
-                        fontWeight: "bold",
-                        fontSize: "14px",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {project.projectName.length > 10
-                        ? project.projectName
-                            .toLowerCase()
-                            .replace(/\b\w/g, (char) => char.toUpperCase())
-                            .slice(0, 10) + "..."
-                        : project.projectName
-                            .toLowerCase()
-                            .replace(/\b\w/g, (char) => char.toUpperCase())}
-                    </Typography>
-                  </Tooltip>
+<Grid container spacing={2} style={{ maxWidth: "100%" }}>
+  {projects.length > 0 ? (
+    projects.map((project) => (
+      <Grid item xs={12} sm={12} md={12} lg={12} key={project._id}>
+        <Card
+          style={{
+            backgroundColor: "#f9f9f9",
+            borderRadius: "10px",
+            boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
+            padding: "5px 10px",
+          }}
+        >
+          <CardContent
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "5px 10px",
+            }}
+          >
+           <Tooltip title={project.projectName}>
+  <Typography
+    variant="body1"
+    style={{
+      fontWeight: "bold",
+      fontSize: "14px",
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+    }}
+  >
+   {project.projectName.length > 25
+  ? project.projectName.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase()).slice(0, 25) + "..."
+  : project.projectName.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
+}
 
-                  <div>
-                    <Tooltip title="Edit">
-                      <IconButton
-                        onClick={() => handleEdit(project)}
-                        size="small"
-                      >
-                        <Edit color="primary" fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+  </Typography>
+</Tooltip>
 
-                    <Tooltip title="Delete">
-                      <IconButton
-                        onClick={() => handleDelete(project._id)}
-                        size="small"
-                      >
-                        <Delete color="error" fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </div>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))
-        ) : (
-          <Typography variant="body1">No projects available</Typography>
-        )}
+            <div>
+              <Tooltip title="Edit">
+                <IconButton onClick={() => handleEdit(project)} size="small">
+                  <Edit color="primary" fontSize="small" />
+                </IconButton>
+              </Tooltip>
+
+              <Tooltip title="Delete">
+                <IconButton onClick={() => handleDelete(project._id)} size="small">
+                  <Delete color="error" fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </div>
+          </CardContent>
+        </Card>
       </Grid>
+    ))
+  ) : (
+    <Typography variant="body1">No projects available</Typography>
+  )}
+</Grid>
     </div>
   );
 };

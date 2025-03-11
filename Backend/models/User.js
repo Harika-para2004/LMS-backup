@@ -5,8 +5,8 @@ const userSchema = new mongoose.Schema({
   empid: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  project: { type: String}, 
-  gender: { type: String },
+  project: { type: String,default:""}, 
+    gender: { type: String },
   role: {
     type: String,
     enum: ["Employee", "Manager", "Admin"],
@@ -25,6 +25,6 @@ const userSchema = new mongoose.Schema({
   resetCodeExpires: { type: Date }, // Expiration time for the reset code
 });
 
-const User = mongoose.model("signups_cols", userSchema);
+const User = mongoose.model("signups", userSchema);
 
 module.exports = User;

@@ -941,6 +941,7 @@ function AdminDashboard() {
           setSelectedCategory={setSelectedCategory}
           logo={logo}
           handleLogout={handleLogout}
+          email={Email}
         />
 
         {/* <main className="main-content">{renderContent()}</main> */}

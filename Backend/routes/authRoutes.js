@@ -141,4 +141,30 @@ router.get('/user/:userId', async (req, res) => {
   }
 });
 
+router.put("/updateAdminPassword", async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    if (!email || !newPassword) {
+      return res.status(400).json({ error: "Email and password are required" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    const updatedAdmin = await User.findOneAndUpdate(
+      { email },
+      { $set: { password: hashedPassword, project: "" } }, // Ensuring `project` is a string
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedAdmin) {
+      return res.status(404).json({ error: "Admin not found" });
+    }
+
+    res.json({ message: "Password updated successfully" });
+  } catch (error) {
+    console.error("Error updating admin password:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 module.exports = router;
