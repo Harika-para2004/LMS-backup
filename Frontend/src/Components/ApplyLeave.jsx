@@ -254,8 +254,8 @@ const ApplyLeave = () =>
 
       if (
         leaveType.toLowerCase().includes("lop") &&
-        casualLeave?.availableLeaves > 0
-      ) {
+        (!casualLeave || casualLeave.availableLeaves > 0)
+        ) {
         showToast(
           "LOP can only be applied when Casual Leaves are exhausted.",
           "info"
