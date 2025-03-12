@@ -292,15 +292,19 @@ const LeaveHistory = () => {
                   <td> <Tooltip title={formatReason(leave.reason)} arrow>
     <span>{truncateReason(formatReason(leave.reason))}</span>
   </Tooltip></td>
-                  <td>
-                    {leave.attachments ? (
-                      <a href={leave.attachments} download>
-                        <AiFillFilePdf size={23} color="red" />
-                      </a>
-                    ) : (
-                      <AiOutlineExclamationCircle size={23} color="gray" />
-                    )}
-                  </td>
+  <td>
+  {leave.attachments ? (
+    <a
+      href={`data:application/pdf;base64,${leave.attachments}`}
+      download={`LeaveAttachment_${leave.empid}.pdf`}
+    >
+      <AiFillFilePdf size={23} color="red" />
+    </a>
+  ) : (
+    <AiOutlineExclamationCircle size={23} color="gray" />
+  )}
+</td>
+
                   <td>{getStatusIcon(leave.status)}</td>
                   <td>
                     <button

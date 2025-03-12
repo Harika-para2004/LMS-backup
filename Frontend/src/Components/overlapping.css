@@ -20,7 +20,7 @@
 .selectors {
     display: flex;
     gap: 15px;
-    margin-bottom: 20px;
+    margin:20px 0;
 }
 
 select {

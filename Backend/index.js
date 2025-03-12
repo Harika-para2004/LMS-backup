@@ -17,7 +17,8 @@ const leavereports = require("./routes/overlaproutes");
 const excelJS = require("exceljs");
 const pdfkit = require("pdfkit");
 const fs = require("fs");
-const upload = multer({ dest: "uploads/" });
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 const exceluploads = require("./routes/exceluploads")
 const forgotPasswordRoutes = require("./routes/ForgotPasswordRoutes");
 dotenv.config();
@@ -135,10 +136,35 @@ app.get("/managers-list", async (req, res) => {
 //     res.status(500).json({ message: "Server error while applying leave." });
 //   }
 // });
+const getMandatoryHolidays = async () => {
+  try {
+    const mandatoryHolidays = await Holiday.find({ type: "Mandatory" }).select("date");
+    return mandatoryHolidays.map((holiday) => holiday.date);
+  } catch (error) {
+    console.error("Error fetching mandatory holidays:", error);
+    return [];
+  }
+};
+const isMandatoryHoliday = async (date) => {
+  const mandatoryHolidays = await getMandatoryHolidays();
+
+  // Convert date to "DD-MMM-YYYY" format
+  const formatDate = (dateObj) => {
+    const day = dateObj.getUTCDate().toString().padStart(2, "0");
+    const month = dateObj.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
+    const year = dateObj.getUTCFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
+  const formattedDate = formatDate(new Date(date));
+  return mandatoryHolidays.includes(formattedDate);
+};
+
+
 app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
   const { email } = req.query;
   const { empname, empid, leaveType, startDate, endDate, reason, managerEmail } = req.body;
-  const filePath = req.file ? req.file.path : null;
+  const filePath = req.file ? req.file.buffer.toString("base64") : null; // Convert file to Base64
   try {
     let formattedStartDate = new Date(startDate);
     let formattedEndDate = new Date(endDate);
@@ -246,6 +272,11 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
         let yearEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59));
 
         let leaveStart = year === startYear ? currentStartDate : yearStart;
+        console.log("leaveStart",leaveStart)
+        while (await isMandatoryHoliday(leaveStart)) {
+          leaveStart.setUTCDate(leaveStart.getUTCDate() + 1);
+        }
+        
         let leaveEnd = year === endYear ? formattedEndDate : yearEnd;
         let days = Math.ceil((leaveEnd - leaveStart) / (1000 * 60 * 60 * 24)) + 1;
 
@@ -637,9 +668,24 @@ app.put("/updateEmployeeList/:id", async (req, res) => {
     if (!existingEmployee) {
       return res.status(404).json({ message: "Employee not found" });
     }
-
+   
+    
     let assignedProject = existingEmployee.project;
+   // ✅ Check if the project is already assigned to another manager
+   if (role === "Manager") {
+    const otherManager = await User.findOne({
+      project: project,
+      role: "Manager",
+      isActive:true,
+      _id: { $ne: req.params.id }, // Exclude current employee
+    });
 
+    if (otherManager) {
+      return res.status(400).json({
+        message: `Project is already assigned to another manager (${otherManager.empname})!`,
+      });
+    }
+  }
     // ✅ Handle Project Assignment When Role Changes to Employee
     if (role === "Employee" && existingEmployee.role !== "Employee") {
       if (managerEmail) {
@@ -654,7 +700,28 @@ app.put("/updateEmployeeList/:id", async (req, res) => {
     // ✅ Handle Project Assignment When Role Changes to Manager
     if (role === "Manager") {
       assignedProject = project;
+
+      // ✅ Check if this employee was under a previous manager for the same project
+      const previousEmployees = await User.find({ project, role: "Employee" });
+
+      if (previousEmployees.length > 0) {
+        // ✅ Update all employees with the same project to have this new manager
+        await User.updateMany(
+          { project: project, role: "Employee" },
+          { $set: { managerEmail: email } }
+        );
+      }
     }
+
+    // ✅ Handle Project Transfer if Manager Changes
+    if (role === "Employee" && existingEmployee.managerEmail !== managerEmail) {
+      const newManager = await User.findOne({ email: managerEmail });
+
+      if (newManager && newManager.project) {
+        assignedProject = newManager.project;
+      }
+    }
+
 
     // ✅ Handle Project Transfer if Manager Changes
     if (role === "Employee" && existingEmployee.managerEmail !== managerEmail) {
@@ -1516,6 +1583,7 @@ app.get('/leavetype-status/:email', async (req, res) => {
 // Fetch Leave Type Status
 app.get('/leave-type-status/:email/:year', async (req, res) => {
   const { email, year } = req.params;
+  const requestedYear = parseInt(year);
 
   try {
     const leaveStats = await Leave.find({ email });
@@ -1523,17 +1591,22 @@ app.get('/leave-type-status/:email/:year', async (req, res) => {
     const formattedResponse = {};
 
     leaveStats.forEach(({ leaveType, status, year: leaveYears, duration }) => {
-      if (!formattedResponse[leaveType]) {
-        formattedResponse[leaveType] = { Pending: 0, Approved: 0, Rejected: 0 };
-      }
+      let isYearPresent = false; // ✅ Track if the leave type exists in the requested year
 
-      // Iterate through each set of years and statuses
       leaveYears.forEach((yearGroup, i) => {
-        if (Array.isArray(yearGroup) && yearGroup.includes(parseInt(year))) {
-          // ✅ Now instead of adding 1, add the duration[i]
+        if (Array.isArray(yearGroup) && yearGroup.includes(requestedYear)) {
+          if (!formattedResponse[leaveType]) {
+            formattedResponse[leaveType] = { Pending: 0, Approved: 0, Rejected: 0 };
+          }
           formattedResponse[leaveType][status[i]] += duration[i][0] || 0;
+          isYearPresent = true; // ✅ Mark that this leave type exists in the requested year
         }
       });
+
+      // ✅ If the leave type exists in the requested year, do NOT remove it
+      if (isYearPresent) {
+        formattedResponse[leaveType] = formattedResponse[leaveType];
+      }
     });
 
     res.json(Object.entries(formattedResponse).map(([leaveType, statuses]) => ({ leaveType, statuses })));
@@ -1542,6 +1615,7 @@ app.get('/leave-type-status/:email/:year', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 app.get("/leave-trends/:email/:year", async (req, res) => {
   const { email, year } = req.params;

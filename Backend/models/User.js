@@ -25,6 +25,6 @@ const userSchema = new mongoose.Schema({
   resetCodeExpires: { type: Date }, // Expiration time for the reset code
 });
 
-const User = mongoose.model("signups_cols", userSchema);
+const User = mongoose.model("signups", userSchema);
 
 module.exports = User;

@@ -202,39 +202,31 @@ const TotalEmployees = () => {
       !empData.email ||
       !empData.empid ||
       !empData.empname ||
-      (empData.role === "Employee" &&
-        (!empData.project || empData.project.length === 0)) ||
+      (empData.role === "Employee" && (!empData.project || empData.project.length === 0)) ||
       !empData.role
     ) {
       setError("All fields are required.");
       return;
     }
-
+  
     const requestBody = {
       ...empData,
-      project: empData.role === "Manager" ? empData.project : empData.project,
-      managerEmail: empData.managerEmail
+      project: empData.project,
+      managerEmail: empData.role === "Manager" ? "" : empData.managerEmail || "",
     };
-    
   
-    console.log("Request Payload:", requestBody); // ✅ Debugging Line
-
     try {
       const response = await fetch(`${BASE_URL}updateEmployeeList/${id}`, {
         method: "PUT",
         body: JSON.stringify(requestBody),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       });
-
+  
       if (!response.ok) {
-        const errorMessage = await response.text(); // Read the error message
-        throw new Error(
-          `Failed to update employee. Server Response: ${errorMessage}`
-        );
+        const errorResponse = await response.json();
+        throw new Error(errorResponse.message);
       }
-
+  
       fetchEmployees();
       setEditingRow(null);
       setError(null);
@@ -243,9 +235,12 @@ const TotalEmployees = () => {
       setSelectedProject("");
     } catch (error) {
       console.error("Error updating employee:", error);
-      setError(error.message);
+      setError(error.message); // ✅ Show the error message
+      showToast(error.message); // ✅ Display alert for better visibility
     }
   };
+  
+  
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -271,12 +266,15 @@ const TotalEmployees = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { empname, empid, email, password, project, gender, role } = empData;
+    const { empname, empid, email, password, project, gender, role ,managerEmail} = empData;
     if (!empname || !empid) {
       showToast("Please Enter Required Fields *");
       return;
     }
-
+    if (role === "Employee" && !managerEmail) {
+      showToast("Manager Email is required for Employees *");
+      return;
+    }
     try {
       const response = await fetch(`${BASE_URL}api/auth/addEmployee`, {
         method: "POST",
@@ -471,7 +469,7 @@ const TotalEmployees = () => {
           .map((entry) => `• ${entry.email}: ${entry.reason}`)
           .join("\n");
 
-          showToast(`Some entries were skipped:\n${failureMessages}`);
+        showToast(`Some entries were skipped:\n`);
       }
       setFile(null);
       document.getElementById("file-input").value = null;
@@ -502,7 +500,7 @@ const TotalEmployees = () => {
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
   };
-  
+
   const formatCase = (text) => {
     return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
   };
@@ -577,15 +575,13 @@ const TotalEmployees = () => {
               fontSize: "13px",
               fontWeight: 500,
               color: "#fff",
-              background:
-                "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)", // Elegant gradient
+              background: "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)", // Elegant gradient
               borderRadius: 1,
               bgcolor: "#fafafa", // Softer background
               transition: "all 0.3s ease-in-out",
               "&:hover": { bgcolor: "#f0f0f0" },
               "&.Mui-focused": {
-                background:
-                  "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)", // Elegant gradient
+                background: "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)", // Elegant gradient
                 boxShadow: "0px 3px 8px rgba(159, 50, 178, 0.3)", // Elegant focused effect
               },
             }}
@@ -597,300 +593,378 @@ const TotalEmployees = () => {
 
       {message && <p>{message}</p>}
       {showAddEmployeeModal && !editingRow && (
-  <div style={{ display: "flex", justifyContent: "center", alignItems: "center", marginTop: "20px" }}>
-    <form
-      onSubmit={handleSubmit}
-      style={{
-        width: "700px",
-        backgroundColor: "white",
-        borderRadius: "8px",
-        boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
-        padding: "20px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "16px",
-        overflowY: "auto",
-        margin: "10px auto",
-      }}
-    >
-      <Typography variant="h5" id="add-employee-form" textTransform="capitalize" textAlign="center">
-      Add Employee / Manager
-      </Typography>
-
-      <div style={{ display: "flex", gap: "16px" }}>
-        <TextField label="Name *" name="empname" value={empData.empname} onChange={handleChange} fullWidth />
-        <TextField label="Id *" name="empid" value={empData.empid} onChange={handleChange} fullWidth />
-      </div>
-      <div style={{ display: "flex", gap: "16px" }}>
-        <TextField label="Email *" name="email" value={empData.email} onChange={handleChange} fullWidth />
-        <TextField label="Password *" name="password" value={empData.password} onChange={handleChange} fullWidth />
-      </div>
-      <div style={{ display: "flex", gap: "16px" }}>
-        <FormControl fullWidth>
-          <InputLabel id="gender-label" sx={{ backgroundColor: "white", paddingX: "4px" }}>Gender *</InputLabel>
-          <Select labelId="gender-label" id="gender" name="gender" value={empData.gender} onChange={handleChange}>
-            <MenuItem value="Male">Male</MenuItem>
-            <MenuItem value="Female">Female</MenuItem>
-            <MenuItem value="Other">Other</MenuItem>
-          </Select>
-        </FormControl>
-        <FormControl fullWidth>
-          <InputLabel id="role-label" sx={{ backgroundColor: "white", paddingX: "4px" }}>Role *</InputLabel>
-          <Select 
-            labelId="role-label" 
-            id="role" 
-            name="role" 
-            value={empData.role} 
-            onChange={(e) => {
-              handleChange(e);
-              if (e.target.value === "Employee") {
-                fetchProjects();
-              }
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            marginTop: "20px",
+          }}
+        >
+          <form
+            onSubmit={handleSubmit}
+            style={{
+              width: "700px",
+              backgroundColor: "white",
+              borderRadius: "8px",
+              boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+              padding: "20px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+              overflowY: "auto",
+              margin: "10px auto",
             }}
           >
-            <MenuItem value="Manager">Manager</MenuItem>
-            <MenuItem value="Employee">Employee</MenuItem>
-          </Select>
-        </FormControl>
-      </div>
-      <div style={{ display: "flex", gap: "16px" }}>
-        {empData.role === "Employee" && (
-          <FormControl fullWidth>
-            <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>Manager Email *</InputLabel>
-            <Select value={selectedManager} onChange={handleManagerChange}>
-              <MenuItem value="">All Managers</MenuItem>
-              {managers.map((manager) => (
-                <MenuItem key={manager._id} value={manager.email}>
-                  {manager.empname} ({manager.email})
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        )}
+            <Typography
+              variant="h5"
+              id="add-employee-form"
+              textTransform="capitalize"
+              textAlign="center"
+            >
+              Add Employee / Manager
+            </Typography>
 
-{empData.role === "Manager" && (
-  <FormControl fullWidth>
-    <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>
-      Project
-    </InputLabel>
-    <Select
-      value={empData.project || ""}
-      onChange={(e) =>
-        setEmpData({ ...empData, project: e.target.value })
-      }
-    >
-      {projects.length > 0 ? (
-        projects.map((project) => (
-          <MenuItem
-            key={project._id}
-            value={project.projectName.toLowerCase()} // ✅ Store in lowercase
-          >
-            {toCamelCase(project.projectName)} {/* ✅ Display in camel case */}
-          </MenuItem>
-        ))
-      ) : (
-        <MenuItem disabled>No projects available</MenuItem>
+            <div style={{ display: "flex", gap: "16px" }}>
+              <TextField
+                label="Name *"
+                name="empname"
+                value={empData.empname}
+                onChange={handleChange}
+                fullWidth
+              />
+              <TextField
+                label="Id *"
+                name="empid"
+                value={empData.empid}
+                onChange={handleChange}
+                fullWidth
+              />
+            </div>
+            <div style={{ display: "flex", gap: "16px" }}>
+              <TextField
+                label="Email *"
+                name="email"
+                value={empData.email}
+                onChange={handleChange}
+                fullWidth
+              />
+              <TextField
+                label="Password *"
+                name="password"
+                value={empData.password}
+                onChange={handleChange}
+                fullWidth
+              />
+            </div>
+            <div style={{ display: "flex", gap: "16px" }}>
+              <FormControl fullWidth>
+                <InputLabel
+                  id="gender-label"
+                  sx={{ backgroundColor: "white", paddingX: "4px" }}
+                >
+                  Gender *
+                </InputLabel>
+                <Select
+                  labelId="gender-label"
+                  id="gender"
+                  name="gender"
+                  value={empData.gender}
+                  onChange={handleChange}
+                >
+                  <MenuItem value="Male">Male</MenuItem>
+                  <MenuItem value="Female">Female</MenuItem>
+                  <MenuItem value="Other">Other</MenuItem>
+                </Select>
+              </FormControl>
+              <FormControl fullWidth>
+                <InputLabel
+                  id="role-label"
+                  sx={{ backgroundColor: "white", paddingX: "4px" }}
+                >
+                  Role *
+                </InputLabel>
+                <Select
+                  labelId="role-label"
+                  id="role"
+                  name="role"
+                  value={empData.role}
+                  onChange={(e) => {
+                    handleChange(e);
+                    if (e.target.value === "Employee") {
+                      fetchProjects();
+                    }
+                  }}
+                >
+                  <MenuItem value="Manager">Manager</MenuItem>
+                  <MenuItem value="Employee">Employee</MenuItem>
+                </Select>
+              </FormControl>
+            </div>
+            <div style={{ display: "flex", gap: "16px" }}>
+              {empData.role === "Employee" && (
+                <FormControl fullWidth>
+                  <InputLabel
+                    sx={{ backgroundColor: "white", paddingX: "4px" }}
+                  >
+                    Manager Email *
+                  </InputLabel>
+                  <Select
+                    value={selectedManager}
+                    onChange={handleManagerChange}
+                  >
+                    <MenuItem value="">All Managers</MenuItem>
+                    {managers.map((manager) => (
+                      <MenuItem key={manager._id} value={manager.email}>
+                        {manager.empname} ({manager.email})
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+
+              {empData.role === "Manager" && (
+                <FormControl fullWidth>
+                  <InputLabel
+                    sx={{ backgroundColor: "white", paddingX: "4px" }}
+                  >
+                    Project
+                  </InputLabel>
+                  <Select
+                    value={empData.project || ""}
+                    onChange={(e) =>
+                      setEmpData({ ...empData, project: e.target.value })
+                    }
+                  >
+                    {projects.length > 0 ? (
+                      projects.map((project) => (
+                        <MenuItem
+                          key={project._id}
+                          value={project.projectName.toLowerCase()} // ✅ Store in lowercase
+                        >
+                          {toCamelCase(project.projectName)}{" "}
+                          {/* ✅ Display in camel case */}
+                        </MenuItem>
+                      ))
+                    ) : (
+                      <MenuItem disabled>No projects available</MenuItem>
+                    )}
+                  </Select>
+                </FormControl>
+              )}
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <Button
+                onClick={handleAddEmployeeClose}
+                style={{ marginRight: "8px" }}
+              >
+                Cancel
+              </Button>
+              <Button variant="contained" type="submit">
+                Add Employee
+              </Button>
+            </div>
+          </form>
+        </div>
       )}
-    </Select>
-  </FormControl>
-)}
-
-      </div>
-      <div style={{ display: "flex", justifyContent: "flex-end" }}>
-       
-        <Button onClick={handleAddEmployeeClose} style={{ marginRight: "8px" }}>
-          Cancel
-        </Button>
-        <Button variant="contained" type="submit">
-          Add Employee
-        </Button>
-      </div>
-    </form>
-  </div>
-)}
-{editingRow && (
-  <div
-    ref={editFormRef}
-    style={{
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      padding: "20px",
-    }}
-  >
-    <div
-      style={{
-        background: "#f9f9f9",
-        padding: "24px",
-        borderRadius: "8px",
-        boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
-        width: "700px",
-      }}
-    >
-      <Typography
-        variant="h5"
-        textTransform="capitalize"
-        textAlign="center"
-      >
-        Update Employee
-      </Typography>
-      <br/>
-
-      {/* Employee ID and Name */}
-      <div style={{ display: "flex", gap: "16px", marginBottom: "16px" }}>
-        <TextField
-          label="Employee Name"
-          name="empname"
-          value={empData.empname}
-          onChange={handleEmployeeData}
-          fullWidth
-        />
-        <TextField
-          label="Employee ID"
-          name="empid"
-          value={empData.empid}
-          onChange={handleEmployeeData}
-          fullWidth
-        />
-      </div>
-
-      {/* Email and Role */}
-      <div style={{ display: "flex", gap: "16px", marginBottom: "16px" }}>
-        <TextField
-          label="Email"
-          name="email"
-          value={empData.email}
-          onChange={handleEmployeeData}
-          fullWidth
-        />
-        <FormControl fullWidth variant="outlined">
-          <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>Role</InputLabel>
-          <Select
-            name="role"
-            value={empData.role}
-            onChange={(e) => {
-              handleEmployeeData(e);
-              if (e.target.value === "Employee") {
-                fetchProjects(); // ✅ Fetch projects for Employees
-              }
+      {editingRow && (
+        <div
+          ref={editFormRef}
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: "20px",
+          }}
+        >
+          <div
+            style={{
+              background: "#f9f9f9",
+              padding: "24px",
+              borderRadius: "8px",
+              boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+              width: "700px",
             }}
           >
-            <MenuItem value="Manager">Manager</MenuItem>
-            <MenuItem value="Employee">Employee</MenuItem>
-          </Select>
-        </FormControl>
-      </div>
+            <Typography
+              variant="h5"
+              textTransform="capitalize"
+              textAlign="center"
+            >
+              Update Employee
+            </Typography>
+            <br />
 
-      {/* Manager Email */}
-      {empData.role === "Employee" && (
-        <FormControl fullWidth>
-          <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>Manager Email</InputLabel>
-          <Select 
-            value={selectedManager || empData.managerEmail} 
-            onChange={handleManagerChange}
-          >
-            <MenuItem value="">All Managers</MenuItem>
-            {managers.map((manager) => (
-              <MenuItem key={manager._id} value={manager.email}>
-                {manager.empname} ({manager.email})
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+            {/* Employee ID and Name */}
+            <div style={{ display: "flex", gap: "16px", marginBottom: "16px" }}>
+              <TextField
+                label="Employee Name"
+                name="empname"
+                value={empData.empname}
+                onChange={handleEmployeeData}
+                fullWidth
+              />
+              <TextField
+                label="Employee ID"
+                name="empid"
+                value={empData.empid}
+                onChange={handleEmployeeData}
+                fullWidth
+              />
+            </div>
+
+            {/* Email and Role */}
+            <div style={{ display: "flex", gap: "16px", marginBottom: "16px" }}>
+              <TextField
+                label="Email"
+                name="email"
+                value={empData.email}
+                onChange={handleEmployeeData}
+                fullWidth
+              />
+              <FormControl fullWidth variant="outlined">
+                <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>
+                  Role
+                </InputLabel>
+                <Select
+                  name="role"
+                  value={empData.role}
+                  onChange={(e) => {
+                    handleEmployeeData(e);
+                    if (e.target.value === "Employee") {
+                      fetchProjects(); // ✅ Fetch projects for Employees
+                    }
+                  }}
+                >
+                  <MenuItem value="Manager">Manager</MenuItem>
+                  <MenuItem value="Employee">Employee</MenuItem>
+                </Select>
+              </FormControl>
+            </div>
+
+            {/* Manager Email */}
+            {empData.role === "Employee" && (
+              <FormControl fullWidth>
+                <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>
+                  Manager Email
+                </InputLabel>
+                <Select
+                  value={selectedManager || empData.managerEmail}
+                  onChange={handleManagerChange}
+                >
+                  <MenuItem value="">All Managers</MenuItem>
+                  {managers.map((manager) => (
+                    <MenuItem key={manager._id} value={manager.email}>
+                      {manager.empname} ({manager.email})
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+
+            {/* ✅ Project Dropdown for Manager */}
+            {empData.role === "Manager" && (
+              <FormControl fullWidth sx={{ width: "100%" }}>
+                <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>
+                  Project
+                </InputLabel>
+                <Select
+                  fullWidth
+                  value={empData.project ? empData.project.toLowerCase() : ""}
+                  onChange={(e) =>
+                    setEmpData({ ...empData, project: e.target.value })
+                  }
+                >
+                  {projects.length > 0 ? (
+                    projects.map((project) => (
+                      <MenuItem
+                        key={project._id}
+                        value={project.projectName.toLowerCase()}
+                      >
+                        {toCamelCase(project.projectName)}
+                      </MenuItem>
+                    ))
+                  ) : (
+                    <MenuItem disabled>No projects available</MenuItem>
+                  )}
+                </Select>
+              </FormControl>
+            )}
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                gap: "16px",
+                marginTop: "20px",
+              }}
+            >
+              <Button onClick={handleCancel} style={{ marginRight: "8px" }}>
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => handleSave1(editingRow)}
+              >
+                Update Employee
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* ✅ Project Dropdown for Manager */}
-      {empData.role === "Manager" && (
+      <div className="employee-container">
+        <table className="holiday-table">
+          <thead>
+            <tr>
+              <th>Employee ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Project</th>
+              <th>Is Active</th>
+              <th>Manager Name</th>
+              <th>Manager Email</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {currentEmployees.length > 0 ? (
+              currentEmployees
+                .filter((emp) => emp.email !== "dummy@gmail.com")
+                .map((emp) => (
+                  <tr key={emp._id} className="employee-row">
+                    <td>{emp.empid}</td>
+                    <td>
+                      {emp.empname
+                        .toLowerCase()
+                        .replace(/\b\w/g, (char) => char.toUpperCase())}
+                    </td>
+                    <td>{emp.email}</td>
+                    <td>{emp.role}</td>
 
-<FormControl fullWidth sx={{ width: '100%' }}>
-  <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>
-    Project
-  </InputLabel>
-  <Select
-    fullWidth
-    value={empData.project ? empData.project.toLowerCase() : ""}
-    onChange={(e) =>
-      setEmpData({ ...empData, project: e.target.value })
-    }
-  >
-    {projects.length > 0 ? (
-      projects.map((project) => (
-        <MenuItem
-          key={project._id}
-          value={project.projectName.toLowerCase()}
-        >
-          {toCamelCase(project.projectName)}
-        </MenuItem>
-      ))
-    ) : (
-      <MenuItem disabled>No projects available</MenuItem>
-    )}
-  </Select>
-</FormControl>
-
-      )}
-
-      <div style={{ display: "flex", justifyContent: "center", gap: "16px", marginTop: "20px" }}>
-        
-        <Button onClick={handleCancel} style={{ marginRight: "8px" }}>
-          Cancel
-        </Button>
-        <Button 
-          variant="contained" 
-          color="primary" 
-          onClick={() => handleSave1(editingRow)}
-        >
-          Update Employee
-        </Button>
-      </div>
-    </div>
-  </div>
-)}
-
-
-
-<div className="employee-container">
-  <table className="holiday-table">
-    <thead>
-      <tr>
-        <th>Employee ID</th>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Role</th>
-        <th>Project</th>
-        <th>Is Active</th>
-        <th>Manager Name</th>
-        <th>Manager Email</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {currentEmployees.length > 0 ? (
-        currentEmployees
-        .filter(emp => emp.email !== "dummy@gmail.com")
-        .map((emp) => (
-          <tr key={emp._id} className="employee-row">
-            <td>{emp.empid}</td>
-            <td>{emp.empname.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())}</td>
-            <td>{emp.email}</td>
-            <td>{emp.role}</td>
-     
-            <td>{emp.project.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())}</td>
-
+                    <td>
+                      {emp.project
+                        ? emp.project
+                            .toLowerCase()
+                            .replace(/\b\w/g, (char) => char.toUpperCase())
+                        : "-"}
+                    </td>
 
                     <td style={{ color: !emp.isActive ? "red" : "green" }}>
                       {emp.isActive ? "Yes" : "No"}
                     </td>
-                    <td>
+                                       <td>
                       {" "}
-                      {emp.role === "Employee"
+                      {emp.role === "Employee" && emp.isActive=== true
                         ? emp.managerEmail === "dummy@gmail.com"
                           ? "Not Assigned"
                           : emp.managerName || "-"
                         : emp.managerName || "-"}
                     </td>
                     <td>
-                      {emp.role === "Employee"
+                      {emp.role === "Employee" && emp.isActive===true
                         ? emp.managerEmail === "dummy@gmail.com"
                           ? "Not Assigned"
                           : emp.managerEmail || "-"
@@ -947,9 +1021,7 @@ const TotalEmployees = () => {
                         }
                       >
                         <Tooltip title="Edit">
-                          <IconButton
-                            size="small"
-                          >
+                          <IconButton size="small">
                             <Edit color="primary" fontSize="small" />
                           </IconButton>
                         </Tooltip>
@@ -969,15 +1041,12 @@ const TotalEmployees = () => {
                           transition: "0.3s",
                         }}
                       >
-                        
                         <Tooltip title="Deactivate">
-                          <IconButton
-                            size="small"
-                          >
+                          <IconButton size="small">
                             <FaUserSlash
-                          size={20}
-                          color={emp.isActive ? "red" : "gray"}
-                        />
+                              size={20}
+                              color={emp.isActive ? "red" : "gray"}
+                            />
                           </IconButton>
                         </Tooltip>
                       </button>

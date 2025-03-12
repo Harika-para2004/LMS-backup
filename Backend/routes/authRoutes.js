@@ -30,7 +30,7 @@ router.post('/addEmployee', async (req, res) => {
 
     let assignedProject = "";
     if (role === "Manager") {
-      const projectExists = await User.findOne({ project, role: "Manager" });
+      const projectExists = await User.findOne({ project, role: "Manager",isActive:true });
 
       if (projectExists) {
         return res.status(400).json({ message: `Project "${project}" is already assigned to another manager.` });
@@ -49,8 +49,23 @@ router.post('/addEmployee', async (req, res) => {
     }
 
     if (role === "Manager") {
+      // Check if another active manager already has the project
+      const activeManager = await User.findOne({ project, role: "Manager", isActive: true });
+    
+      if (activeManager) {
+        return res.status(400).json({ message: `Project "${project}" is already assigned to another active manager.` });
+      }
+    
+      // Assign project to the new manager
       assignedProject = project;
+    
+      // Find employees with the same project and update their managerEmail
+      await User.updateMany(
+        { project, role: "Employee" }, // Employees under this project
+        { $set: { managerEmail: email } } // Assign new manager
+      );
     }
+    
 
     // ✅ Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);

@@ -17,7 +17,7 @@ const LeaveSchema = new mongoose.Schema({
   usedLeaves: { type: Number, default: 0 },
   availableLeaves: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
-  attachments: { type: [String] },
+  attachments: { type: [String] }, // Storing Base64 string
   duration: { type: [[Number]] }, // Store duration as a nested array per month
   year: { type: [[Number]] },
   month: { type: [[Number]] },

@@ -94,7 +94,7 @@ const LeaveRequestsTable = () => {
     );
     const excludeEmail = "admin@gmail.com"; // Replace with the email to exclude
     try {
-      const response = await fetch("http://localhost:5001/leaverequests");
+      const response = await fetch(`http://localhost:5001/leaverequests`);
       if (response.ok) {
         const data = await response.json();
         const filteredData = data.filter((item) => item.email !== excludeEmail); // Filter out records with the given email
@@ -108,9 +108,8 @@ const LeaveRequestsTable = () => {
   };
 
   useEffect(() => {
-    if (admincred) fetchLeaveRequestsAdmin();
-  }, [admincred]);
-
+    if (admincred && selectedYear) fetchLeaveRequestsAdmin();
+  }, [admincred,selectedYear]);
   const fetchLeaveRequests = async () => {
     try {
       const response = await fetch(
@@ -311,6 +310,7 @@ const LeaveRequestsTable = () => {
             updatedLeaveFromServer
           );
           fetchLeaveRequests();
+
         } else {
           console.error("Failed to update leave status in the database");
         }
@@ -370,7 +370,7 @@ const LeaveRequestsTable = () => {
       endDate: new Date(leave.endDate[index]).toLocaleDateString("en-GB"),
       availableLeaves: leave.availableLeaves,
       document: leave.attachments?.[index]
-        ? getDownloadLink(leave.attachments[index])
+        ? leave.attachments[index]
         : null,
       reason: leave.reason[index] === "null" ? "N/A" : leave.reason[index],
       status: leave.status[index].toLowerCase(),
@@ -577,17 +577,21 @@ const LeaveRequestsTable = () => {
                   <td>{leave.endDate}</td>
                   <td>{leave.availableLeaves ? leave.availableLeaves : "-"}</td>
                   <td>
-                    {leave.document ? (
-                      <a href={leave.document} download>
-                        <AiFillFilePdf size={23} color="red" />
-                      </a>
-                    ) : (
-                      <AiOutlineExclamationCircle
-                        size={23}
-                        color="rgb(114,114,114)"
-                      />
-                    )}
-                  </td>
+          {leave.document && leave.document.trim() !== "" ? (
+           <a
+           href={`data:application/pdf;base64,${leave.document}`}
+           download={`LeaveAttachment_${leave.empid}.pdf`}
+           target="_blank"
+           rel="noopener noreferrer"
+         >
+           <AiFillFilePdf size={23} color="red" />
+         </a>
+         
+          ) : (
+            <AiOutlineExclamationCircle size={23} color="rgb(114,114,114)" />
+          )}
+        </td>
+
                   <td> <Tooltip title={formatReason(leave.reason)} arrow>
     <span>{truncateReason(formatReason(leave.reason))}</span>
   </Tooltip></td>

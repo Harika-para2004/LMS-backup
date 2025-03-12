@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./overlapping.css";
+import { MenuItem, Select } from "@mui/material";
 
 const Overlap = ({ year, managerEmail }) => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
@@ -67,7 +68,6 @@ const Overlap = ({ year, managerEmail }) => {
       setHolidayName(holidays[day] || ""); // Set holiday name if applicable
     }
   };
-  
 
   const getHighlightColor = (count, dayOfWeek) => {
     if (dayOfWeek === 0 || dayOfWeek === 6) return "#f9f9f9"; // No highlight for weekends
@@ -84,25 +84,37 @@ const Overlap = ({ year, managerEmail }) => {
     <div className="calendar-container">
       <h2>Leave Overlapping Calendar</h2>
       <div className="selectors">
-        <select onChange={(e) => setSelectedMonth(Number(e.target.value))} value={selectedMonth}>
-          {Array.from({ length: 12 }, (_, i) => (
-            <option key={i + 1} value={i + 1}>
-              {new Date(0, i).toLocaleString("default", { month: "long" })}
-            </option>
-          ))}
-        </select>
+        <FormControl fullWidth>
+          <InputLabel id="label">Month</InputLabel>
+          <Select
+            label="Month"
+            onChange={(e) => setSelectedMonth(Number(e.target.value))}
+            value={selectedMonth}
+          >
+            {Array.from({ length: 12 }, (_, i) => (
+              <MenuItem key={i + 1} value={i + 1}>
+                {new Date(0, i).toLocaleString("default", { month: "long" })}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </div>
       <div className="calendar-wrapper">
         <div className="calendar-box">
           <h3>
-            {new Date(year, selectedMonth - 1).toLocaleString("default", { month: "long" })} {year}
+            {new Date(year, selectedMonth - 1).toLocaleString("default", {
+              month: "long",
+            })}{" "}
+            {year}
           </h3>
           <div className="weekday-row">
-            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day, index) => (
-              <div key={index} className="weekday-header">
-                {day}
-              </div>
-            ))}
+            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
+              (day, index) => (
+                <div key={index} className="weekday-header">
+                  {day}
+                </div>
+              )
+            )}
           </div>
           <div className="calendar-grid">
             {Array.from({ length: firstDayOfMonth }, (_, i) => (
@@ -119,11 +131,24 @@ const Overlap = ({ year, managerEmail }) => {
                   key={day}
                   className={`calendar-day ${holidays[day] ? "holiday" : ""}`}
                   style={{
-                    backgroundColor: holidays[day] ? "transparent" : getHighlightColor(employeesOnLeave.length, dayOfWeek),
-                    color: holidays[day] ? "red" : dayOfWeek === 0 || dayOfWeek === 6 ? "#aaa" : "#000",
-                    cursor: dayOfWeek === 0 || dayOfWeek === 6 ? "default" : "pointer",
+                    backgroundColor: holidays[day]
+                      ? "transparent"
+                      : getHighlightColor(employeesOnLeave.length, dayOfWeek),
+                    color: holidays[day]
+                      ? "red"
+                      : dayOfWeek === 0 || dayOfWeek === 6
+                      ? "#aaa"
+                      : "#000",
+                    cursor:
+                      dayOfWeek === 0 || dayOfWeek === 6
+                        ? "default"
+                        : "pointer",
                   }}
-                  onClick={() => (dayOfWeek === 0 || dayOfWeek === 6 ? null : handleDayClick(day))}
+                  onClick={() =>
+                    dayOfWeek === 0 || dayOfWeek === 6
+                      ? null
+                      : handleDayClick(day)
+                  }
                 >
                   <span>{day}</span>
                   {holidays[day] && <div className="holiday-marker">🎉</div>}
@@ -135,10 +160,16 @@ const Overlap = ({ year, managerEmail }) => {
         {selectedDay !== null && (
           <div className="leave-details-box">
             <h3>
-              {selectedDay} {new Date(year, selectedMonth - 1).toLocaleString("default", { month: "long" })} {year}
+              {selectedDay}{" "}
+              {new Date(year, selectedMonth - 1).toLocaleString("default", {
+                month: "long",
+              })}{" "}
+              {year}
             </h3>
             {holidayName ? (
-              <p><strong>Holiday:</strong> {holidayName}</p>
+              <p>
+                <strong>Holiday:</strong> {holidayName}
+              </p>
             ) : leaveData[selectedDay]?.length > 0 ? (
               <ul className="employee-list">
                 {leaveData[selectedDay].map((emp, index) => (

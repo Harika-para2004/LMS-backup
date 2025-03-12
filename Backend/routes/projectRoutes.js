@@ -96,14 +96,8 @@ router.delete("/projects/:id", async (req, res) => {
 
     // ✅ Remove Project from Manager (who had that project)
     await User.updateMany(
-      { project: { $in: [project.projectName.toLowerCase()] } },
-      { $pull: { project: project.projectName.toLowerCase() } }
-    );
-
-    // ✅ Set Employee's project to "" if it was deleted
-    await User.updateMany(
-      { project: project.projectName.toLowerCase() },
-      { $set: { project: "" } }
+      { project: project.projectName.toLowerCase() }, 
+      { $set: { project: "" } } 
     );
 
     res.status(200).json({ message: "Project deleted successfully" });

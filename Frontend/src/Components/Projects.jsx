@@ -82,6 +82,7 @@ const ProjectManager = () => {
   const handleDelete = async (id) => {
     try {
       await fetch(`${BASE_URL}/projects/${id}`, { method: "DELETE" });
+      showToast("Project deleted successfully","success");
       fetchProjects();
     } catch (error) {
       console.error("Error deleting project:", error);
