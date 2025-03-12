@@ -29,6 +29,15 @@ router.post('/addEmployee', async (req, res) => {
     }
 
     let assignedProject = "";
+    if (role === "Manager") {
+      const projectExists = await User.findOne({ project, role: "Manager" });
+
+      if (projectExists) {
+        return res.status(400).json({ message: `Project "${project}" is already assigned to another manager.` });
+      }
+
+      assignedProject = project;
+    }
 
     // ✅ Handle Project Assignment from Senior → Manager → Employee
     if (role === "Employee" && managerEmail) {

@@ -716,7 +716,7 @@ app.put("/updateEmployeeList/:id", async (req, res) => {
 
 app.get("/getManagers", async (req, res) => {
   try {
-    const managers = await User.find({ role: "Manager" }); // ✅ Fetch all Managers
+    const managers = await User.find({ role: "Manager", isActive: true }); // ✅ Fetch only active managers
     res.status(200).json(managers);
   } catch (err) {
     res.status(500).json({ message: "Error fetching managers", error: err.message });
