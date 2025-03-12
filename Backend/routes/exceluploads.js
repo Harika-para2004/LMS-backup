@@ -28,112 +28,129 @@ router.post('/uploadEmployees', upload.single('file'), async (req, res) => {
 
       // Extract column names from the first row
       const expectedColumns = ["EmployeeID", "EmployeeName", "Email", "Password", "Role", "Gender", "Project", "ManagerEmail"];
-      const fileColumns = Object.keys(sheetData[0]); 
-
-      // Check if the uploaded file has the correct columns
-      const hasCorrectFormat = expectedColumns.every(col => fileColumns.includes(col));
+      const fileColumns = Object.keys(sheetData[0]);
 
       const newUsers = [];
       const failedEntries = [];
+      const managerEmails = new Map();
+
+      // ✅ First insert Managers only
       for (let row of sheetData) {
           const { EmployeeID, EmployeeName, Email, Password, Role, Gender, Project, ManagerEmail } = row;
-          const email = Email.toLowerCase();
+          const email = Email ? Email.toLowerCase() : "";
+          const project = Project ? Project.toLowerCase() : "";
 
-          if (!email || !Password) {
-              failedEntries.push({ email: email || "Unknown", reason: "Missing required fields" });
-              continue;
-          }
+          if (String(Role).toLowerCase() === "manager") {
+              const userExists = await User.findOne({ email });
+              const empidExists = await User.findOne({ empid: EmployeeID });
 
-          // Check if email or empid already exists
-          const userExists = await User.findOne({ email });
-          const empidExists = await User.findOne({ empid: EmployeeID });
-
-          if (userExists) {
-              failedEntries.push({ email, reason: "User already exists!" });
-              continue;
-          }
-
-          if (empidExists) {
-              failedEntries.push({ email, reason: "Empid already exists!" });
-              continue;
-          }
-
-          let assignedProject = "";
-
-          // ✅ Handle Project Assignment from Senior → Manager → Employee
-          if (String(Role).toLowerCase() === "employee" && ManagerEmail) {
-              const manager = await User.findOne({ email: ManagerEmail.toLowerCase() });
-              if (manager && manager.project) {
-                  assignedProject = manager.project;
-              } else {
-                  failedEntries.push({ email, reason: "Invalid manager email or project not assigned" });
+              if (userExists || empidExists) {
+                  failedEntries.push({ email, reason: "User or EmpID already exists!" });
                   continue;
               }
+
+              const hashedPassword = await bcrypt.hash(Password.toString(), 10);
+
+              const newUser = new User({
+                  empid: EmployeeID,
+                  empname: EmployeeName,
+                  email,
+                  password: hashedPassword,
+                  role: Role,
+                  gender: Gender,
+                  project
+              });
+
+              await newUser.save();
+              newUsers.push({ ...newUser.toObject(), originalPassword: Password });
+              managerEmails.set(email, project);
           }
-            // Store original password for email
-            const originalPassword = Password.toString();
-  
-            // Hash password before saving to database
-            const hashedPassword = await bcrypt.hash(originalPassword, 10);
-  
-            const newUser = new User({
-                empid: EmployeeID,
-                empname: EmployeeName,
-                email: Email,
-                password: hashedPassword, // Store only hashed password
-                role: Role,
-                gender: Gender,
-                project: Project,
-                ...(String(Role).toLowerCase() === "employee" && { managerEmail: ManagerEmail })
-            });
-  
-            newUsers.push({ ...newUser.toObject(), originalPassword }); // Keep original password for email
-        }
-  
-        if (newUsers.length > 0) {
-            await User.insertMany(newUsers);
-        }
-  
-        // Email configuration
-        const transporter = nodemailer.createTransport({
-            service: 'Gmail',
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
-            }
-        });
-  
-        // Send emails concurrently using Promise.all
-        const emailPromises = newUsers.map(user => {
-            const mailOptions = {
-                from: process.env.EMAIL_USER,
-                to: user.email,
-                subject: 'Welcome to Quadface Company!',
-                text: `Hello ${user.empname},\n\nWelcome to the Leave Management System!\n\nHere are your login details:\n🔹 Username: ${user.email}\n🔹 Password: ${user.originalPassword}\n\nPlease log in and change your password after your first login for security reasons.\n\nBest regards,\nAdmin`
-            };
-            return transporter.sendMail(mailOptions).catch(err => {
-                console.log(`Error sending email to ${user.email}:`, err);
-            });
-        });
-  
-        await Promise.all(emailPromises);
-  
-        const responseMessage = newUsers.length > 0 
-      ? `${newUsers.length} employees were successfully added!` 
-      : "No employees added, they already exist.";
-  
-  res.status(201).json({
-      message: responseMessage,
-      totalInserted: newUsers.length,
-      failedEntries
-  });
-  
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Error processing file" });
-    }
-  });
-  
+      }
+
+      // ✅ Now insert Employees
+      for (let row of sheetData) {
+          const { EmployeeID, EmployeeName, Email, Password, Role, Gender, Project, ManagerEmail } = row;
+          const email = Email ? Email.toLowerCase() : "";
+          const managerEmail = ManagerEmail ? ManagerEmail.toLowerCase() : "";
+
+          if (String(Role).toLowerCase() === "employee") {
+              const userExists = await User.findOne({ email });
+              const empidExists = await User.findOne({ empid: EmployeeID });
+
+              if (userExists || empidExists) {
+                  failedEntries.push({ email, reason: "User or EmpID already exists!" });
+                  continue;
+              }
+
+              let assignedProject = "";
+              if (managerEmails.has(managerEmail)) {
+                  assignedProject = managerEmails.get(managerEmail);
+              } else {
+                  const manager = await User.findOne({ email: managerEmail });
+                  if (manager && manager.project) {
+                      assignedProject = manager.project.toLowerCase();
+                  } else {
+                      failedEntries.push({ email, reason: "Invalid manager email or project not assigned" });
+                      continue;
+                  }
+              }
+
+              const hashedPassword = await bcrypt.hash(Password.toString(), 10);
+
+              const newUser = new User({
+                  empid: EmployeeID,
+                  empname: EmployeeName,
+                  email,
+                  password: hashedPassword,
+                  role: Role,
+                  gender: Gender,
+                  project: assignedProject,
+                  managerEmail
+              });
+
+              await newUser.save();
+              newUsers.push({ ...newUser.toObject(), originalPassword: Password });
+          }
+      }
+
+      // ✅ Send Emails
+      const transporter = nodemailer.createTransport({
+          service: 'Gmail',
+          auth: {
+              user: process.env.EMAIL_USER,
+              pass: process.env.EMAIL_PASS
+          }
+      });
+
+      const emailPromises = newUsers.map(user => {
+          const mailOptions = {
+              from: process.env.EMAIL_USER,
+              to: user.email,
+              subject: 'Welcome to Quadface Company!',
+              text: `Hello ${user.empname},\n\nWelcome To Leave Management System. We are excited to have you on board.\nUsername: ${user.email}\nPassword: ${user.originalPassword}\n\nBest regards,\nAdmin`
+          };
+
+          return transporter.sendMail(mailOptions).catch(err => {
+              console.log(`Error sending email to ${user.email}:`, err);
+          });
+      });
+
+      await Promise.all(emailPromises);
+
+      res.status(201).json({
+          message: `${newUsers.length} employees were successfully added!`,
+          totalInserted: newUsers.length,
+          failedEntries
+      });
+
+  } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Error processing file" });
+  }
+});
+
+
+
   const formatExcelDate = (serial) => {
     if (!serial || typeof serial !== "number") return null;
   

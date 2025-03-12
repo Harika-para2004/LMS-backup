@@ -17,8 +17,7 @@ const transporter = nodemailer.createTransport({
 
 // ✅ Forgot Password Route - Sends a reset code via email
 router.post("/forgot-password", async (req, res) => {
-    const { email } = req.body;
-  
+    const { email } = req.body;  
     try {
       const user = await User.findOne({ email });
       if (!user) {

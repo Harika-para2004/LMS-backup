@@ -11,7 +11,9 @@ const formatCase = (text) => {
 };
 router.post('/addEmployee', async (req, res) => {
   let { empname, empid, email, password, gender, project, role, managerEmail } = req.body;
-  email = email.toLowerCase();
+  email = email ? email.toLowerCase() : "";
+  project = project ? project.toLowerCase() : "";
+  managerEmail = managerEmail ? managerEmail.toLowerCase() : "";
 
   try {
     // ✅ Check if email already exists

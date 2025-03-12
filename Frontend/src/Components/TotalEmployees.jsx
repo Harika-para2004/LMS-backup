@@ -476,6 +476,7 @@ const TotalEmployees = () => {
       setFile(null);
       document.getElementById("file-input").value = null;
       fetchEmployees();
+      fetchManagers();
       setTimeout(() => {
         setMessage("");
       }, 3000);
@@ -696,11 +697,12 @@ const TotalEmployees = () => {
 
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
-        <Button variant="contained" type="submit">
-          Add Employee
-        </Button>
+       
         <Button onClick={handleAddEmployeeClose} style={{ marginRight: "8px" }}>
           Cancel
+        </Button>
+        <Button variant="contained" type="submit">
+          Add Employee
         </Button>
       </div>
     </form>
@@ -799,43 +801,46 @@ const TotalEmployees = () => {
 
       {/* ✅ Project Dropdown for Manager */}
       {empData.role === "Manager" && (
-  <FormControl fullWidth>
-    <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>
-      Project
-    </InputLabel>
-    <Select
-      value={empData.project || ""}
-      onChange={(e) =>
-        setEmpData({ ...empData, project: e.target.value })
-      }
-    >
-      {projects.length > 0 ? (
-        projects.map((project) => (
-          <MenuItem
-            key={project._id}
-            value={project.projectName.toLowerCase()} // ✅ Store in lowercase
-          >
-            {toCamelCase(project.projectName)} {/* ✅ Display in camel case */}
-          </MenuItem>
-        ))
-      ) : (
-        <MenuItem disabled>No projects available</MenuItem>
-      )}
-    </Select>
-  </FormControl>
-)}
 
+<FormControl fullWidth sx={{ width: '100%' }}>
+  <InputLabel sx={{ backgroundColor: "white", paddingX: "4px" }}>
+    Project
+  </InputLabel>
+  <Select
+    fullWidth
+    value={empData.project ? empData.project.toLowerCase() : ""}
+    onChange={(e) =>
+      setEmpData({ ...empData, project: e.target.value })
+    }
+  >
+    {projects.length > 0 ? (
+      projects.map((project) => (
+        <MenuItem
+          key={project._id}
+          value={project.projectName.toLowerCase()}
+        >
+          {toCamelCase(project.projectName)}
+        </MenuItem>
+      ))
+    ) : (
+      <MenuItem disabled>No projects available</MenuItem>
+    )}
+  </Select>
+</FormControl>
+
+      )}
 
       <div style={{ display: "flex", justifyContent: "center", gap: "16px", marginTop: "20px" }}>
+        
+        <Button onClick={handleCancel} style={{ marginRight: "8px" }}>
+          Cancel
+        </Button>
         <Button 
           variant="contained" 
           color="primary" 
           onClick={() => handleSave1(editingRow)}
         >
           Update Employee
-        </Button>
-        <Button onClick={handleCancel} style={{ marginRight: "8px" }}>
-          Cancel
         </Button>
       </div>
     </div>
