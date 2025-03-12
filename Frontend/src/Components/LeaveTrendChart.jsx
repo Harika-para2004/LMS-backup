@@ -104,6 +104,7 @@ const LeaveTrendChart = ({ email, year }) => {
       ["#4682B4", "#5F9EA0"], // Steel Blue
     ];
   
+   
     const series = leaveTypes.map((type, index) => ({
       name: type,
       type: "bar",

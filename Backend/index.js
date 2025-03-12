@@ -1417,47 +1417,45 @@ app.get("/leave-trends/:email/:year", async (req, res) => {
 //     res.status(500).json({ error: err.message });
 //   }
 // });
-app.get('/leavetype-status/:email', async (req, res) => {
-  const { email } = req.params;
+
+app.get('/leave-type-status/:email/:year', async (req, res) => {
+  const { email, year } = req.params;
+  const requestedYear = parseInt(year);
+
   try {
-    const types = await Leave.aggregate([
-      { $match: { email } },
+    const leaveStats = await Leave.find({ email });
 
-      // 🔹 Extract status and calculate total duration sum
-      {
-        $addFields: {
-          firstStatus: { $arrayElemAt: ["$status", 0] }, 
-          
-          // ✅ Sum all elements in the first array of `duration`
-          totalDuration: {
-            $reduce: {
-              input: { $arrayElemAt: ["$duration", 0] }, // Get first array [18, 21, 22, 23, 6]
-              initialValue: 0,
-              in: { $add: ["$$value", "$$this"] } // Sum all elements
-            }
+    const formattedResponse = {};
+
+    leaveStats.forEach(({ leaveType, status, year: leaveYears, duration }) => {
+      let isYearPresent = false; // ✅ Track if the leave type exists in the requested year
+
+      leaveYears.forEach((yearGroup, i) => {
+        if (Array.isArray(yearGroup) && yearGroup.includes(requestedYear)) {
+          if (!formattedResponse[leaveType]) {
+            formattedResponse[leaveType] = { Pending: 0, Approved: 0, Rejected: 0 };
           }
+
+          // ✅ Sum all elements in duration[i]
+          const totalDuration = duration[i] ? duration[i].reduce((sum, val) => sum + val, 0) : 0;
+
+          formattedResponse[leaveType][status[i]] += totalDuration;
+          isYearPresent = true; // ✅ Mark that this leave type exists in the requested year
         }
-      },
+      });
 
-      // 🔹 Group by leaveType & status
-      {
-        $group: {
-          _id: { leaveType: "$leaveType", status: "$firstStatus" },
-          count: { $sum: 1 }, // ✅ Count occurrences
-          totalDuration: { $sum: "$totalDuration" } // ✅ Sum all durations correctly
-        }
-      },
+      // ✅ If the leave type exists in the requested year, do NOT remove it
+      if (isYearPresent) {
+        formattedResponse[leaveType] = formattedResponse[leaveType];
+      }
+    });
 
-      // 🔹 Sort for better readability
-      { $sort: { "_id.leaveType": 1, "_id.status": 1 } }
-    ]);
-
-    res.json(types);
+    res.json(Object.entries(formattedResponse).map(([leaveType, statuses]) => ({ leaveType, statuses })));
   } catch (err) {
+    console.error("❌ Error in API:", err);
     res.status(500).json({ error: err.message });
   }
 });
-
 
 // app.get('/leave-types/:email/:year?', async (req, res) => {
 //   const { email, year } = req.params;
@@ -1610,11 +1608,7 @@ app.get('/leave-type-status/:email/:year', async (req, res) => {
           if (!formattedResponse[leaveType]) {
             formattedResponse[leaveType] = { Pending: 0, Approved: 0, Rejected: 0 };
           }
-
-          // ✅ Sum all elements in duration[i]
-          const totalDuration = duration[i] ? duration[i].reduce((sum, val) => sum + val, 0) : 0;
-
-          formattedResponse[leaveType][status[i]] += totalDuration;
+          formattedResponse[leaveType][status[i]] += duration[i][0] || 0;
           isYearPresent = true; // ✅ Mark that this leave type exists in the requested year
         }
       });
