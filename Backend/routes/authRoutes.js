@@ -63,13 +63,13 @@ router.post('/addEmployee', async (req, res) => {
     const transporter = nodemailer.createTransport({
       service: 'Gmail',
       auth: {
-        user: 'lahirikokkiligadda@gmail.com',
-        pass: 'jmfe rmka otnc upxe'
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
       }
     });
 
     const mailOptions = {
-      from: 'lahirikokkiligadda@gmail.com',
+      from: process.env.EMAIL_USER,
       to: email,
       subject: 'Welcome to Quadface Company!',
       text: `Hello ${empname},\n\nWelcome To Leave Management System. We are excited to have you on board.\nUsername: ${email}\nPassword: ${password}\n\nBest regards,\nAdmin`
