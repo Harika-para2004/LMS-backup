@@ -1417,23 +1417,34 @@ app.get("/leave-trends/:email/:year", async (req, res) => {
 //     res.status(500).json({ error: err.message });
 //   }
 // });
-
 app.get('/leavetype-status/:email', async (req, res) => {
   const { email } = req.params;
   try {
     const types = await Leave.aggregate([
       { $match: { email } },
 
-      // 🔹 Unwind the arrays to process each date separately
-      { $unwind: "$startDate" },
-      { $unwind: "$endDate" },
-      { $unwind: "$status" },
+      // 🔹 Extract status and calculate total duration sum
+      {
+        $addFields: {
+          firstStatus: { $arrayElemAt: ["$status", 0] }, 
+          
+          // ✅ Sum all elements in the first array of `duration`
+          totalDuration: {
+            $reduce: {
+              input: { $arrayElemAt: ["$duration", 0] }, // Get first array [18, 21, 22, 23, 6]
+              initialValue: 0,
+              in: { $add: ["$$value", "$$this"] } // Sum all elements
+            }
+          }
+        }
+      },
 
       // 🔹 Group by leaveType & status
       {
         $group: {
-          _id: { leaveType: "$leaveType", status: "$status" },
-          count: { $sum: 1 } // ✅ Correct count of each leave type & status
+          _id: { leaveType: "$leaveType", status: "$firstStatus" },
+          count: { $sum: 1 }, // ✅ Count occurrences
+          totalDuration: { $sum: "$totalDuration" } // ✅ Sum all durations correctly
         }
       },
 
@@ -1446,6 +1457,7 @@ app.get('/leavetype-status/:email', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // app.get('/leave-types/:email/:year?', async (req, res) => {
 //   const { email, year } = req.params;
@@ -1598,7 +1610,11 @@ app.get('/leave-type-status/:email/:year', async (req, res) => {
           if (!formattedResponse[leaveType]) {
             formattedResponse[leaveType] = { Pending: 0, Approved: 0, Rejected: 0 };
           }
-          formattedResponse[leaveType][status[i]] += duration[i][0] || 0;
+
+          // ✅ Sum all elements in duration[i]
+          const totalDuration = duration[i] ? duration[i].reduce((sum, val) => sum + val, 0) : 0;
+
+          formattedResponse[leaveType][status[i]] += totalDuration;
           isYearPresent = true; // ✅ Mark that this leave type exists in the requested year
         }
       });

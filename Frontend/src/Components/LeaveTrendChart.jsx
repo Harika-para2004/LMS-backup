@@ -108,25 +108,25 @@ const LeaveTrendChart = ({ email, year }) => {
       name: type,
       type: "bar",
       stack: "total",
-      data: months.map((_, idx) => chartData[idx]?.[type] || 0),
+      data: months.map((monthName, idx) => {
+        const monthData = chartData.find(m => m.month === idx + 1);
+        return monthData ? monthData[type] || 0 : 0;
+      }),
       emphasis: { focus: "series" },
-      barWidth: 30, // Ensure equal bar sizes
+      barWidth: 30,
       itemStyle: {
         color: {
           type: "linear",
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
+          x: 0, y: 0, x2: 0, y2: 1,
           colorStops: [
             { offset: 0, color: colorPalette[index % colorPalette.length][0] },
             { offset: 1, color: colorPalette[index % colorPalette.length][1] },
           ],
         },
-        borderRadius: [6, 6, 0, 0], // Rounded top edges for elegance
+        borderRadius: [6, 6, 0, 0],
       },
     }));
-  
+    
     return {
       animation: true,
       tooltip: {
