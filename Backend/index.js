@@ -226,7 +226,15 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
     let defaultTotalLeaves = 12; // Adjust as per policy
 
     if (startYear === endYear) {
-      let leaveRecord = await Leave.findOne({ email, leaveType, year: [startYear] });
+      console.log("start",startYear)
+      console.log("end",endYear)
+      let leaveRecord = await Leave.findOne({
+        email,
+        leaveType,
+        year: { $elemMatch: { $elemMatch: { $eq: Number(startYear) } } }  // Convert to number
+      });
+      
+            console.log(leaveRecord)
       let durationDays = Math.ceil((formattedEndDate - formattedStartDate) / (1000 * 60 * 60 * 24)) + 1;
 
       if (!leaveRecord) {
@@ -280,8 +288,11 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
         let leaveEnd = year === endYear ? formattedEndDate : yearEnd;
         let days = Math.ceil((leaveEnd - leaveStart) / (1000 * 60 * 60 * 24)) + 1;
 
-        let leaveRecord = await Leave.findOne({ email, leaveType, year: [year] });
-
+        let leaveRecord = await Leave.findOne({
+          email,
+          leaveType,
+          year: { $elemMatch: { $elemMatch: { $eq: Number(year) } } }  // Convert to number
+        });
         if (!leaveRecord) {
           leaveRecord = new Leave({
             email,
