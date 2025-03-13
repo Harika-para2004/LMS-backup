@@ -7,6 +7,8 @@ import {
   Stack,
   Pagination,
   Tooltip,
+  InputAdornment,
+  TextField,
 } from "@mui/material";
 import { MdCheckCircle, MdCancel, MdWatchLater } from "react-icons/md";
 import { useManagerContext } from "../context/ManagerContext";
@@ -19,6 +21,8 @@ import {
   AiOutlineExclamationCircle,
 } from "react-icons/ai";
 import { useLocation } from "react-router-dom";
+import { FaSearch } from "react-icons/fa";
+import { Search } from "@mui/icons-material";
 
 const LeaveRequestsTable = () => {
   const {
@@ -34,7 +38,7 @@ const LeaveRequestsTable = () => {
     role,
     showToast,
   } = useManagerContext();
-
+  const [searchQuery, setSearchQuery] = useState("");
   const location = useLocation();
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
@@ -109,7 +113,7 @@ const LeaveRequestsTable = () => {
 
   useEffect(() => {
     if (admincred && selectedYear) fetchLeaveRequestsAdmin();
-  }, [admincred,selectedYear]);
+  }, [admincred, selectedYear]);
   const fetchLeaveRequests = async () => {
     try {
       const response = await fetch(
@@ -141,6 +145,10 @@ const LeaveRequestsTable = () => {
   const handleFilterChange = (e) => {
     setSelectedFilter(e.target.value);
   };
+
+  useEffect(() => {
+    setSelectedFilter("Pending");
+  },[])
 
   const handleCloseModal = () => {
     setModalOpen(false); // Close the modal
@@ -310,7 +318,6 @@ const LeaveRequestsTable = () => {
             updatedLeaveFromServer
           );
           fetchLeaveRequests();
-
         } else {
           console.error("Failed to update leave status in the database");
         }
@@ -337,6 +344,7 @@ const LeaveRequestsTable = () => {
           (status) => status.toLowerCase() === selectedFilter.toLowerCase()
         )
   );
+
   const getDownloadLink = (attachments) =>
     `http://localhost:5001/${attachments}`;
 
@@ -369,9 +377,7 @@ const LeaveRequestsTable = () => {
       startDate: new Date(startDate).toLocaleDateString("en-GB"),
       endDate: new Date(leave.endDate[index]).toLocaleDateString("en-GB"),
       availableLeaves: leave.availableLeaves,
-      document: leave.attachments?.[index]
-        ? leave.attachments[index]
-        : null,
+      document: leave.attachments?.[index] ? leave.attachments[index] : null,
       reason: leave.reason[index] === "null" ? "N/A" : leave.reason[index],
       status: leave.status[index].toLowerCase(),
       leaveData: leave,
@@ -381,15 +387,27 @@ const LeaveRequestsTable = () => {
 
   // 🔹 Apply filter
   // 🔹 Apply filter before using displayedData
-  const displayedData =
-    selectedFilter === "All"
-      ? filteredData
-      : filteredData.filter(
-          (leave) => leave.status === selectedFilter.toLowerCase()
-        );
+  // const displayedData =
+  //   selectedFilter === "All"
+  //     ? filteredData
+  //     : filteredData.filter(
+  //         (leave) => leave.status === selectedFilter.toLowerCase()
+  //       );
+  const displayedData = filteredData
+    .filter(
+      (leave) =>
+        selectedFilter === "All" ||
+        leave.status === selectedFilter.toLowerCase()
+    )
+    .filter(
+      (leave) =>
+        leave.empname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        leave.empid.toString().includes(searchQuery) ||
+        leave.leaveType.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
   const sortedItems = [...displayedData]
-    .filter((item) => item.startDate) // Remove invalid dates
+    .filter((item) => item.startDate) 
     .sort(
       (a, b) =>
         new Date(b.startDate.split("/").reverse().join("-")) -
@@ -428,7 +446,6 @@ const LeaveRequestsTable = () => {
       return prevPage > totalPages ? 1 : prevPage;
     });
   }, [sortedItems]);
-  
 
   return (
     <div>
@@ -447,6 +464,46 @@ const LeaveRequestsTable = () => {
             </div>
           </div>
           <div className="year-filter">
+            {/* <input
+              type="text"
+              placeholder="Search here..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                padding: "8px 12px",
+                borderRadius: "5px",
+                border: "1px solid #ccc",
+                fontSize: "14px",
+                width: "180px",
+                boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
+              }}
+            /> */}
+            <TextField
+              placeholder="Search here..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              variant="outlined"
+              size="small"
+              sx={{
+                width: 200,
+                bgcolor: "white",
+                borderRadius: 1,
+                boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "8px",
+                  "& fieldset": { borderColor: "#ccc" },
+                  "&:hover fieldset": { borderColor: "#888" },
+                  "&.Mui-focused fieldset": { borderColor: "#555" },
+                },
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search sx={{ color: "#555" }} />
+                  </InputAdornment>
+                ),
+              }}
+            />
             {/* Filters */}
             <div className="filter-container">
               <FormControl
@@ -577,24 +634,40 @@ const LeaveRequestsTable = () => {
                   <td>{leave.endDate}</td>
                   <td>{leave.availableLeaves ? leave.availableLeaves : "-"}</td>
                   <td>
-          {leave.document && leave.document.trim() !== "" ? (
-           <a
-           href={`data:application/pdf;base64,${leave.document}`}
-           download={`LeaveAttachment_${leave.empid}.pdf`}
-           target="_blank"
-           rel="noopener noreferrer"
-         >
-           <AiFillFilePdf size={23} color="red" />
-         </a>
-         
-          ) : (
-            <AiOutlineExclamationCircle size={23} color="rgb(114,114,114)" />
-          )}
-        </td>
+                    {leave.document && leave.document.trim() !== "" ? (
+                      <a
+                        href={`data:application/pdf;base64,${leave.document}`}
+                        download={`LeaveAttachment_${leave.empid}.pdf`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <AiFillFilePdf size={23} color="red" />
+                      </a>
+                    ) : (
+                      <AiOutlineExclamationCircle
+                        size={23}
+                        color="rgb(114,114,114)"
+                      />
+                    )}
+                  </td>
 
-                  <td> <Tooltip title={formatReason(leave.reason)} arrow>
-    <span>{truncateReason(formatReason(leave.reason))}</span>
-  </Tooltip></td>
+                  <td>
+                    {" "}
+                    <Tooltip
+                      title={
+                        leave.reason.toLowerCase() === "n/a"
+                          ? "N/A"
+                          : formatReason(leave.reason)
+                      }
+                      arrow
+                    >
+                      <span>
+                        {leave.reason.toLowerCase() === "n/a"
+                          ? "N/A"
+                          : truncateReason(formatReason(leave.reason))}
+                      </span>{" "}
+                    </Tooltip>
+                  </td>
                   <td>
                     {leave.status === "approved" && (
                       <button
@@ -662,14 +735,17 @@ const LeaveRequestsTable = () => {
           </tbody>
         </table>
 
-        <Stack spacing={2} sx={{ mt: 2, display: "flex", alignItems: "center" }}>
-        <Pagination
-          count={Math.ceil(sortedItems.length / itemsPerPage)}
-          page={currentPage}
-          onChange={handlePageChange}
-          color="primary"
-        />
-      </Stack>
+        <Stack
+          spacing={2}
+          sx={{ mt: 2, display: "flex", alignItems: "center" }}
+        >
+          <Pagination
+            count={Math.ceil(sortedItems.length / itemsPerPage)}
+            page={currentPage}
+            onChange={handlePageChange}
+            color="primary"
+          />
+        </Stack>
       </div>
       <Modal open={modalOpen} onClose={handleCloseModal}>
         <Box

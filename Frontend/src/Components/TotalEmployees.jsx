@@ -83,15 +83,17 @@ const TotalEmployees = () => {
     setSelectedProject(event.target.value);
     setEmpData((prev) => ({ ...prev, project: event.target.value })); // ✅ Replace, not append
   };
-
   const filteredEmployees = employeeList
-    .slice() // Create a shallow copy to avoid mutating original data
-    .sort((a, b) =>
-      a.empid.localeCompare(b.empid, undefined, { numeric: true })
-    )
-    .filter((emp) =>
-      emp.empname.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+  .slice() // Create a shallow copy to avoid mutating original data
+  .sort((a, b) =>
+    a.empid.localeCompare(b.empid, undefined, { numeric: true })
+  )
+  .filter((emp) =>
+    [emp.empname, emp.email, emp.role, emp.project,emp.managerName]
+      .some((field) => (typeof field === "string" ? field.toLowerCase().includes(searchTerm.toLowerCase()) : false))
+  );
+
+
 
   const [currentPage, setCurrentPage] = useState(1);
   const employeesPerPage = 15;
@@ -586,7 +588,7 @@ const TotalEmployees = () => {
               },
             }}
           >
-            Add Employee
+            Add User
           </Button>
         </div>
       </div>
@@ -622,7 +624,7 @@ const TotalEmployees = () => {
               textTransform="capitalize"
               textAlign="center"
             >
-              Add Employee / Manager
+              Add User
             </Typography>
 
             <div style={{ display: "flex", gap: "16px" }}>
@@ -761,7 +763,7 @@ const TotalEmployees = () => {
                 Cancel
               </Button>
               <Button variant="contained" type="submit">
-                Add Employee
+                Add 
               </Button>
             </div>
           </form>
@@ -791,7 +793,7 @@ const TotalEmployees = () => {
               textTransform="capitalize"
               textAlign="center"
             >
-              Update Employee
+              Update User
             </Typography>
             <br />
 
@@ -907,7 +909,7 @@ const TotalEmployees = () => {
                 color="primary"
                 onClick={() => handleSave1(editingRow)}
               >
-                Update Employee
+                Update 
               </Button>
             </div>
           </div>

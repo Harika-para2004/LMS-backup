@@ -807,7 +807,7 @@ const AdminAnalytics = ({year}) => {
         interval: 0,
         rotate: 0,
         margin: 10,
-        formatter: (value) => (value.length > 10 ? value.slice(0, 10) + "..." : value), // Truncate if longer than 10 characters
+        formatter: (value) => (value.length > 5 ? value.slice(0, 5) + "..." : value), // Truncate label
       },
       tooltip: {
         show: true, // Show tooltip when hovering over X-axis labels

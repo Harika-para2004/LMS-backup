@@ -1,76 +1,24 @@
 import React, { useState, useEffect } from "react";
-import logo from "./../assets/img/quadfacelogo-hd.png";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-// import { BASE_URL } from "../Config";
 const BASE_URL = "http://localhost:5001/";
-
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-import axios from "axios";
-import { FaEdit, FaTrash } from "react-icons/fa";
-import { Outlet, useNavigate } from "react-router-dom";
-import { AiOutlineClose } from "react-icons/ai";
-import { faSearch } from "@fortawesome/free-solid-svg-icons";
-
-import {
-  Box,
-  Button,
-  TextField,
-  FormControl,
-  FormControlLabel,
-  InputLabel,
-  MenuItem,
-  RadioGroup,
-  FormLabel,
-  Radio,
-  Select,
-  IconButton,
-  Typography,
-  Modal,
-  CircularProgress,
-  Tooltip,
-} from "@mui/material";
-import Sidebar from "./Sidebar";
+import {Box,Button,TextField,FormControl,  FormControlLabel,  RadioGroup,FormLabel,Radio,IconButton,Typography,Modal,Tooltip,} from "@mui/material";
 import { Delete, Edit } from "@mui/icons-material";
 import useToast from "./useToast";
-
 const HolidayCalendar = () => {
   const [holidays, setHolidays] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [file, setFile] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const year = new Date().getFullYear();
-  const [leaveRequests, setLeaveRequests] = useState([]);
-  const [selectedLeave, setSelectedLeave] = useState(null);
   const [editingRow, setEditingRow] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [error, setError] = useState(null);
-  const [errors, setErrors] = useState({});
-  const navigate = useNavigate();
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-  /*Add New Employee*/
-  const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
-  const [employeeList, setEmpList] = useState([]);
-  const [selectedFilter, setSelectedFilter] = useState("All");
-  const [modalOpen, setModalOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const excludeEmail = "admin@gmail.com"; // Email to exclude from the list
-  // const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
+  const [errors, setErrors] = useState({});;
   const showToast = useToast();
   const [formData, setFormData] = useState({
     date: "",
     holidayName: "",
     holidayType: "Mandatory",
-  });
-  const [empData, setEmpData] = useState({
-    empname: "",
-    empid: "",
-    email: "",
-    password: "",
-    gender: "",
-    project: "",
-    role: "",
-    managerEmail: "",
   });
 
   useEffect(() => {
@@ -115,32 +63,41 @@ const HolidayCalendar = () => {
           : value,
     }));
   };
+ const handleEdit = (index) => {
+    const holidayToEdit = holidays[index];
+    if (!holidayToEdit) return;
 
-  const handleEdit = (index) => {
+    const [day, month, year] = holidayToEdit.date.split("-");
+    const monthIndex = new Date(`${month} 1, 2000`).getMonth() + 1;
+    const formattedDate = `${year}-${String(monthIndex).padStart(2, "0")}-${day.padStart(2, "0")}`;
+
+    setFormData({
+      date: formattedDate,
+      holidayName: holidayToEdit.name,
+      holidayType: holidayToEdit.type, // Ensure this is set correctly
+    });
+
     setEditingRow(index);
-    setFormData(holidays[index]);
+    setIsEditMode(true);
+    setShowModal(true);
   };
 
+  
+
   const handleDeleteHoliday = async (id) => {
-    // Ask for confirmation before proceeding
-    const isConfirmed = window.confirm(
+        const isConfirmed = window.confirm(
       "Are you sure you want to delete this holiday? This action cannot be undone."
     );
-
     if (!isConfirmed) {
-      return; // Exit the function if the user cancels
+      return; 
     }
-
     try {
       const response = await fetch(`${BASE_URL}holidays/${id}`, {
         method: "DELETE",
       });
 
       if (!response.ok) {
-        throw new Error("Failed to delete employee.");
-      }
-
-      // Update the state by removing the deleted employee
+        throw new Error("Failed to delete employee.");      }
       setHolidays((prevHolidays) =>
         prevHolidays.filter((holiday) => holiday._id !== id)
       );
@@ -150,7 +107,6 @@ const HolidayCalendar = () => {
       setError("Failed to delete employee. Please try again later.");
     }
   };
-
   const validateForm = () => {
     const newErrors = {};
     if (!formData.date) newErrors.date = "Date is required";
@@ -162,76 +118,58 @@ const HolidayCalendar = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = async (index) => {
-    if (!formData.date || !formData.day || !formData.name || !formData.type) {
-      setError("All fields are required.");
-      return;
-    }
-
-    const updatedHolidays = [...holidays];
-    const holidayId = updatedHolidays[index]._id;
+  const handleSave = async () => {
+    if (!validateForm()) return;
 
     try {
-      const response = await fetch(`${BASE_URL}holidays/${holidayId}`, {
-        method: "PUT",
-        body: JSON.stringify(formData),
-        headers: {
-          "Content-Type": "application/json",
-        },
+      const [year, month, day] = formData.date.split("-");
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const formattedDate = `${day}-${monthNames[parseInt(month, 10) - 1]}-${year}`;
+
+      const requestData = {
+        date: formattedDate,
+        name: formData.holidayName,
+        type: formData.holidayType, // Ensure this is included
+      };
+
+      const url = isEditMode ? `${BASE_URL}holidays/${holidays[editingRow]._id}` : `${BASE_URL}holidays`;
+      const method = isEditMode ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestData),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to update holiday.");
-      }
-
       const updatedHoliday = await response.json();
+      if (!response.ok) throw new Error(updatedHoliday.message || "Failed to update holiday.");
 
-      // Update the holiday in the array
-      updatedHolidays[index] = { ...updatedHoliday };
+      const updatedHolidays = isEditMode
+        ? holidays.map((holiday, idx) => (idx === editingRow ? updatedHoliday : holiday))
+        : [...holidays, updatedHoliday];
 
-      // Sort holidays by month and custom day order
-      const sortedHolidays = sortHolidaysByMonthAndCustomDay(updatedHolidays);
+      setHolidays(sortHolidaysByMonthAndCustomDay (updatedHolidays));
 
-      // Update the state
-      setHolidays(sortedHolidays);
+      setShowModal(false);
       setEditingRow(null);
-      setError(null);
+      setFormData({ date: "", holidayName: "", holidayType: "Mandatory" });      setIsEditMode(false);
     } catch (error) {
       console.error("Error updating holiday:", error);
-      setError("Failed to update holiday. Please try again later.");
+      
+      showToast("Failed to update holiday.");
     }
   };
-
   const sortHolidaysByMonthAndCustomDay = (holidayList) => {
     const monthNames = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-
+      "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug",      "Sep",      "Oct",      "Nov",      "Dec",    ];
     return [...holidayList].sort((a, b) => {
       const [dayA, monthA] = a.date.split("-");
       const [dayB, monthB] = b.date.split("-");
-
       const monthIndexA = monthNames.indexOf(monthA);
       const monthIndexB = monthNames.indexOf(monthB);
-
-      // First, compare months
       if (monthIndexA !== monthIndexB) {
         return monthIndexA - monthIndexB;
-      }
-
-      // If months are the same, compare days (numerically)
-      return parseInt(dayA, 10) - parseInt(dayB, 10);
+      }      return parseInt(dayA, 10) - parseInt(dayB, 10);
     });
   };
 
@@ -244,28 +182,12 @@ const HolidayCalendar = () => {
 
     try {
       const { date, holidayName, holidayType } = formData;
-
-      // Convert date format (dd-MMM-yyyy)
       const [year, month, day] = date.split("-");
       const monthNames = [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-      ];
+        "Jan","Feb","Mar",      "Apr",        "May",        "Jun",        "Jul",        "Aug",        "Sep",      "Oct",        "Nov",        "Dec",     ];
       const formattedDate = `${day}-${
         monthNames[parseInt(month, 10) - 1]
       }-${year}`;
-
-      // Send API request
       const response = await fetch(`${BASE_URL}holidays`, {
         method: "POST",
         body: JSON.stringify({
@@ -305,137 +227,110 @@ const HolidayCalendar = () => {
       holidayName: "",
       holidayType: "Mandatory",
     });
-
-    // Close modal after editing
     setShowModal(false);
-  };
-
-  const handleFileChange = (event) => {
-    const selectedFile = event.target.files[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-    }
   };
 
   return (
     <div className="holiday-cal-container">
+     
       {showModal && (
-        <Modal
-          open={showModal}
-          onClose={() => {
-            setShowModal(false);
-            setFormData({
-              date: "",
-              holidayName: "",
-              holidayType: "Mandatory",
-            });
-          }}
-          aria-labelledby="holiday-modal"
-          aria-describedby="holiday-form"
+  <Modal
+    open={showModal}
+    onClose={() => {
+      setShowModal(false);
+      setEditingRow(null);
+      setIsEditMode(false);
+      setFormData({ date: "", holidayName: "", holidayType: "Mandatory" });
+    }}
+    aria-labelledby="holiday-modal"
+    aria-describedby="holiday-form"
+  >
+    <Box
+      component="form"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (isEditMode) {
+          handleSave(editingRow); // Correct function call
+        } else {
+          handleAddHoliday();
+        }
+      }}
+      
+      sx={{
+        position: "absolute",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        width: 400,
+        bgcolor: "background.paper",
+        borderRadius: 2,
+        boxShadow: 24,
+        p: 4,
+        display: "flex",
+        flexDirection: "column",
+        gap: 2,
+        overflowY: "auto",
+      }}
+    >
+      <Typography variant="h5" id="holiday-modal" textAlign="center">
+        {isEditMode ? "Edit Holiday" : "Add Holiday"}
+      </Typography>
+      <TextField
+        label="Date"
+        type="date"
+        name="date"
+        value={formData.date}
+        onChange={handleInputChange}
+        InputLabelProps={{ shrink: true }}
+        error={Boolean(errors.date)}
+        helperText={errors.date}
+      />
+      <TextField
+        label="Holiday Name"
+        name="holidayName"
+        value={formData.holidayName}
+        onChange={handleInputChange}
+        error={Boolean(errors.holidayName)}
+        helperText={errors.holidayName}
+        fullWidth
+      />
+      <FormControl component="fieldset">
+        <FormLabel component="legend">Holiday Type</FormLabel>
+        <RadioGroup
+          name="holidayType"
+          value={formData.holidayType}
+          onChange={handleInputChange}
+          row
         >
-          <Box
-            component="form"
-            onSubmit={(e) => {
-              e.preventDefault(); // Prevent default form submission
-              if (isEditMode) {
-                handleEditHoliday(); // Handle editing holiday
-              } else {
-                handleAddHoliday(); // Handle adding new holiday
-              }
-            }}
-            sx={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              width: 400,
-              bgcolor: "background.paper",
-              borderRadius: 2,
-              boxShadow: 24,
-              p: 4,
-              display: "flex",
-              flexDirection: "column",
-              gap: 2,
-              overflowY: "auto",
-            }}
-          >
-            <Typography variant="h5" id="holiday-modal" textAlign="center">
-              {isEditMode ? "Edit Holiday" : "Add Holiday"}
-            </Typography>
-            <TextField
-              label="Date"
-              type="date"
-              name="date"
-              value={formData.date}
-              onChange={handleInputChange}
-              InputLabelProps={{ shrink: true }}
-              error={Boolean(errors.date)}
-              helperText={errors.date}
-            />
-            <TextField
-              label="Holiday Name"
-              name="holidayName"
-              value={formData.holidayName}
-              onChange={handleInputChange}
-              error={Boolean(errors.holidayName)}
-              helperText={errors.holidayName}
-              fullWidth
-            />
-            <FormControl component="fieldset">
-              <FormLabel component="legend">Holiday Type</FormLabel>
-              <RadioGroup
-                name="holidayType"
-                value={formData.holidayType}
-                onChange={handleInputChange}
-                row
-              >
-                <FormControlLabel
-                  value="Mandatory"
-                  control={<Radio />}
-                  label="Mandatory"
-                />
-                <FormControlLabel
-                  value="Optional"
-                  control={<Radio />}
-                  label="Optional"
-                />
-              </RadioGroup>
-              {errors.holidayType && (
-                <p
-                  style={{
-                    color: "red",
-                    fontSize: "0.8rem",
-                    marginTop: "0.25rem",
-                  }}
-                >
-                  {errors.holidayType}
-                </p>
-              )}
-            </FormControl>
-            <Box display="flex" justifyContent="flex-end">
-              <Button
-                onClick={() => {
-                  setShowModal(false);
-                  setFormData({
-                    date: "",
-                    holidayName: "",
-                    holidayType: "Mandatory",
-                  });
-                }}
-                sx={{ mr: 2 }}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="contained"
-                type="submit" // Use type="submit" to trigger form submission
-              >
-                {isEditMode ? "Save Changes" : "Add Holiday"}
-              </Button>
-            </Box>
-          </Box>
-        </Modal>
-      )}
+          <FormControlLabel value="Mandatory" control={<Radio />} label="Mandatory" />
+          <FormControlLabel value="Optional" control={<Radio />} label="Optional" />
+        </RadioGroup>
+        {errors.holidayType && (
+          <p style={{ color: "red", fontSize: "0.8rem", marginTop: "0.25rem" }}>
+            {errors.holidayType}
+          </p>
+        )}
+      </FormControl>
+      <Box display="flex" justifyContent="flex-end">
+        <Button
+          onClick={() => {
+            setShowModal(false);
+            setEditingRow(null);
+            setIsEditMode(false);
+            setFormData({ date: "", holidayName: "", holidayType: "Mandatory" });
+          }}
+          sx={{ mr: 2 }}
+        >
+          Cancel
+        </Button>
+        <Button variant="contained" type="submit">
+          {isEditMode ? "Save Changes" : "Add Holiday"}
+        </Button>
+      </Box>
+    </Box>
+  </Modal>
+)}
+
 
       <div className="head">
         <h2 className="content-heading">Holiday Calendar {year}</h2>
@@ -512,51 +407,8 @@ const HolidayCalendar = () => {
           {holidays.length > 0 ? (
             holidays.map((holiday, index) => (
               <tr key={holiday._id}>
-                {editingRow === index ? (
-                  <>
-                    <td>
-                      <input
-                        type="text"
-                        name="date"
-                        value={formData.date}
-                        onChange={handleInputChange}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        name="day"
-                        value={formData.day}
-                        onChange={handleInputChange}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        name="type"
-                        value={formData.type}
-                        onChange={handleInputChange}
-                      />
-                    </td>
-                    <td>
-                      <button
-                        className="save-btn"
-                        onClick={() => handleSave(index)}
-                      >
-                        Save
-                      </button>
-                    </td>
-                  </>
-                ) : (
-                  <>
+
+                
                     <td>
                       {holiday.date.split("-").slice(0, 2).join("-")}{" "}
                       {/* Display without the year */}
@@ -565,13 +417,14 @@ const HolidayCalendar = () => {
                     <td>{formatCase(holiday.name)}</td>
                     <td>{holiday.type}</td>
                     <td>
-                      <button onClick={() => handleEdit(index)}>
-                        <Tooltip title="Edit">
-                          <IconButton size="small" >
-                            <Edit color="primary" fontSize="small" />
-                          </IconButton>
-                        </Tooltip>{" "}
-                      </button>
+                    <button onClick={() => handleEdit(index)}>
+  <Tooltip title="Edit">
+    <IconButton size="small">
+      <Edit color="primary" fontSize="small" />
+    </IconButton>
+  </Tooltip>
+</button>
+
                       <button
                         onClick={() => handleDeleteHoliday(holiday._id)}
                         style={{
@@ -587,8 +440,7 @@ const HolidayCalendar = () => {
                         </Tooltip>{" "}
                       </button>
                     </td>
-                  </>
-                )}
+                
               </tr>
             ))
           ) : (

@@ -637,11 +637,14 @@ app.post("/holidays", async (req, res) => {
 
 
 
-// Update a holiday
 app.put("/holidays/:id", async (req, res) => {
+  console.log("Received ID:", req.params.id);
+  console.log("Received Data:", req.body);
+
   const { date, name, type } = req.body;
   try {
     if (!date || !name || !type) {
+      console.log("Missing fields!");
       return res.status(400).json({ message: "All fields are required!" });
     }
 
@@ -655,16 +658,18 @@ app.put("/holidays/:id", async (req, res) => {
     );
 
     if (!updatedHoliday) {
+      console.log("Holiday not found!");
       return res.status(404).json({ message: "Holiday not found" });
     }
 
+    console.log("Updated Holiday:", updatedHoliday);
     res.json(updatedHoliday);
   } catch (err) {
-    res
-      .status(400)
-      .json({ message: "Error updating holiday", error: err.message });
+    console.error("Error updating holiday:", err.message);
+    res.status(400).json({ message: "Error updating holiday", error: err.message });
   }
 });
+
 app.put("/updateEmployeeList/:id", async (req, res) => {
   const { empid, empname, email, project, role, managerEmail } = req.body;
 
@@ -884,7 +889,7 @@ app.get("/reports", async (req, res) => {
               leaveType: leave.leaveType,
               startDate: new Date(start).toISOString().split("T")[0],
               endDate: leave.endDate[index]
-              ? new Date(new Date(leave.endDate[index]).setDate(new Date(leave.endDate[index]).getDate() - 1)).toLocaleDateString()
+              ? new Date(new Date(leave.endDate[index]).setDate(new Date(leave.endDate[index]).getDate() - 1))
               : "N/A",  
               status: leave.status[index] || "Pending",
               reason: leave.reason[index] || "No reason provided",
@@ -962,7 +967,7 @@ app.get("/reports-admin", async (req, res) => {
               leaveType: leave.leaveType,
               startDate: new Date(start).toISOString().split("T")[0],
               endDate: leave.endDate[index]
-              ? new Date(new Date(leave.endDate[index]).setDate(new Date(leave.endDate[index]).getDate() - 1)).toLocaleDateString()
+              ? new Date(new Date(leave.endDate[index]).setDate(new Date(leave.endDate[index]).getDate() - 1))
               : "N/A",          
               status: leave.status[index] || "Pending",
               reason: leave.reason[index] || "No reason provided",

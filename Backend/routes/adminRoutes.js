@@ -298,11 +298,12 @@ router.get("/leave-status/:year", async (req, res) => {
   try {
     const { year } = req.params;
 
-    // Fetch all leave records
-    const leaves = await Leave.find({      year: { $elemMatch: { $elemMatch: { $eq: year } } },
+    // Fetch all leave records for the given year
+    const leaves = await Leave.find({
+      year: { $elemMatch: { $elemMatch: { $eq: parseInt(year) } } },
     });
 
-    // Extract and count statuses for the given year
+    // Extract and sum durations for each status
     const statusCounts = {};
 
     leaves.forEach((leave) => {
@@ -310,7 +311,14 @@ router.get("/leave-status/:year", async (req, res) => {
         const leaveYear = new Date(start).getFullYear();
         if (leaveYear === parseInt(year)) {
           const status = leave.status[index]; // Get corresponding status
-          statusCounts[status] = (statusCounts[status] || 0) + 1;
+          const leaveDurations = leave.duration[index]; // Get duration array
+
+          // Sum all values inside the nested array
+          const totalDuration = Array.isArray(leaveDurations)
+            ? leaveDurations.reduce((sum, days) => sum + days, 0)
+            : 0;
+
+          statusCounts[status] = (statusCounts[status] || 0) + totalDuration;
         }
       });
     });
@@ -328,34 +336,32 @@ router.get("/leave-type-distribution/:year", async (req, res) => {
 
     console.log(`Fetching leave type distribution for year: ${selectedYear}`);
 
-    const reports = await getAdminReports();
-    if (!Array.isArray(reports)) {
-      console.error("❌ Error: reports is not an array.");
-      return res.status(500).json({ message: "Server Error: Data is invalid" });
-    }
+    // Fetch all leave records for the given year
+    const leaves = await Leave.find({
+      year: { $elemMatch: { $elemMatch: { $eq: selectedYear } } },
+    });
 
     const leaveTypeDuration = {};
 
-    // Step 1: Iterate over reports safely
-    reports.forEach(({ leaves }) => {
-      if (!Array.isArray(leaves)) return;
+    leaves.forEach((leave) => {
+      leave.startDate.forEach((start, index) => {
+        const leaveYear = new Date(start).getFullYear();
+        if (leaveYear === selectedYear && leave.status[index] === "Approved") {
+          const leaveType = leave.leaveType;
+          const leaveDurations = leave.duration[index]; // Get duration array
 
-      leaves.forEach(({ leaveType, startDate, endDate, status, duration }) => {
-        if (!startDate || !endDate || !status || !duration) return;
+          // Sum all values inside the nested array
+          const totalDuration = Array.isArray(leaveDurations)
+            ? leaveDurations.reduce((sum, days) => sum + days, 0)
+            : 0;
 
-        const startYear = new Date(startDate).getFullYear();
-        const endYear = new Date(endDate).getFullYear();
-
-        // Check if the selectedYear is in the start or end year
-        if ((startYear === selectedYear || endYear === selectedYear) && status === "Approved") {
-          leaveTypeDuration[leaveType] = (leaveTypeDuration[leaveType] || 0) + duration;
+          leaveTypeDuration[leaveType] = (leaveTypeDuration[leaveType] || 0) + totalDuration;
         }
       });
     });
 
     console.log("✅ Leave Type Duration Distribution:", JSON.stringify(leaveTypeDuration, null, 2));
 
-    // Step 2: Return structured response
     res.status(200).json(leaveTypeDuration);
 
   } catch (error) {

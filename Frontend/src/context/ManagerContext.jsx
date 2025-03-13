@@ -26,7 +26,8 @@ export const ManagerProvider = ({ children }) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [userData, setUserData] = useState(null);
   const [file, setFile] = useState(null);
-  const [selectedFilter, setSelectedFilter] = useState("All");
+  const [selectedFilter, setSelectedFilter] = useState("Pending");
+  const [selectedFilterHistory, setSelectedFilterHistory] = useState("Pending");
   const [error, setError] = useState("");
   const [leavePolicyRef, setLeavePolicyRef] = useState([]);
   const [mergedLeaveData, setMergedLeaveData] = useState([]);
@@ -99,6 +100,7 @@ export const ManagerProvider = ({ children }) => {
         role,setRole,
         file, setFile,
         selectedFilter, setSelectedFilter,
+        selectedFilterHistory,setSelectedFilterHistory,
         error, setError,
         leavePolicyRef, setLeavePolicyRef,
         mergedLeaveData, setMergedLeaveData,

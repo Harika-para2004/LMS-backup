@@ -4,18 +4,32 @@ import { MdCheckCircle, MdCancel, MdWatchLater } from "react-icons/md";
 import { FaTrash } from "react-icons/fa";
 import { formatDate } from "../utils/dateUtlis";
 import { useManagerContext } from "../context/ManagerContext";
-import { Button, Select, MenuItem, FormControl, Stack, Pagination, Tooltip } from "@mui/material";
+import {
+  Button,
+  Select,
+  MenuItem,
+  FormControl,
+  Stack,
+  Pagination,
+  Tooltip,
+  TextField,
+  InputAdornment,
+} from "@mui/material";
+import { Search } from "@mui/icons-material";
 
 const LeaveHistory = () => {
-  const { leaveHistory, setLeaveHistory, email, setEmail, showToast,selectedFilter,
-    setSelectedFilter, } =
-    useManagerContext();
+  const {
+    leaveHistory,
+    setLeaveHistory,
+    email,
+    setEmail,
+    showToast,
+    selectedFilterHistory,setSelectedFilterHistory,
+  } = useManagerContext();
 
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
-
-
-
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Generate last 17 years dynamically
   const yearsRange = useMemo(
@@ -41,12 +55,32 @@ const LeaveHistory = () => {
     return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
   };
 
+  // const filteredLeaveRequests = leaveHistory.filter((leave) =>
+  //   selectedFilter === "All"
+  //     ? true
+  //     : leave.status.some(
+  //         (status) => status.toLowerCase() === selectedFilter.toLowerCase()
+  //       )
+  // );
+
+  const displayedData = leaveHistory
+    .filter(
+      (leave) =>
+      selectedFilterHistory === "All" ||
+        (leave.status &&
+          leave.status.toString().toLowerCase() ===
+          selectedFilterHistory.toLowerCase())
+    )
+    .filter((leave) =>
+      leave.leaveType.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
   // ✅ Correct Year Filtering: Ensure year is properly compared
-  const filteredLeaves = leaveHistory.filter(
+  const filteredLeaves = displayedData.filter(
     (leave) => leave.year === Number(selectedYear)
   );
+
   filteredLeaves.sort((a, b) => {
-    // Convert the startDate strings to Date objects
     const dateA = new Date(a.startDate);
     const dateB = new Date(b.startDate);
 
@@ -57,9 +91,13 @@ const LeaveHistory = () => {
   });
 
   const handleFilterChange = (e) => {
-    setSelectedFilter(e.target.value);
+    setSelectedFilterHistory(e.target.value);
   };
-  
+
+  useEffect(() => {
+    setSelectedFilterHistory("Pending");
+  },[])
+
   // Pagination logic
   // const itemsPerPage = 15;
   // const [currentPage, setCurrentPage] = useState(1);
@@ -67,7 +105,6 @@ const LeaveHistory = () => {
   // const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   // const currentLeaves = filteredLeaves.slice(indexOfFirstItem, indexOfLastItem);
   // const totalPages = Math.ceil(filteredLeaves.length / itemsPerPage);
-
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
@@ -155,69 +192,95 @@ const LeaveHistory = () => {
       <div className="history-header">
         <h2 className="content-heading">Leave History</h2>
         <div className="legend-container" style={{ marginLeft: "10px" }}>
-            <div className="legend-item">
-              <MdWatchLater size={20} color="blue" /> <span>Pending</span>
-            </div>
-            <div className="legend-item">
-              <MdCheckCircle size={20} color="green" /> <span>Approved</span>
-            </div>
-            <div className="legend-item">
-              <MdCancel size={20} color="red" /> <span>Rejected</span>
-            </div>
+          <div className="legend-item">
+            <MdWatchLater size={20} color="blue" /> <span>Pending</span>
           </div>
+          <div className="legend-item">
+            <MdCheckCircle size={20} color="green" /> <span>Approved</span>
+          </div>
+          <div className="legend-item">
+            <MdCancel size={20} color="red" /> <span>Rejected</span>
+          </div>
+        </div>
 
         {/* Year Filter Dropdown (Top Right) */}
         <div className="year-filter">
-        <div className="filter-container">
-              <FormControl
+          <TextField
+            placeholder="Search here..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            variant="outlined"
+            size="small"
+            sx={{
+              width: 200,
+              bgcolor: "white",
+              borderRadius: 1,
+              boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "8px",
+                "& fieldset": { borderColor: "#ccc" },
+                "&:hover fieldset": { borderColor: "#888" },
+                "&.Mui-focused fieldset": { borderColor: "#555" },
+              },
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search sx={{ color: "#555" }} />
+                </InputAdornment>
+              ),
+            }}
+          />
+          <div className="filter-container">
+            <FormControl
+              sx={{
+                minWidth: 120,
+                bgcolor: "white",
+                borderRadius: 1,
+                boxShadow: "0px 2px 6px rgba(0, 0, 0, 0.1)",
+              }}
+            >
+              <Select
+                value={selectedFilterHistory}
+                onChange={handleFilterChange}
+                displayEmpty
                 sx={{
-                  minWidth: 120,
-                  bgcolor: "white",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  color: "#333",
                   borderRadius: 1,
-                  boxShadow: "0px 2px 6px rgba(0, 0, 0, 0.1)",
+                  height: 40,
+                  px: 1.2,
+                  bgcolor: "#fafafa",
+                  transition: "all 0.3s ease-in-out",
+                  "&:hover": { bgcolor: "#f0f0f0" },
+                  "&.Mui-focused": {
+                    boxShadow: "0px 3px 8px rgba(0, 0, 0, 0.2)",
+                  },
                 }}
               >
-                <Select
-                  value={selectedFilter}
-                  onChange={handleFilterChange}
-                  displayEmpty
-                  sx={{
-                    fontSize: "14px",
-                    fontWeight: 500,
-                    color: "#333",
-                    borderRadius: 1,
-                    height: 40,
-                    px: 1.2,
-                    bgcolor: "#fafafa",
-                    transition: "all 0.3s ease-in-out",
-                    "&:hover": { bgcolor: "#f0f0f0" },
-                    "&.Mui-focused": {
-                      boxShadow: "0px 3px 8px rgba(0, 0, 0, 0.2)",
-                    },
-                  }}
-                >
-                  {["All", "Pending", "Approved", "Rejected"].map((status) => (
-                    <MenuItem
-                      key={status}
-                      value={status}
-                      sx={{
-                        fontSize: "14px",
-                        px: 1.2,
-                        color:
-                          status === "Approved"
-                            ? "green"
-                            : status === "Rejected"
-                            ? "red"
-                            : "#333",
-                        "&:hover": { bgcolor: "#f5f5f5" },
-                      }}
-                    >
-                      {status}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </div>
+                {["All", "Pending", "Approved", "Rejected"].map((status) => (
+                  <MenuItem
+                    key={status}
+                    value={status}
+                    sx={{
+                      fontSize: "14px",
+                      px: 1.2,
+                      color:
+                        status === "Approved"
+                          ? "green"
+                          : status === "Rejected"
+                          ? "red"
+                          : "#333",
+                      "&:hover": { bgcolor: "#f5f5f5" },
+                    }}
+                  >
+                    {status}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </div>
           <FormControl
             sx={{
               minWidth: 85,
@@ -289,21 +352,35 @@ const LeaveHistory = () => {
                   <td>{formatDate(leave.startDate) || "N/A"}</td>
                   <td>{formatDate(leave.endDate) || "N/A"}</td>
                   <td>{leave.duration}</td>
-                  <td> <Tooltip title={formatReason(leave.reason)} arrow>
-    <span>{truncateReason(formatReason(leave.reason))}</span>
-  </Tooltip></td>
-  <td>
-  {leave.attachments ? (
-    <a
-      href={`data:application/pdf;base64,${leave.attachments}`}
-      download={`LeaveAttachment_${leave.empid}.pdf`}
-    >
-      <AiFillFilePdf size={23} color="red" />
-    </a>
-  ) : (
-    <AiOutlineExclamationCircle size={23} color="gray" />
-  )}
-</td>
+                  <td>
+                    {" "}
+                    <Tooltip
+                      title={
+                        leave.reason.toLowerCase() === "n/a"
+                          ? "N/A"
+                          : formatReason(leave.reason)
+                      }
+                      arrow
+                    >
+                      <span>
+                        {leave.reason.toLowerCase() === "n/a"
+                          ? "N/A"
+                          : truncateReason(formatReason(leave.reason))}
+                      </span>{" "}
+                    </Tooltip>
+                  </td>
+                  <td>
+                    {leave.attachments ? (
+                      <a
+                        href={`data:application/pdf;base64,${leave.attachments}`}
+                        download={`LeaveAttachment.pdf`}
+                      >
+                        <AiFillFilePdf size={23} color="red" />
+                      </a>
+                    ) : (
+                      <AiOutlineExclamationCircle size={23} color="gray" />
+                    )}
+                  </td>
 
                   <td>{getStatusIcon(leave.status)}</td>
                   <td>
