@@ -63,8 +63,9 @@ router.post("/uploadEmployees", upload.single("file"), async (req, res) => {
         Project,
         ManagerEmail,
       } = row;
-      const email = Email ? Email.toLowerCase() : "";
-      const project = Project ? Project.toLowerCase() : "";
+      const email = Email ? String(Email).toLowerCase() : "";
+const project = Project ? String(Project).toLowerCase() : "";
+
 
       if (String(Role).toLowerCase() === "manager") {
         const userExists = await User.findOne({ email });
@@ -359,5 +360,78 @@ function formatDate(excelDate) {
 
   return `${day}-${month}-${year}`;
 }
+
+router.get("/downloadHolidayTemplate", async (req, res) => {
+  try {
+    // Define the template structure with headers
+    const templateData = [
+      { date: "YYYY-MM-DD", name: "Example Holiday", type: "Mandotary/Optional" }
+    ];
+
+    // Create a worksheet & workbook
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Holiday_Template");
+
+    // Convert workbook to a buffer
+    const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+
+    // Set response headers
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=Holiday_Template.xlsx"
+    );
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+    // Send the file
+    res.send(buffer);
+  } catch (error) {
+    console.error("Error generating holiday template:", error);
+    res.status(500).json({ message: "Error generating template" });
+  }
+});
+
+router.get("/downloadTemplate", async (req, res) => {
+  try {
+    // Define the headers based on the expected format
+    const templateData = [
+      {
+        EmployeeID: "",
+        EmployeeName: "",
+        Email: "",
+        Password: "",
+        Role: "",
+        Gender: "",
+        Project: "",
+        ManagerEmail: "",
+      },
+    ];
+
+    // Create a new workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+
+    // Append worksheet to workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Employee_Template");
+
+    // Convert workbook to buffer
+    const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "buffer" });
+
+    // Set response headers for file download
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=Employee_Template.xlsx"
+    );
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+
+    res.send(buffer);
+  } catch (error) {
+    console.error("Error generating template:", error);
+    res.status(500).json({ message: "Error generating template" });
+  }
+});
 
 module.exports = router;

@@ -10,6 +10,7 @@ import { AiOutlineClose } from "react-icons/ai";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import Pagination from "@mui/material/Pagination";
 import Stack from "@mui/material/Stack";
+import InfoPopup from "./InfoPopup";
 import {
   Dialog,
   DialogActions,
@@ -162,7 +163,24 @@ const TotalEmployees = () => {
   const handlePageChange = (event, value) => {
     setCurrentPage(value);
   };
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}excel/downloadTemplate`, {
+        responseType: "blob",
+      });
 
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "Employee_Template.xlsx");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Error downloading template:", error);
+      alert("Failed to download template");
+    }
+  };
   useEffect(() => {
     setCurrentPage((prevPage) => {
       const totalPages = Math.ceil(filteredEmployees.length / employeesPerPage);
@@ -309,6 +327,7 @@ const TotalEmployees = () => {
             showToast("Failed to fetch user data");
           }
         }
+        setSelectedManager("");
         // Clear the form and close the modal
         setEmpData({
           empname: "",
@@ -569,6 +588,11 @@ const TotalEmployees = () => {
               </Button>
             )}
           </div>
+          <div style={{ position: "relative", display: "inline-block" }}>
+  {/* ℹ️ Info Icon */}
+  <InfoPopup handleDownloadTemplate={handleDownloadTemplate} />
+</div>
+
           <Button
             variant="contained"
             onClick={() => handleAddEmployeeClick()}

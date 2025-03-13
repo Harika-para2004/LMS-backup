@@ -21,6 +21,8 @@ const LeaveSchema = new mongoose.Schema({
   duration: { type: [[Number]] }, // Store duration as a nested array per month
   year: { type: [[Number]] },
   month: { type: [[Number]] },
+  rejectionComment: { type: [String], default: [] } // ✅ New field for rejection comments
+
 });
 
 LeaveSchema.pre("save", async function (next) {
@@ -131,4 +133,4 @@ LeaveSchema.pre("save", async function (next) {
   }
 });
 
-module.exports = mongoose.model("LeaveData", LeaveSchema);
+module.exports = mongoose.model("leaverequests", LeaveSchema);

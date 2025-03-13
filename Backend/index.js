@@ -160,7 +160,6 @@ const isMandatoryHoliday = async (date) => {
   return mandatoryHolidays.includes(formattedDate);
 };
 
-
 app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
   const { email } = req.query;
   const { empname, empid, leaveType, startDate, endDate, reason, managerEmail } = req.body;
@@ -193,10 +192,12 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
 
     const startYear = formattedStartDate.getFullYear();
     const endYear = formattedEndDate.getFullYear();
-    let existingLeaves = await Leave.find({ email });
+    let existingLeaves = await Leave.find({ email});
 
     for (let leave of existingLeaves) {
       for (let i = 0; i < leave.startDate.length; i++) {
+        if (leave.status[i] === "Rejected") continue;
+
         const existingStartDate = new Date(leave.startDate[i]);
         const existingEndDate = new Date(leave.endDate[i]);
     
@@ -362,6 +363,8 @@ app.get("/leave-history", async (req, res) => {
           ? new Date(leave.endDate[index]).toISOString().split("T")[0]
           : null,
         reason: leave.reason[index] || "N/A",
+        rejectionComment: leave.rejectionComment[index] || "N/A",
+
         status: leave.status[index] || "Pending",
         duration: Array.isArray(leave.duration[index])
           ? leave.duration[index].reduce((sum, num) => sum + num, 0)
@@ -1679,66 +1682,51 @@ app.get("/leave-trends/:email/:year", async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
-
 app.get("/leave-balance/:email/:year", async (req, res) => {
   const { email, year } = req.params;
   const numericYear = Number(year);
 
   try {
-    // Fetch leave requests where the given year exists in the nested 'year' array
-    const leaves = await Leave.find({
-      email,
-      year: { $elemMatch: { $elemMatch: { $eq: numericYear } } } // ✅ Match any year inside the nested array
+    // Fetch all leave policies
+    const policies = await LeavePolicy.find({});
+    
+    // Initialize leave balance with all leave types
+    const leaveBalance = {};
+    policies.forEach(policy => {
+      leaveBalance[policy.leaveType] = {
+        totalLeaves: policy.maxAllowedLeaves,
+        usedLeaves: 0,
+        availableLeaves: policy.maxAllowedLeaves, // Initially set to total leaves
+      };
     });
 
-    if (!leaves.length) {
-      return res.json({});
-    }
-
-    // Initialize leave balance storage
-    const leaveBalance = {};
+    // Fetch leave requests for the given email and year
+    const leaves = await Leave.find({
+      email,
+      year: { $elemMatch: { $elemMatch: { $eq: numericYear } } }
+    });
 
     for (const leave of leaves) {
-      const { leaveType, totalLeaves, duration, year,status } = leave;
+      const { leaveType, duration, year, status } = leave;
 
-      // Ensure leave type exists in balance
-      if (!leaveBalance[leaveType]) {
-        leaveBalance[leaveType] = {
-          totalLeaves: 0,
-          usedLeaves: 0,
-          availableLeaves: 0
-        };
-      }
+      // Skip if leave type is not found in policies (fallback check)
+      if (!leaveBalance[leaveType]) continue;
 
-      // ✅ Fetch the correct leave policy from the database
-      const policy = await LeavePolicy.findOne({ leaveType });
-      const maxLeaves = policy ? policy.maxAllowedLeaves : totalLeaves;
-
-      leaveBalance[leaveType].totalLeaves = maxLeaves;
-
-      // ✅ Calculate used leaves only for the requested year
       let usedLeavesInYear = 0;
-
       for (let i = 0; i < year.length; i++) {
         for (let j = 0; j < year[i].length; j++) {
-          if (year[i][j] === numericYear && status[i]=="Approved") {
-            usedLeavesInYear += duration[i][j]; // ✅ Sum only the duration for that specific year
+          if (year[i][j] === numericYear && status[i] === "Approved") {
+            usedLeavesInYear += duration[i][j];
           }
         }
       }
-      
-      leaveBalance[leaveType].usedLeaves += usedLeavesInYear;
 
-      // ✅ Compute available leaves correctly
-      //updated available leaves 
-      if (policy?.maxAllowedLeaves !== undefined) {
-        leaveBalance[leaveType].availableLeaves = Math.max(
-          0,
-          leaveBalance[leaveType].totalLeaves - leaveBalance[leaveType].usedLeaves
-        );
-      } else {
-        delete leaveBalance[leaveType].availableLeaves; // ✅ Remove availableLeaves if maxAllowedLeaves doesn't exist
-      }
+      // Update used leaves and available leaves
+      leaveBalance[leaveType].usedLeaves += usedLeavesInYear;
+      leaveBalance[leaveType].availableLeaves = Math.max(
+        0,
+        leaveBalance[leaveType].totalLeaves - leaveBalance[leaveType].usedLeaves
+      );
     }
 
     res.json(leaveBalance);
@@ -1747,6 +1735,7 @@ app.get("/leave-balance/:email/:year", async (req, res) => {
     res.status(500).json({ error: "Error fetching leave balance" });
   }
 });
+
 
 // Get Pending/Approved/Rejected Requests
 app.get('/leave-status/:managerEmail', async (req, res) => {
@@ -1945,7 +1934,6 @@ app.get('/employee-yearly-leaves', async (req, res) => {
       res.status(500).json({ message: 'Error fetching yearly leaves', error });
   }
 });
-
 app.delete("/leaves/:id", async (req, res) => {
   const { id } = req.params;
   const { startDate } = req.body;
@@ -1977,28 +1965,34 @@ app.delete("/leaves/:id", async (req, res) => {
 
     const parsedStartDate = parseDate(startDate);
 
-    const indexToRemove = leave.startDate.findIndex(date => 
-      new Date(date).toISOString() === parsedStartDate.toISOString()
-    );
+    const indexToRemove = leave.startDate.findIndex((date, i) => {
+      return (
+        new Date(date).toISOString() === parsedStartDate.toISOString() &&
+        leave.status[i] === "Pending"
+      );
+    });
 
     if (indexToRemove === -1) {
       return res.status(404).json({ error: "Start date not found" });
     }
 
-    // Remove the specific leave entry
-    leave.startDate.splice(indexToRemove, 1);
-    leave.endDate.splice(indexToRemove, 1);
-    leave.reason.splice(indexToRemove, 1);
-    leave.status.splice(indexToRemove, 1);
-    leave.duration.splice(indexToRemove, 1);
-    leave.year.splice(indexToRemove, 1);
-    leave.month.splice(indexToRemove, 1);
-    leave.attachments.splice(indexToRemove, 1);
-    leave.applyDate.splice(indexToRemove, 1);
+    if (leave.status[indexToRemove] === "Pending") {
+      leave.startDate.splice(indexToRemove, 1);
+      leave.endDate.splice(indexToRemove, 1);
+      leave.reason.splice(indexToRemove, 1);
+      leave.status.splice(indexToRemove, 1);
+      leave.duration.splice(indexToRemove, 1);
+      leave.year.splice(indexToRemove, 1);
+      leave.month.splice(indexToRemove, 1);
+      leave.attachments.splice(indexToRemove, 1);
+      leave.applyDate.splice(indexToRemove, 1);
 
-    await leave.save();
+      await leave.save();
+      return res.status(200).json({ message: "Leave entry deleted successfully" });
+    }
 
-    res.status(200).json({ message: "Leave entry deleted successfully" });
+    return res.status(400).json({ error: `Only 'Pending' leave entries can be deleted ${leave.status[indexToRemove]}` });
+
   } catch (error) {
     console.error("Error deleting leave:", error);
     res.status(500).json({ error: "Internal Server Error" });

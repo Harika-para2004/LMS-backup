@@ -338,6 +338,7 @@ const LeaveHistory = () => {
             <th>Duration</th>
             <th>Reason</th>
             <th>Document</th>
+            {["All", "Rejected"].includes(selectedFilterHistory) && <th>Rejection Reason</th>}
             <th>Status</th>
             <th>Action</th>
           </tr>
@@ -381,6 +382,19 @@ const LeaveHistory = () => {
                       <AiOutlineExclamationCircle size={23} color="gray" />
                     )}
                   </td>
+                  {["All", "Rejected"].includes(selectedFilterHistory) && (
+  <td>
+    <Tooltip title={leave.rejectionComment || "N/A"} arrow>
+      <span>
+        {leave.rejectionComment
+          ? leave.rejectionComment.length > 10
+            ? leave.rejectionComment.substring(0, 30) + "..."
+            : leave.rejectionComment
+          : "N/A"}
+      </span>
+    </Tooltip>
+  </td>
+)}
 
                   <td>{getStatusIcon(leave.status)}</td>
                   <td>
@@ -405,11 +419,12 @@ const LeaveHistory = () => {
                       />
                     </button>
                   </td>
+
                 </tr>
               ))
           ) : (
             <tr>
-              <td colSpan="8" style={{ textAlign: "center" }}>
+              <td colSpan="10" style={{ textAlign: "center" }}>
                 No leave history available for {selectedYear}.
               </td>
             </tr>

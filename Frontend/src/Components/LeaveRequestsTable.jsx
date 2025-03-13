@@ -43,6 +43,22 @@ const LeaveRequestsTable = () => {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const admincred = localStorage.getItem("admin");
+  const [rejectionComment, setRejectionComment] = useState("");
+  const [showCommentBox, setShowCommentBox] = useState(false);
+
+  
+  const handleRejectClick = () => {
+    setShowCommentBox(true); // Show comment box when rejecting
+  };
+
+  const handleConfirmReject = () => {
+    if (!rejectionComment.trim()) {
+      alert("Please enter a comment before rejecting.");
+      return;
+    }
+    handleReject(rejectionComment); // Pass comment to reject function
+    setShowCommentBox(false);
+  };
   // console.log("admincred",admincred);
   const [userData, setUserData] = useState(() => {
     const storedAdmin = localStorage.getItem("admin");
@@ -237,39 +253,36 @@ const LeaveRequestsTable = () => {
       }
     }
   };
-  const handleReject = async () => {
+  const handleReject = async (comment) => {
     if (selectedLeave) {
       const { selectedIndex, ...leave } = selectedLeave;
-
+  
       if (
         selectedIndex === undefined ||
         !Array.isArray(leave.duration) ||
         leave.duration.length === 0 ||
         selectedIndex >= leave.duration.length
       ) {
-        console.error(
-          "Invalid leave duration or selected index:",
-          selectedLeave
-        );
+        console.error("Invalid leave duration or selected index:", selectedLeave);
         return;
       }
-
+  
       // Extract the leave duration for the selected index
       const leaveDuration = Array.isArray(leave.duration[selectedIndex])
         ? leave.duration[selectedIndex]
         : [leave.duration[selectedIndex]];
-
+  
       const totalLeaveDays = leaveDuration.reduce(
         (sum, num) =>
           sum + (Array.isArray(num) ? num.reduce((a, b) => a + b, 0) : num),
         0
       );
-
+  
       if (typeof totalLeaveDays !== "number") {
         console.error("Unexpected leave duration format:", leaveDuration);
         return;
       }
-
+  
       const currentStatus = leave.status[selectedIndex]?.toLowerCase();
       if (
         !currentStatus ||
@@ -278,9 +291,9 @@ const LeaveRequestsTable = () => {
         console.log("This leave is already rejected.");
         return;
       }
-
+  
       const wasApproved = currentStatus === "approved";
-
+  
       const updatedLeave = {
         availableLeaves:
           wasApproved && leave.totalLeaves
@@ -290,8 +303,9 @@ const LeaveRequestsTable = () => {
           ? leave.usedLeaves - totalLeaveDays
           : leave.usedLeaves,
         [`status.${selectedIndex}`]: "Rejected", // ✅ Only update the status at selected index
+        [`rejectionComment.${selectedIndex}`]: comment, // ✅ Add the rejection comment
       };
-
+  
       try {
         const response = await fetch(
           `http://localhost:5001/leaverequests/${leave._id}`,
@@ -301,7 +315,7 @@ const LeaveRequestsTable = () => {
             body: JSON.stringify({ $set: updatedLeave }), // ✅ Use `$set` to prevent modifying `duration`
           }
         );
-
+  
         if (response.ok) {
           const updatedLeaveFromServer = await response.json();
           setLeaveRequests((prevHistory) =>
@@ -326,6 +340,7 @@ const LeaveRequestsTable = () => {
       }
     }
   };
+  
 
   const yearsRange = useMemo(
     () => Array.from({ length: 18 }, (_, i) => currentYear + 1 - i),
@@ -748,81 +763,97 @@ const LeaveRequestsTable = () => {
         </Stack>
       </div>
       <Modal open={modalOpen} onClose={handleCloseModal}>
-        <Box
+      <Box
+        sx={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: 400,
+          bgcolor: "background.paper",
+          boxShadow: 24,
+          p: 4,
+          borderRadius: "10px",
+          textAlign: "center",
+        }}
+      >
+        {/* Close Icon */}
+        <IconButton
+          onClick={handleCloseModal}
           sx={{
             position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 400,
-            bgcolor: "background.paper",
-            boxShadow: 24,
-            p: 4,
-            borderRadius: "10px",
-            textAlign: "center",
+            top: 10,
+            right: 10,
+            color: "gray",
+            "&:hover": { color: "black" },
           }}
         >
-          {/* Close Icon */}
-          <IconButton
-            onClick={handleCloseModal}
-            sx={{
-              position: "absolute",
-              top: 10,
-              right: 10,
-              color: "gray",
-              "&:hover": { color: "black" },
-            }}
-          >
-            <AiOutlineClose size={24} />
-          </IconButton>
-          <h3 style={{ marginBottom: "20px" }}>Approve or Reject Request?</h3>
+          <AiOutlineClose size={24} />
+        </IconButton>
+        <h3 style={{ marginBottom: "20px" }}>Approve or Reject Request?</h3>
 
-          {/* Added code: Determine current status and toggle button enable/disable */}
-          {selectedLeave &&
-            (() => {
-              // Retrieve current status using the selected index
-              const currentStatus =
-                (selectedLeave.status &&
-                  selectedLeave.status[selectedLeave.selectedIndex]) ||
-                "pending";
+        {selectedLeave && (() => {
+          const currentStatus =
+            (selectedLeave.status &&
+              selectedLeave.status[selectedLeave.selectedIndex]) ||
+            "pending";
 
-              return (
-                <div className="action-buttons">
-                  <button
-                    onClick={handleApprove}
-                    className="approve-btn"
-                    disabled={currentStatus.toLowerCase() === "approved"}
-                    style={{
-                      opacity:
-                        currentStatus.toLowerCase() === "approved" ? 0.5 : 1,
-                      cursor:
-                        currentStatus.toLowerCase() === "approved"
-                          ? "not-allowed"
-                          : "pointer",
-                    }}
-                  >
-                    ✅ Approve
-                  </button>
-                  <button
-                    onClick={handleReject}
-                    className="reject-btn"
-                    disabled={currentStatus.toLowerCase() === "rejected"}
-                    style={{
-                      opacity:
-                        currentStatus.toLowerCase() === "rejected" ? 0.5 : 1,
-                      cursor:
-                        currentStatus.toLowerCase() === "rejected"
-                          ? "not-allowed"
-                          : "pointer",
-                    }}
-                  >
-                    ❌ Reject
-                  </button>
-                </div>
-              );
-            })()}
-        </Box>
-      </Modal>
+          return (
+            <div className="action-buttons">
+              <Button
+                onClick={handleApprove}
+                variant="contained"
+                color="success"
+                disabled={currentStatus.toLowerCase() === "approved"}
+                sx={{
+                  opacity: currentStatus.toLowerCase() === "approved" ? 0.5 : 1,
+                  cursor: currentStatus.toLowerCase() === "approved" ? "not-allowed" : "pointer",
+                  marginRight: "10px",
+                }}
+              >
+                ✅ Approve
+              </Button>
+
+              <Button
+                onClick={handleRejectClick}
+                variant="contained"
+                color="error"
+                disabled={currentStatus.toLowerCase() === "rejected"}
+                sx={{
+                  opacity: currentStatus.toLowerCase() === "rejected" ? 0.5 : 1,
+                  cursor: currentStatus.toLowerCase() === "rejected" ? "not-allowed" : "pointer",
+                }}
+              >
+                ❌ Reject
+              </Button>
+            </div>
+          );
+        })()}
+
+        {/* Comment Box for Rejection */}
+        {showCommentBox && (
+          <div style={{ marginTop: "20px" }}>
+            <TextField
+              label="Enter Rejection Comment"
+              multiline
+              rows={3}
+              fullWidth
+              variant="outlined"
+              value={rejectionComment}
+              onChange={(e) => setRejectionComment(e.target.value)}
+            />
+            <Button
+              onClick={handleConfirmReject}
+              variant="contained"
+              color="error"
+              sx={{ marginTop: "10px" }}
+            >
+              Confirm Reject
+            </Button>
+          </div>
+        )}
+      </Box>
+    </Modal>
     </div>
   );
 };

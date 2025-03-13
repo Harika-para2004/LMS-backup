@@ -3,9 +3,11 @@ const BASE_URL = "http://localhost:5001/";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import {Box,Button,TextField,FormControl,  FormControlLabel,  RadioGroup,FormLabel,Radio,IconButton,Typography,Modal,Tooltip,} from "@mui/material";
 import { Delete, Edit } from "@mui/icons-material";
+import { FaInfoCircle } from "react-icons/fa";
 import useToast from "./useToast";
 const HolidayCalendar = () => {
   const [holidays, setHolidays] = useState([]);
+  const [showTooltip, setShowTooltip] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [file, setFile] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -82,7 +84,20 @@ const HolidayCalendar = () => {
     setShowModal(true);
   };
 
-  
+  const handleDownloadHolidayTemplate = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}excel/downloadHolidayTemplate`);
+      const blob = await response.blob();
+
+      const link = document.createElement("a");
+      link.href = window.URL.createObjectURL(blob);
+      link.download = "Holiday_Template.xlsx";
+      link.click();
+    } catch (error) {
+      console.error("Error downloading holiday template:", error);
+      alert("Failed to download template. Try again.");
+    }
+  };
 
   const handleDeleteHoliday = async (id) => {
         const isConfirmed = window.confirm(
@@ -155,7 +170,7 @@ const HolidayCalendar = () => {
       setFormData({ date: "", holidayName: "", holidayType: "Mandatory" });      setIsEditMode(false);
     } catch (error) {
       console.error("Error updating holiday:", error);
-      
+
       showToast("Failed to update holiday.");
     }
   };
@@ -359,6 +374,56 @@ const HolidayCalendar = () => {
               }}
             />
           </Button>
+          <div style={{ position: "relative", display: "inline-block" }}>
+  {/* ℹ️ Info Icon */}
+  <div
+    className="cursor-pointer p-2 rounded-full bg-blue-100 hover:bg-blue-200 transition duration-300 shadow-md inline-flex items-center justify-center"
+    onClick={() => setShowTooltip(!showTooltip)}
+  >
+    <FaInfoCircle size={24} color="#007bff" />
+  </div>
+
+  {/* Tooltip with Download Option */}
+  {showTooltip && (
+    <div
+      style={{
+        position: "absolute",
+        background: "#fff",
+        border: "1px solid #ddd",
+        padding: "8px 12px",
+        borderRadius: "6px",
+        top: "30px", // Positions below the "i" icon
+        left: "50%",
+        transform: "translateX(-50%)",
+        boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.15)",
+        whiteSpace: "nowrap",
+        transition: "opacity 0.3s ease-in-out",
+        zIndex: 1000, // Ensures visibility
+      }}
+    >
+      <button
+        onClick={handleDownloadHolidayTemplate}
+        style={{
+          background: "#007bff",
+          border: "none",
+          color: "white",
+          fontSize: "14px",
+          padding: "8px 14px",
+          borderRadius: "5px",
+          cursor: "pointer",
+          fontWeight: "500",
+          transition: "background 0.3s ease",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "8px",
+        }}
+        onMouseEnter={(e) => (e.target.style.background = "#0056b3")}
+        onMouseLeave={(e) => (e.target.style.background = "#007bff")}
+      >
+        ⬇️ Download Template
+      </button>
+    </div>)}</div>
           <Button
             variant="contained"
             onClick={() => setShowModal(true)}

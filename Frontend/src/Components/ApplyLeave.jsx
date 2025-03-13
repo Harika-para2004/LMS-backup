@@ -4,7 +4,6 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import dayjs from "dayjs";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Cancel } from "@mui/icons-material";
 import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
 // import Tooltip from "@mui/material/Tooltip";
 import {
@@ -130,11 +129,7 @@ const ApplyLeave = () =>
         showToast("All fields are required.", "warning");
         return;
       }
-      const allowedType = "application/pdf"; // ✅ Allow only PDF files
-      if (file.type !== allowedType) {
-        showToast("Only PDF files are allowed.", "error");
-        return;
-      }
+
       // **✅ Valid Date Range Check**
       if (endDayjs.isBefore(startDayjs)) {
         showToast("End Date cannot be before Start Date.", "error");
@@ -168,6 +163,7 @@ const ApplyLeave = () =>
       const alreadyApplied = leaveHistory.some(
         (leave) =>
           leave.leaveType === leaveType &&
+          leave.status !== "Rejected" &&
           dayjs(leave.startDate).isSame(startDayjs, "day") &&
           dayjs(leave.endDate).isSame(endDayjs, "day")
       );
@@ -657,32 +653,21 @@ const ApplyLeave = () =>
               </Box>
 
               <Box display="flex" alignItems="center" gap={2} mt={2}>
-              <Button
-  variant="outlined"
-  component="label"
-  className="attach-button"
-  style={{ display: "flex", alignItems: "center", gap: "8px" }} // Align text and icon
->
-  {fileName ? fileName : "Attach"}
-  <input
-    type="file"
-    name="attachment"
-    onChange={handleFileChangeWithState}
-    hidden
-  />
-  {fileName && (
-    <Cancel
-      onClick={(e) => {
-        e.preventDefault(); // Prevent file input from opening
-        e.stopPropagation(); // Stop event bubbling
-        setFile(null);
-        setFileName("");
-      }}
-      style={{ cursor: "pointer", color: "red", fontSize: "20px" }}
-    />
-  )}
-</Button>
-
+                {/* Attach Button */}
+                <Button
+                  variant="outlined"
+                  component="label"
+                  className="attach-button"
+                >
+                  {fileName ? fileName : "Attach"}
+                  <input
+                    type="file"
+                    name="attachment"
+                    onChange={handleFileChangeWithState}
+                    hidden
+                    accept=" .pdf"
+                  />
+                </Button>
 
                 {/* Submit Button */}
                 <Button
