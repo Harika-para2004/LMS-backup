@@ -833,11 +833,20 @@ const HolidayCalendar = () => {
                   </button>
 
                   <button
-                    onClick={() => handleDeleteHoliday(holiday._id)}
+                    onClick={() =>
+                      selectedYear >= new Date().getFullYear() &&
+                      handleDeleteHoliday(holiday._id)
+                    }
+                    disabled={selectedYear < new Date().getFullYear()}
                     style={{
+                      background: "transparent",
                       border: "none",
-                      background: "none",
-                      cursor: "pointer",
+                      cursor:
+                        selectedYear < new Date().getFullYear()
+                          ? "not-allowed"
+                          : "pointer",
+                      opacity:
+                        selectedYear < new Date().getFullYear() ? 0.5 : 1,
                     }}
                   >
                     <Tooltip title="Delete">
