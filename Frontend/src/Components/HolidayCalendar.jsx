@@ -677,10 +677,12 @@ const HolidayCalendar = () => {
             id="file-input"
             variant="outlined"
             component="label"
+            disabled={selectedYear < new Date().getFullYear()}
             sx={{
               color: "#313896",
               borderColor: "#313896",
               textTransform: "none",
+              
             }}
             startIcon={<CloudUploadIcon />}
           >
@@ -751,6 +753,7 @@ const HolidayCalendar = () => {
           <Button
             variant="contained"
             onClick={() => setShowModal(true)}
+            disabled={selectedYear < new Date().getFullYear()}
             sx={{
               // fontSize: "13px",
               // fontWeight: 500,
