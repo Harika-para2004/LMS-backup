@@ -133,4 +133,4 @@ LeaveSchema.pre("save", async function (next) {
   }
 });
 
-module.exports = mongoose.model("leaverequests", LeaveSchema);
+module.exports = mongoose.model("leaveData", LeaveSchema);

@@ -19,13 +19,12 @@ import LeaveBalanceChart from "./LeaveBalanceChart";
 import LeaveTrendChart from "./LeaveTrendChart";
 
 const EmployeeDashboard = () => {
-  const { email: contextEmail } = useManagerContext();
+  const { email: contextEmail ,gender} = useManagerContext();
   const { managerEmail, email: paramEmail } = useParams(); // Access both params
   const location = useLocation();
   const [userData, setUserData] = useState(location.state?.userData || {});
   const [email, setEmail] = useState(userData?.email);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-
+     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   useEffect(() => {
     if (paramEmail) {
       setEmail(paramEmail);
@@ -33,6 +32,7 @@ const EmployeeDashboard = () => {
       setEmail(contextEmail);
     }
   }, [contextEmail, paramEmail]);
+  
 
   const navigate = useNavigate();
 
@@ -164,7 +164,7 @@ const EmployeeDashboard = () => {
           xs={12}
           md={6}
         >
-            <LeaveBalanceChart email={email} year={selectedYear} />
+            <LeaveBalanceChart email={email} year={selectedYear} gender={gender}/>
         </Grid>
       </Grid>
     </Grid>

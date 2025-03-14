@@ -274,7 +274,7 @@ const ReportsAdmin = () => {
                 <th>Leave Type</th>
                 <th>Start Date</th>
                 <th>End Date</th>
-                <th>Duration</th>
+                <th>No Of Days</th>
               </tr>
             </thead>
             <tbody>

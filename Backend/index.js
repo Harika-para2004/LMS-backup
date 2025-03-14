@@ -1061,7 +1061,7 @@ app.get("/reports/export-excel", async (req, res) => {
       { header: "Leave Type", key: "leaveType", width: 20 },
       { header: "Start Date", key: "startDate", width: 15 },
       { header: "End Date", key: "endDate", width: 15 },
-      { header: "Duration", key: "duration", width: 15 },
+      { header: "No Of Days", key: "duration", width: 15 },
     ];
 
     let allReports = [];
@@ -1175,7 +1175,7 @@ app.post("/reports/export-excel", async (req, res) => {
       { header: "Leave Type", key: "leaveType", width: 20 },
       { header: "Start Date", key: "startDate", width: 15 },
       { header: "End Date", key: "endDate", width: 15 },
-      { header: "Duration", key: "duration", width: 15 },
+      { header: "No Of Days", key: "duration", width: 15 },
     ];
 
     let allReports = [];

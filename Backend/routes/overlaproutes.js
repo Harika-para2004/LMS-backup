@@ -98,30 +98,35 @@ router.get("/manager-leave-reports", async (req, res) => {
 // GET holidays for a specific month and year
 router.get("/holidays", async (req, res) => {
   try {
-      const { month, year } = req.query;
-      if (!month || !year) {
-          return res.status(400).json({ error: "Month and year are required" });
-      }
+    const { month, year } = req.query;
 
-      // Convert numeric month to short-form text (e.g., "03" → "Mar")
-      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      const monthIndex = parseInt(month, 10) - 1; // Convert "03" to 2 (March)
-      if (monthIndex < 0 || monthIndex > 11) {
-          return res.status(400).json({ error: "Invalid month value" });
-      }
-      const monthText = monthNames[monthIndex]; // "Mar"
+    if (!month || !year) {
+      return res.status(400).json({ error: "Month and year are required" });
+    }
 
-      // Find holidays where the date contains the selected month and year
-      const holidays = await Holiday.find({
-          date: { $regex: `-${monthText}-${year}$` } // Matches "26-Feb-2025"
-      });
+    // Convert numeric month to short-form text (e.g., "03" → "Mar")
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const monthIndex = parseInt(month, 10) - 1; // Convert "03" to 2 (March)
+    
+    if (monthIndex < 0 || monthIndex > 11) {
+      return res.status(400).json({ error: "Invalid month value" });
+    }
 
-      res.json(holidays);
+    const monthText = monthNames[monthIndex]; // "Mar"
+
+    // Find only "Mandatory" holidays in the selected month & year
+    const holidays = await Holiday.find({
+      date: { $regex: `-${monthText}-${year}$`, $options: "i" }, // Case-insensitive match
+      type: "Mandatory", // Explicitly filter only Mandatory holidays
+    });
+
+    res.json(holidays);
   } catch (error) {
-      console.error("Error fetching holidays:", error);
-      res.status(500).json({ error: "Internal server error" });
+    console.error("Error fetching holidays:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
+
 
 
 

@@ -65,8 +65,6 @@ router.post("/uploadEmployees", upload.single("file"), async (req, res) => {
       } = row;
       const email = Email ? String(Email).toLowerCase() : "";
 const project = Project ? String(Project).toLowerCase() : "";
-
-
       if (String(Role).toLowerCase() === "manager") {
         const userExists = await User.findOne({ email });
         const empidExists = await User.findOne({ empid: EmployeeID });

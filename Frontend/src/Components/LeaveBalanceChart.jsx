@@ -3,7 +3,7 @@ import axios from "axios";
 import { Card, CardContent, Typography, Grid, MenuItem, Select, CircularProgress, Box, Divider, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, FormControl } from "@mui/material";
 import ReactECharts from "echarts-for-react";
 
-const LeaveBalanceChart = ({ email,year }) => {
+const LeaveBalanceChart = ({ email,year,gender }) => {
   const currentYear = new Date().getFullYear();
   const [leaveBalance, setLeaveBalance] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -78,6 +78,12 @@ const LeaveBalanceChart = ({ email,year }) => {
     name: type,
     value: data.availableLeaves,
   }));
+  const filteredLeaveBalance = Object.fromEntries(
+    Object.entries(leaveBalance).filter(([type]) => 
+      !((gender === "Male" && type === "Maternity Leave") || (gender === "Female" && type === "Paternity Leave"))
+    )
+  );
+  
 
   return (
     <Card sx={{ maxWidth: 800,maxHeight:460,overflowY:"auto", margin: "auto", padding: 3, boxShadow: 3, borderRadius: 2,backgroundColor: "#F4F5F7" }}>
@@ -107,8 +113,8 @@ const LeaveBalanceChart = ({ email,year }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {Object.entries(leaveBalance).map(([type, data]) => (
-                <TableRow key={type}>
+            {Object.entries(filteredLeaveBalance).map(([type, data]) => (
+                              <TableRow key={type}>
                   <TableCell>{type}</TableCell>
                   <TableCell align="center">{data.totalLeaves === null ? "-" : data.totalLeaves}</TableCell>
                   <TableCell align="center">{data.totalLeaves === null ? "-" : data.availableLeaves}</TableCell>

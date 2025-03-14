@@ -335,7 +335,7 @@ const LeaveHistory = () => {
             <th>Leave Type</th>
             <th>Start Date</th>
             <th>End Date</th>
-            <th>Duration</th>
+            <th>No Of Days</th>
             <th>Reason</th>
             <th>Document</th>
             {["All", "Rejected"].includes(selectedFilterHistory) && <th>Rejection Reason</th>}
@@ -386,10 +386,10 @@ const LeaveHistory = () => {
   <td>
     <Tooltip title={leave.rejectionComment || "N/A"} arrow>
       <span>
-        {leave.rejectionComment
-          ? leave.rejectionComment.length > 10
-            ? leave.rejectionComment.substring(0, 30) + "..."
-            : leave.rejectionComment
+     {leave.rejectionComment
+          ? leave.rejectionComment.length > 30
+            ?  truncateReason(formatReason(leave.rejectionComment.substring(0, 30) + "..."))
+            :  truncateReason(formatReason(leave.rejectionComment))
           : "N/A"}
       </span>
     </Tooltip>

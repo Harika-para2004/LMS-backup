@@ -395,6 +395,7 @@ const LeaveRequestsTable = () => {
       document: leave.attachments?.[index] ? leave.attachments[index] : null,
       reason: leave.reason[index] === "null" ? "N/A" : leave.reason[index],
       status: leave.status[index].toLowerCase(),
+      rejectionComment:leave.rejectionComment[index] || "N/A",
       leaveData: leave,
       leaveIndex: index,
     }))
@@ -628,17 +629,19 @@ const LeaveRequestsTable = () => {
               <th>ID</th>
               <th>Name</th>
               <th>Leave Type</th>
-              <th>Duration</th>
+              <th>No Of Days</th>
               <th>From</th>
               <th>To</th>
               <th>Available</th>
               <th>Document</th>
               <th>Reason</th>
+              {["All", "Rejected"].includes(selectedFilter) && <th>Rejection Reason</th>}
               <th>Status</th>
             </tr>
           </thead>
           <tbody>
             {currentItems.length > 0 ? (
+              
               currentItems.map((leave) => (
                 <tr key={leave.id}>
                   <td>{leave.empid}</td>
@@ -683,7 +686,20 @@ const LeaveRequestsTable = () => {
                       </span>{" "}
                     </Tooltip>
                   </td>
-                  <td>
+                  {["All", "Rejected"].includes(selectedFilter) && (
+  <td>
+    <Tooltip title={leave.rejectionComment || "N/A"} arrow>
+      <span>
+        {leave.rejectionComment
+          ? leave.rejectionComment.length > 30
+            ? truncateReason(formatReason(leave.rejectionComment).substring(0, 30)) + "..."
+            : truncateReason(formatReason(leave.rejectionComment))
+          : "N/A"}
+      </span>
+    </Tooltip>
+  </td>
+)}
+             <td>
                     {leave.status === "approved" && (
                       <button
                         onClick={() =>
@@ -736,7 +752,7 @@ const LeaveRequestsTable = () => {
             ) : (
               <tr>
                 <td
-                  colSpan="10"
+                  colSpan="12"
                   style={{
                     textAlign: "center",
                     padding: "15px",

@@ -317,7 +317,8 @@ const App = () => {
     switch (selectedCategory) {
       case "dashboard":
         return(
-        <EmployeeDashboard email={email} /> );
+        <EmployeeDashboard email={email}             gender={gender}
+/> );
       case "apply-leave":
         return (
           <ApplyLeave
