@@ -1059,8 +1059,8 @@ app.get("/reports/export-excel", async (req, res) => {
       { header: "Email", key: "email", width: 30 },
       { header: "Project", key: "project", width: 25 },
       { header: "Leave Type", key: "leaveType", width: 20 },
-      { header: "Start Date", key: "startDate", width: 15 },
-      { header: "End Date", key: "endDate", width: 15 },
+      { header: "From", key: "startDate", width: 15 },
+      { header: "To", key: "endDate", width: 15 },
       { header: "No Of Days", key: "duration", width: 15 },
     ];
 
@@ -1173,8 +1173,8 @@ app.post("/reports/export-excel", async (req, res) => {
       { header: "Email", key: "email", width: 30 },
       { header: "Project", key: "project", width: 25 },
       { header: "Leave Type", key: "leaveType", width: 20 },
-      { header: "Start Date", key: "startDate", width: 15 },
-      { header: "End Date", key: "endDate", width: 15 },
+      { header: "From", key: "startDate", width: 15 },
+      { header: "To", key: "endDate", width: 15 },
       { header: "No Of Days", key: "duration", width: 15 },
     ];
 

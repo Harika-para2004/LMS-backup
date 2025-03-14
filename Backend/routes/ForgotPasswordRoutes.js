@@ -17,7 +17,9 @@ const transporter = nodemailer.createTransport({
 
 // ✅ Forgot Password Route - Sends a reset code via email
 router.post("/forgot-password", async (req, res) => {
-    const { email } = req.body;  
+    let { email } = req.body;
+    email = email ? email.toLowerCase() : ""; // Convert to lowercase
+  
     try {
       const user = await User.findOne({ email });
       if (!user) {
@@ -76,8 +78,8 @@ router.post("/verify-code", async (req, res) => {
 
 // ✅ Reset Password Route
 router.post("/reset-password", async (req, res) => {
-  const { email, newPassword } = req.body;
-
+  let { email, newPassword } = req.body;
+  email = email ? email.toLowerCase() : ""; // Convert to lowercase
   try {
     const user = await User.findOne({ email });
 

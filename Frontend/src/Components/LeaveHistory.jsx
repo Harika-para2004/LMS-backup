@@ -333,8 +333,8 @@ const LeaveHistory = () => {
         <thead>
           <tr>
             <th>Leave Type</th>
-            <th>Start Date</th>
-            <th>End Date</th>
+            <th>From</th>
+            <th>To</th>
             <th>No Of Days</th>
             <th>Reason</th>
             <th>Document</th>

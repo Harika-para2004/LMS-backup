@@ -240,8 +240,8 @@ const Reports = () => {
                 <th>Employee ID</th>
                 <th>Project</th>
                 <th>Leave Type</th>
-                <th>Start Date</th>
-                <th>End Date</th>
+                <th>From</th>
+                <th>To</th>
                 <th>No Of Days</th>
               </tr>
             </thead>
