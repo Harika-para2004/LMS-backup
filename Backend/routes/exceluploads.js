@@ -135,9 +135,8 @@ const project = Project ? String(Project).toLowerCase() : "";
         Project,
         ManagerEmail,
       } = row;
-      const email = Email ? Email.toLowerCase() : "";
-      const managerEmail = ManagerEmail ? ManagerEmail.toLowerCase() : "";
-
+      const email = Email ? String(Email).toLowerCase() : "";
+      const managerEmail = ManagerEmail ? String(ManagerEmail).toLowerCase() : "";
       if (String(Role).toLowerCase() === "employee") {
         const userExists = await User.findOne({ email });
         const empidExists = await User.findOne({ empid: EmployeeID });
@@ -149,7 +148,7 @@ const project = Project ? String(Project).toLowerCase() : "";
           });
           continue;
         }
-
+      
         let assignedProject = "";
         if (managerEmails.has(managerEmail)) {
           assignedProject = managerEmails.get(managerEmail);
@@ -166,14 +165,7 @@ const project = Project ? String(Project).toLowerCase() : "";
           }
         }
 
-        // if (assignedProject) {
-          const existingProject = await ProjectSchema.findOne({
-            projectName: Project.toLowerCase(),
-          });
-          if (!existingProject) {
-            await ProjectSchema.create({ projectName: Project.toLowerCase() });
-          }
-        // }
+
 
         const hashedPassword = await bcrypt.hash(Password.toString(), 10);
 

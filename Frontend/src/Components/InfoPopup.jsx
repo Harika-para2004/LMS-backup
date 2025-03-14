@@ -67,13 +67,16 @@ const InfoPopup = ({ handleDownloadTemplate }) => {
                 For <b>Managers</b>, leave the <b>Manager Email</b> column <i>empty</i>.
               </li>
               <li>
-                For <b>Employees</b>, leave the <b>Project</b> column <i>empty</i>.
+                For <b>Employees</b>, leave the <b>Project</b> column <i>empty</i>.The <b>Project</b> Automatically assigned from <b>Manager</b>
               </li>
               <li>
                 Ensure all required fields like <b>Email</b> and <b>Password</b> are filled.
               </li>
+        
             </ol>
-
+            <small style={{ color: "red" }}>
+    Must follow Above Instructions, Otherwise Employee details are skipped
+  </small>
             {/* Download Button */}
             <button
               onClick={handleDownloadTemplate}
