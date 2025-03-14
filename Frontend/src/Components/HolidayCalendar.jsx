@@ -657,7 +657,7 @@ const HolidayCalendar = () => {
         </FormControl>
 
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-        <div
+          <div
             style={{
               background: "#fff",
               border: "1px solid #ddd",
@@ -667,10 +667,9 @@ const HolidayCalendar = () => {
           >
             <Button
               onClick={handleDownloadHolidayTemplate}
-              sx={{color:"#313896" }}
-              
+              sx={{ color: "#313896" }}
             >
-              ⬇️  Template
+              ⬇️ Template
             </Button>
           </div>
           <Button
@@ -682,7 +681,6 @@ const HolidayCalendar = () => {
               color: "#313896",
               borderColor: "#313896",
               textTransform: "none",
-              
             }}
             startIcon={<CloudUploadIcon />}
           >
@@ -749,7 +747,7 @@ const HolidayCalendar = () => {
               </div>
             )}
           </div> */}
-          
+
           <Button
             variant="contained"
             onClick={() => setShowModal(true)}
@@ -843,8 +841,18 @@ const HolidayCalendar = () => {
                     }}
                   >
                     <Tooltip title="Delete">
-                      <IconButton size="small">
-                        <Delete color="error" fontSize="small" />
+                      <IconButton
+                        size="small"
+                        disabled={selectedYear < new Date().getFullYear()}
+                      >
+                        <Delete
+                          color={
+                            selectedYear < new Date().getFullYear()
+                              ? "disabled"
+                              : "error"
+                          }
+                          fontSize="small"
+                        />
                       </IconButton>
                     </Tooltip>{" "}
                   </button>
