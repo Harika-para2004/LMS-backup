@@ -322,7 +322,7 @@ const HolidayCalendar = () => {
       }
 
       if (duplicateName) {
-        ShowToast("A holiday with this name already exists!");
+        showToast("A holiday with this name already exists!");
         return;
       }
 
