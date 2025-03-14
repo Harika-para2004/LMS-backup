@@ -22,7 +22,7 @@
 
 /* ✅ Left Section (90% Space) */
 .lp-left-section {
-  flex-basis: 700px;
+  flex-basis: 70%;
   background-color: #eef2f7;
   padding:0 20px;
   border-radius: 10px;
@@ -31,7 +31,7 @@
 
 /* ✅ Right Section (10% Space) */
 .lp-right-section {
-  flex-basis: 400px;
+  flex-basis: 30%;
   background-color: #eef2f7;
   padding:0 20px;
   border-radius: 10px;

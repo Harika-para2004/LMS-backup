@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useMemo } from "react";
 const BASE_URL = "http://localhost:5001/";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-import {Box,Button,TextField,FormControl,  FormControlLabel,  RadioGroup,FormLabel,Radio,IconButton,Typography,Modal,Tooltip,} from "@mui/material";
+import {Box,Button,TextField,FormControl,  FormControlLabel,Select,MenuItem,  RadioGroup,FormLabel,Radio,IconButton,Typography,Modal,Tooltip,} from "@mui/material";
 import { Delete, Edit } from "@mui/icons-material";
 import { FaInfoCircle } from "react-icons/fa";
 import useToast from "./useToast";
+import * as XLSX from "xlsx";
 const HolidayCalendar = () => {
   const [holidays, setHolidays] = useState([]);
   const [showTooltip, setShowTooltip] = useState(false);
@@ -17,39 +18,142 @@ const HolidayCalendar = () => {
   const [error, setError] = useState(null);
   const [errors, setErrors] = useState({});;
   const showToast = useToast();
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [formData, setFormData] = useState({
     date: "",
     holidayName: "",
     holidayType: "Mandatory",
   });
+  const yearsRange = useMemo(() => {
+    return Array.from({ length: 17 }, (_, i) => currentYear - (i - 1));
+  }, [currentYear]);
+  console.log(selectedYear)
 
-  useEffect(() => {
-    fetchHolidays();
-  }, []);
+  const handlefileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setSelectedFile(file); // Store the actual file
+      handleHolidayUpload(file); // Call upload function
+    }
+    // Reset file input after a successful upload
+    if (!file) {
+      event.target.value = "";
+    }
+  }
+  const handleHolidayUpload = async (file) => {
+    if (!file) {
+      alert("Please select a file first.");
+      return;
+    }
+  
+    const reader = new FileReader();
+    
+    reader.onload = async (e) => {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: "array" });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const holidays = XLSX.utils.sheet_to_json(sheet);
 
-  const fetchHolidays = async () => {
-    try {
-      const response = await fetch(`${BASE_URL}holidays`, {
-        method: "GET", // Explicitly specify the HTTP method
-        headers: {
-          "Content-Type": "application/json", // Ensure correct headers
-        },
+      // ✅ Handle different date formats
+      const filteredHolidays = holidays.filter((holiday) => {
+        if (!holiday.date) return false; // Ensure date exists
+
+        let holidayYear;
+
+        if (typeof holiday.date === "string") {
+          // If date is a string in "DD/MM/YYYY" format
+          const [day, month, year] = holiday.date.split("/").map(Number);
+          holidayYear = year;
+        } else if (typeof holiday.date === "number") {
+          // If date is an Excel serial number, convert it to a JS Date object
+          const excelDate = new Date((holiday.date - 25569) * 86400000);
+          holidayYear = excelDate.getFullYear();
+        } else if (holiday.date instanceof Date) {
+          // If already a Date object
+          holidayYear = holiday.date.getFullYear();
+        }
+
+        return holidayYear === selectedYear;
       });
 
+      if (filteredHolidays.length === 0) {
+        alert(`No holidays found for ${selectedYear}.`);
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        const response = await fetch(`${BASE_URL}excel/uploadHolidays`, {
+          method: "POST",
+          body: formData,
+        });
+
+        const result = await response.json();
+        console.log("Server Response:", result);
+
+        if (!response.ok) {
+          alert(`Error: ${result.message}`);
+          return;
+        }
+
+        alert(`${result.insertedCount} holidays were successfully added.`);
+        setFile(null); // Reset file state
+        setSelectedFile(null); // Clear selected file display
+        fetchHolidays(); // Refresh holidays list
+      } catch (error) {
+        console.error("Error uploading holidays:", error);
+        alert("Failed to upload holidays. Please try again.");
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
+};
+
+
+  
+
+  useEffect(() => {
+    if (selectedYear) {
+      fetchHolidays();
+    }
+  }, [selectedYear]); // ✅ Depend on selectedYear
+  
+  const fetchHolidays = async () => {
+    if (!selectedYear) {
+      console.error("Selected year is missing!"); // ✅ Debugging log
+      return;
+    }
+  
+    const requestUrl = `${BASE_URL}holidays?year=${selectedYear}`;
+    console.log("Fetching from:", requestUrl); // ✅ Log the full API URL
+  
+    try {
+      const response = await fetch(requestUrl, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+  
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-
+  
       const data = await response.json();
+      console.log("Fetched holidays:", data); // ✅ Debugging log
+  
       const sortedHolidays = sortHolidaysByMonthAndCustomDay(data);
-
-      // Set the sorted holidays
       setHolidays(sortedHolidays);
     } catch (error) {
       console.error("Error fetching holidays:", error);
-      setError("Failed to fetch holidays. Please try again later."); // Update error state for UI
+      setError("Failed to fetch holidays. Please try again later.");
     }
   };
+  
+  
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -65,24 +169,32 @@ const HolidayCalendar = () => {
           : value,
     }));
   };
- const handleEdit = (index) => {
+  const handleEdit = (index) => {
     const holidayToEdit = holidays[index];
     if (!holidayToEdit) return;
-
-    const [day, month, year] = holidayToEdit.date.split("-");
-    const monthIndex = new Date(`${month} 1, 2000`).getMonth() + 1;
+  
+    const [day, monthText, year] = holidayToEdit.date.split("-");
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const monthIndex = monthNames.indexOf(monthText) + 1;
+  
+    if (monthIndex === 0) {
+      console.error("Invalid month:", monthText);
+      return;
+    }
+  
     const formattedDate = `${year}-${String(monthIndex).padStart(2, "0")}-${day.padStart(2, "0")}`;
-
+  
     setFormData({
       date: formattedDate,
       holidayName: holidayToEdit.name,
-      holidayType: holidayToEdit.type, // Ensure this is set correctly
+      holidayType: holidayToEdit.type,
     });
-
+  
     setEditingRow(index);
     setIsEditMode(true);
     setShowModal(true);
   };
+  
 
   const handleDownloadHolidayTemplate = async () => {
     try {
@@ -132,48 +244,70 @@ const HolidayCalendar = () => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
   const handleSave = async () => {
     if (!validateForm()) return;
-
+  
     try {
       const [year, month, day] = formData.date.split("-");
       const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
       const formattedDate = `${day}-${monthNames[parseInt(month, 10) - 1]}-${year}`;
-
-      const requestData = {
-        date: formattedDate,
-        name: formData.holidayName,
-        type: formData.holidayType, // Ensure this is included
-      };
-
-      const url = isEditMode ? `${BASE_URL}holidays/${holidays[editingRow]._id}` : `${BASE_URL}holidays`;
+  
+      const requestData = { date: formattedDate, name: formData.holidayName, type: formData.holidayType };
+  
+      // ✅ Normalize dates for consistent comparison
+      const normalizeDate = (dateStr) => dateStr.toLowerCase().trim();
+  
+      const duplicateDate = holidays.find(
+        (holiday) =>
+          normalizeDate(holiday.date) === normalizeDate(formattedDate) &&
+          (!isEditMode || holiday._id !== holidays[editingRow]._id) // ✅ Allow self-update
+      );
+  
+      const duplicateName = holidays.find(
+        (holiday) =>
+          holiday.name.toLowerCase().trim() === formData.holidayName.toLowerCase().trim() &&
+          (!isEditMode || holiday._id !== holidays[editingRow]._id) // ✅ Allow self-update
+      );
+  
+      if (duplicateDate) {
+        showToast("A holiday with this date already exists!");
+        return;
+      }
+  
+      if (duplicateName) {
+        ShowToast("A holiday with this name already exists!");
+        return;
+      }
+  
+      const url = isEditMode ? `${BASE_URL}holidays/${holidays[editingRow]._id}` : `${BASE_URL}/holidays`;
       const method = isEditMode ? "PUT" : "POST";
-
+  
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestData),
       });
-
+  
       const updatedHoliday = await response.json();
       if (!response.ok) throw new Error(updatedHoliday.message || "Failed to update holiday.");
-
+  
       const updatedHolidays = isEditMode
         ? holidays.map((holiday, idx) => (idx === editingRow ? updatedHoliday : holiday))
         : [...holidays, updatedHoliday];
-
-      setHolidays(sortHolidaysByMonthAndCustomDay (updatedHolidays));
-
+  
+      setHolidays(sortHolidaysByMonthAndCustomDay(updatedHolidays));
+  
       setShowModal(false);
       setEditingRow(null);
-      setFormData({ date: "", holidayName: "", holidayType: "Mandatory" });      setIsEditMode(false);
+      setFormData({ date: "", holidayName: "", holidayType: "Mandatory" });
+      setIsEditMode(false);
     } catch (error) {
       console.error("Error updating holiday:", error);
-
       showToast("Failed to update holiday.");
     }
   };
+  
+
   const sortHolidaysByMonthAndCustomDay = (holidayList) => {
     const monthNames = [
       "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug",      "Sep",      "Oct",      "Nov",      "Dec",    ];
@@ -194,45 +328,63 @@ const HolidayCalendar = () => {
 
   const handleAddHoliday = async () => {
     if (!validateForm()) return;
-
+  
     try {
       const { date, holidayName, holidayType } = formData;
+  
+      // ✅ Normalize date format (yyyy-mm-dd → dd-MMM-yyyy)
       const [year, month, day] = date.split("-");
-      const monthNames = [
-        "Jan","Feb","Mar",      "Apr",        "May",        "Jun",        "Jul",        "Aug",        "Sep",      "Oct",        "Nov",        "Dec",     ];
-      const formattedDate = `${day}-${
-        monthNames[parseInt(month, 10) - 1]
-      }-${year}`;
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const formattedDate = `${day}-${monthNames[parseInt(month, 10) - 1]}-${year}`;
+  
+      // ✅ Normalize name (trim spaces & convert to lowercase)
+      const trimmedName = holidayName.trim().toLowerCase();
+  
+      // ✅ Check for duplicate **date** in local state
+      const isDuplicateDate = holidays.some((holiday) => holiday.date === formattedDate);
+      if (isDuplicateDate) {
+        showToast(`A holiday already exists on ${formattedDate}!`);
+        return;
+      }
+  
+      // ✅ Check for duplicate **name** in local state
+      const isDuplicateName = holidays.some((holiday) => holiday.name.trim().toLowerCase() === trimmedName);
+      if (isDuplicateName) {
+        showToast(`A holiday with the name "${holidayName.trim()}" already exists!`);
+        return;
+      }
+  
+      // ✅ Send request to backend
       const response = await fetch(`${BASE_URL}holidays`, {
         method: "POST",
         body: JSON.stringify({
           date: formattedDate,
-          name: holidayName,
+          name: holidayName.trim(), // Trim before sending to backend
           type: holidayType,
         }),
         headers: { "Content-Type": "application/json" },
       });
-
+  
       const data = await response.json();
-
+  
       if (!response.ok) {
-        showToast(data.message); //  Show showToast if holiday already exists
+        showToast(data.message); // 🔴 Show backend error message
         return;
       }
-
-      // Update state with the new holiday
-      setHolidays((prevHolidays) =>
-        sortHolidaysByMonthAndCustomDay([...prevHolidays, data])
-      );
-
-      // Reset form
+  
+      // ✅ Update holidays state & sort
+      setHolidays((prevHolidays) => sortHolidaysByMonthAndCustomDay([...prevHolidays, data]));
+  
+      // ✅ Reset form & close modal
       setFormData({ date: "", holidayName: "", holidayType: "Mandatory" });
       setShowModal(false);
     } catch (error) {
       console.error("Error adding holiday:", error);
-      showToast("Failed to add holiday. Please try again later."); //  Show alert on error
+      showToast("Failed to add holiday. Please try again later."); // 🔴 Handle unexpected errors
     }
   };
+  
+  
 
   const handleEditHoliday = () => {
     if (!validateForm()) return; // Don't proceed if validation fails
@@ -291,15 +443,20 @@ const HolidayCalendar = () => {
         {isEditMode ? "Edit Holiday" : "Add Holiday"}
       </Typography>
       <TextField
-        label="Date"
-        type="date"
-        name="date"
-        value={formData.date}
-        onChange={handleInputChange}
-        InputLabelProps={{ shrink: true }}
-        error={Boolean(errors.date)}
-        helperText={errors.date}
-      />
+  label="Date"
+  type="date"
+  name="date"
+  value={formData.date}
+  onChange={handleInputChange}
+  InputLabelProps={{ shrink: true }}
+  error={Boolean(errors.date)}
+  helperText={errors.date}
+  inputProps={{
+    min: `${selectedYear}-01-01`, // Start of the selected year
+    max: `${selectedYear}-12-31`, // End of the selected year
+  }}
+/>
+
       <TextField
         label="Holiday Name"
         name="holidayName"
@@ -349,31 +506,80 @@ const HolidayCalendar = () => {
 
       <div className="head">
         <h2 className="content-heading">Holiday Calendar {year}</h2>
-
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <Button
-            id="file-input"
-            variant="text"
-            component="label"
+        <FormControl
+          sx={{
+            minWidth: 85,
+            bgcolor: "white",
+            borderRadius: 1,
+            boxShadow: "0px 2px 6px rgba(159, 50, 178, 0.2)", // Softer purple glow for elegance
+            "& .MuiOutlinedInput-notchedOutline": { border: "none" }, // Removes default border
+          }}
+        >
+          <Select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+            displayEmpty
             sx={{
-              borderRadius: "5px",
-              "&:focus": { outline: "none" },
-              textTransform: "none",
+              fontSize: "12px",
+              fontWeight: 500,
+              color: "#fff",
+              background: "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)", // Elegant gradient
+              borderRadius: 1,
+              height: 40, // Slightly reduced height for compact look
+              px: 1.2, // Well-balanced padding
+              bgcolor: "#fafafa", // Softer background
+              transition: "all 0.3s ease-in-out",
+              "&:hover": { bgcolor: "#f0f0f0" },
+              "&.Mui-focused": {
+                background: "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)", // Elegant gradient
+                boxShadow: "0px 3px 8px rgba(159, 50, 178, 0.3)", // Elegant focused effect
+              },
             }}
-            startIcon={<CloudUploadIcon />}
           >
-            {/* <CloudUploadIcon fontSize="small" /> */}
-            Upload Holidays
-            <input
-              type="file"
-              accept=".xlsx, .xls"
-              hidden
-              onChange={(e) => {
-                handlefileChange(e);
-                setSelectedFile(e.target.files[0]); // Update selected file state
-              }}
-            />
-          </Button>
+            {yearsRange.map((year) => (
+              <MenuItem
+                key={year}
+                value={year}
+                sx={{
+                  fontSize: "12px",
+                  px: 1.2,
+                  "&:hover": { bgcolor: "#f5e9f7" }, // Subtle hover effect
+                }}
+              >
+                {year}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <Button
+  id="file-input"
+  variant="text"
+  component="label"
+  disabled={selectedYear < new Date().getFullYear()} // 🔥 Disable for past years
+  sx={{
+    borderRadius: "5px",
+    "&:focus": { outline: "none" },
+    textTransform: "none",
+    opacity: selectedYear < new Date().getFullYear() ? 0.5 : 1, // 🔍 Dim when disabled
+    cursor: selectedYear < new Date().getFullYear() ? "not-allowed" : "pointer", // ✋ Show "not-allowed" cursor
+  }}
+  startIcon={<CloudUploadIcon />}
+>
+  Upload Holidays
+  <input
+    type="file"
+    accept=".xlsx, .xls"
+    hidden
+    onChange={(e) => {
+      if (selectedYear >= new Date().getFullYear()) { // ✅ Extra safety check
+        handlefileChange(e);
+        setSelectedFile(e.target.files[0]); // Update selected file state
+      }
+    }}
+  />
+</Button>
+
           <div style={{ position: "relative", display: "inline-block" }}>
   {/* ℹ️ Info Icon */}
   <div
@@ -424,28 +630,39 @@ const HolidayCalendar = () => {
         ⬇️ Download Template
       </button>
     </div>)}</div>
-          <Button
-            variant="contained"
-            onClick={() => setShowModal(true)}
-            sx={{
-              fontSize: "13px",
-              fontWeight: 500,
-              color: "#fff",
-              background:
-                "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)", // Elegant gradient
-              borderRadius: 1,
-              bgcolor: "#fafafa", // Softer background
-              transition: "all 0.3s ease-in-out",
-              "&:hover": { bgcolor: "#f0f0f0" },
-              "&.Mui-focused": {
-                background:
-                  "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)", // Elegant gradient
-                boxShadow: "0px 3px 8px rgba(159, 50, 178, 0.3)", // Elegant focused effect
-              },
-            }}
-          >
-            Add Holiday
-          </Button>
+    <Button
+  variant="contained"
+  onClick={() => selectedYear >= new Date().getFullYear() && setShowModal(true)}
+  disabled={selectedYear < new Date().getFullYear()} // Disable for past years
+  sx={{
+    fontSize: "13px",
+    fontWeight: 500,
+    color: "#fff",
+    background:
+      selectedYear < new Date().getFullYear()
+        ? "#ccc" // Greyed out for past years
+        : "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)",
+    borderRadius: 1,
+    transition: "all 0.3s ease-in-out",
+    cursor: selectedYear < new Date().getFullYear() ? "not-allowed" : "pointer", // Show "not-allowed" cursor
+    "&:hover": {
+      bgcolor: selectedYear < new Date().getFullYear() ? "#ccc" : "#f0f0f0",
+    },
+    "&.Mui-focused": {
+      background:
+        selectedYear < new Date().getFullYear()
+          ? "#ccc"
+          : "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)",
+      boxShadow:
+        selectedYear < new Date().getFullYear()
+          ? "none"
+          : "0px 3px 8px rgba(159, 50, 178, 0.3)",
+    },
+  }}
+>
+  Add Holiday
+</Button>
+
 
           {/* Show file name only if selected */}
           {selectedFile && (
@@ -482,13 +699,26 @@ const HolidayCalendar = () => {
                     <td>{formatCase(holiday.name)}</td>
                     <td>{holiday.type}</td>
                     <td>
-                    <button onClick={() => handleEdit(index)}>
+                    <button
+  onClick={() => selectedYear >= new Date().getFullYear() && handleEdit(index)}
+  disabled={selectedYear < new Date().getFullYear()} // Disable for past years
+  style={{
+    background: "transparent",
+    border: "none",
+    cursor: selectedYear < new Date().getFullYear() ? "not-allowed" : "pointer", // Show "not-allowed" cursor for past years
+    opacity: selectedYear < new Date().getFullYear() ? 0.5 : 1, // Dim button for past years
+  }}
+>
   <Tooltip title="Edit">
-    <IconButton size="small">
-      <Edit color="primary" fontSize="small" />
+    <IconButton size="small" disabled={selectedYear < new Date().getFullYear()}>
+      <Edit
+        color={selectedYear < new Date().getFullYear() ? "disabled" : "primary"} 
+        fontSize="small"
+      />
     </IconButton>
   </Tooltip>
 </button>
+
 
                       <button
                         onClick={() => handleDeleteHoliday(holiday._id)}

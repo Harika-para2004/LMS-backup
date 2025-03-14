@@ -570,16 +570,32 @@ app.put("/updatepassword", async (req, res) => {
     res.status(500).json({ message: "Internal server error." });
   }
 });
-
 app.get("/holidays", async (req, res) => {
   try {
-    const holidays = await Holiday.find();
+    console.log("Request Query Params:", req.query); // ✅ Log the full query params
+    const { year } = req.query;
+
+    if (!year || isNaN(year)) {
+      return res.status(400).json({ message: "Valid year is required!" });
+    }
+
+    console.log("Fetching holidays for year:", year);
+
+    const holidays = await Holiday.find({
+      date: { $regex: `-${year}$`, $options: "i" },
+    });
+
+    console.log("Found holidays:", holidays.length);
+    
     res.json(holidays);
   } catch (err) {
     console.error("Error fetching holidays:", err);
-    res.status(500).json({ message: "Server Error", error: err.message }); // Include error message
+    res.status(500).json({ message: "Server Error", error: err.message });
   }
 });
+
+
+
 app.get("/employee-list", async (req, res) => {
   try {
    
@@ -638,13 +654,12 @@ app.post("/holidays", async (req, res) => {
   }
 });
 
-
-
 app.put("/holidays/:id", async (req, res) => {
   console.log("Received ID:", req.params.id);
   console.log("Received Data:", req.body);
 
   const { date, name, type } = req.body;
+
   try {
     if (!date || !name || !type) {
       console.log("Missing fields!");
@@ -654,6 +669,21 @@ app.put("/holidays/:id", async (req, res) => {
     const holidayDate = new Date(date);
     const dayOfWeek = holidayDate.toLocaleString("en-us", { weekday: "long" });
 
+    // ✅ Check if another holiday already has BOTH same date AND same name
+    const existingHoliday = await Holiday.findOne({
+      _id: { $ne: req.params.id }, // Exclude the current holiday from search
+      date: date, // Check for same date
+      name: name, // Check for same name
+    });
+
+    if (existingHoliday) {
+      console.log("Duplicate holiday found!");
+      return res.status(400).json({
+        message: `A holiday with the same date (${date}) and name (${name}) already exists!`,
+      });
+    }
+
+    // ✅ Update the holiday if no duplicate is found
     const updatedHoliday = await Holiday.findByIdAndUpdate(
       req.params.id,
       { date, day: dayOfWeek, name, type },
@@ -672,6 +702,7 @@ app.put("/holidays/:id", async (req, res) => {
     res.status(400).json({ message: "Error updating holiday", error: err.message });
   }
 });
+
 
 app.put("/updateEmployeeList/:id", async (req, res) => {
   const { empid, empname, email, project, role, managerEmail } = req.body;

@@ -8,7 +8,7 @@ const InfoPopup = ({ handleDownloadTemplate }) => {
     <div style={{ display: "inline-block" }}>
       {/* ℹ️ Info Icon */}
       <div className="info-icon" onClick={() => setShowPopup(true)}>
-        <FaInfoCircle size={20} color="#007bff" style={{ cursor: "pointer" }} />
+        <FaInfoCircle size={20} color="#007bff" style={{ cursor: "pointer",marginTop:"5px" }} />
       </div>
 
       {/* Popup (Modal) */}
