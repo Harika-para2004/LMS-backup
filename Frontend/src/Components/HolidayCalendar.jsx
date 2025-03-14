@@ -32,15 +32,16 @@ const HolidayCalendar = () => {
 
   const handlefileChange = (event) => {
     const file = event.target.files[0];
+    
     if (file) {
       setSelectedFile(file); // Store the actual file
       handleHolidayUpload(file); // Call upload function
+  
+      // ✅ Reset the input field to allow re-uploading the same file
+      event.target.value = null; 
     }
-    // Reset file input after a successful upload
-    if (!file) {
-      event.target.value = "";
-    }
-  }
+  };
+  
   const handleHolidayUpload = async (file) => {
     if (!file) {
       alert("Please select a file first.");
@@ -104,6 +105,7 @@ const HolidayCalendar = () => {
         setFile(null); // Reset file state
         setSelectedFile(null); // Clear selected file display
         fetchHolidays(); // Refresh holidays list
+        
       } catch (error) {
         console.error("Error uploading holidays:", error);
         alert("Failed to upload holidays. Please try again.");
@@ -229,6 +231,7 @@ const HolidayCalendar = () => {
         prevHolidays.filter((holiday) => holiday._id !== id)
       );
       showToast("Holiday deleted successfully!");
+      fetchHolidays();
     } catch (error) {
       console.error("Error deleting employee:", error);
       setError("Failed to delete employee. Please try again later.");
