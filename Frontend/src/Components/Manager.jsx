@@ -26,6 +26,7 @@ import LeaveRequestsTable from "./LeaveRequestsTable";
 import dayjs from "dayjs";
 
 import { useManagerContext } from "../context/ManagerContext";
+import Navbar from "./Navbar";
 
 
 function LeaveRequests() {
@@ -763,9 +764,20 @@ function LeaveRequests() {
           Profile={Profile}
         />
         {/* <main className="main-content">{renderContent()}</main> */}
-        <div className="main-content">
+        <div className="nav-main-cont">
+          {" "}
+          <Navbar
+            userType="manager"
+            email={email}
+            handleLogout={handleLogout}
+          />
+          <main className="main-content">
+            <Outlet />
+          </main>
+        </div>
+        {/* <div className="main-content">
         <Outlet />
-      </div>
+      </div> */}
       </div>
     </div>
   );

@@ -6,7 +6,7 @@
   --deep-blue: #313896;    /* Deep Blue */
   --purple: #9F32B2;       /* Purple */
   /* --dark-blue: rgba(46, 131, 146, 0.8);     */
-  --dark-blue: #408591;    
+  /* --dark-blue: #408591;     */
   --dark-blue: linear-gradient(180deg, #A3A7E4 , #313896 );
 
   --light-bg: #f8f9fa;     /* Neutral Light Background */
@@ -89,6 +89,14 @@ body, html {
   overflow-x: auto;
   overflow-y: auto;
 
+}
+
+.nav-main-cont{
+  display: flex;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  flex-direction: column;
 }
 
 .table-heading {
@@ -504,7 +512,7 @@ body, html {
   position: fixed;
   bottom: 5px;
   margin-bottom: 15px;
-  width: 200px;
+  width: 160px;
 }
  
 .logout a {
@@ -904,20 +912,18 @@ body, html {
 }
 
 .update-password-btn {
-  background: var(--dark-blue);
-  color: #ffffff;
+  background: white;
+  color: var(--dark-blue);
   font-size: 14px;
   font-weight: 600;
   border: none;
   padding: 10px 20px;
   border-radius: 8px;
   cursor: pointer;
-  margin-top: 20px;
   transition: background 0.3s ease, transform 0.3s ease;
 }
 
 .update-password-btn:hover {
-  background: var(--lighter-dark-blue);
   transform: translateY(-3px);
 }
 
@@ -1199,7 +1205,7 @@ body {
 }
 
 .logo_das {
-  height: 59px;
+  height: 63px;
   /* margin-top: -6px; */
   /* margin-right: auto; */
   /* margin-bottom: 15px; */
@@ -1861,7 +1867,7 @@ body {
 
 .reports-container button {
   padding: 10px 15px;
-  border: none;
+  /* border: none; */
   cursor: pointer;
   font-size: 14px;
   border-radius: 5px;

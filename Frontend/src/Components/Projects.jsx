@@ -79,15 +79,32 @@ const ProjectManager = () => {
   };
   
 
+  // const handleDelete = async (id) => {
+  //   try {
+  //     await fetch(`${BASE_URL}/projects/${id}`, { method: "DELETE" });
+  //     showToast("Project deleted successfully","success");
+  //     fetchProjects();
+  //   } catch (error) {
+  //     console.error("Error deleting project:", error);
+  //   }
+  // };
+
   const handleDelete = async (id) => {
     try {
-      await fetch(`${BASE_URL}/projects/${id}`, { method: "DELETE" });
-      showToast("Project deleted successfully","success");
-      fetchProjects();
+      const response = await fetch(`${BASE_URL}/projects/${id}`, { method: "DELETE" });
+      const data = await response.json(); // Parse response JSON
+  
+      if (response.ok) {
+        showToast(data.message, "success"); // Show success message
+        fetchProjects(); // Refresh project list
+      } else {
+        showToast(data.message, "error"); // Show error message from backend
+      }
     } catch (error) {
-      console.error("Error deleting project:", error);
+      showToast("An error occurred while deleting the project.", "error"); // Handle unexpected errors
     }
   };
+  
 
   const handleEdit = (project) => {
     setTimeout(() => {

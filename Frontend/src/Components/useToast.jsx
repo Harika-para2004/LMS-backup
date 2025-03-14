@@ -50,7 +50,7 @@ const useToast = () => {
             style={{
               background: "transparent",
               border: "none",
-              color: "#fff",
+              color: "#555",
               cursor: "pointer",
               fontSize: "16px",
               padding: "4px",

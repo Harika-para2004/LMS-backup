@@ -57,6 +57,7 @@ const LeaveRequestsTable = () => {
       return;
     }
     handleReject(rejectionComment); // Pass comment to reject function
+    setRejectionComment("");
     setShowCommentBox(false);
   };
   // console.log("admincred",admincred);
@@ -168,6 +169,7 @@ const LeaveRequestsTable = () => {
 
   const handleCloseModal = () => {
     setModalOpen(false); // Close the modal
+    setRejectionComment("");
     setSelectedLeave(null); // Clear selected leave
   };
   const handleRowClick = (leave, index) => {
@@ -219,6 +221,7 @@ const LeaveRequestsTable = () => {
           leave.totalLeaves === 0 ? 0 : leave.availableLeaves - totalLeaveDays,
         usedLeaves: leave.usedLeaves + totalLeaveDays,
         [`status.${selectedIndex}`]: "Approved", // Only update the status at selected index
+        [`rejectionComment.${selectedIndex}`] :  "",
       };
       try {
         const response = await fetch(
@@ -688,9 +691,9 @@ const LeaveRequestsTable = () => {
                   </td>
                   {["All", "Rejected"].includes(selectedFilter) && (
   <td>
-    <Tooltip title={leave.rejectionComment || "N/A"} arrow>
+    <Tooltip title={formatReason(leave.rejectionComment) || "N/A"} arrow>
       <span>
-        {leave.rejectionComment
+        {leave.rejectionComment.toLowerCase() !== "n/a"
           ? leave.rejectionComment.length > 30
             ? truncateReason(formatReason(leave.rejectionComment).substring(0, 30)) + "..."
             : truncateReason(formatReason(leave.rejectionComment))
@@ -818,29 +821,35 @@ const LeaveRequestsTable = () => {
             <div className="action-buttons">
               <Button
                 onClick={handleApprove}
-                variant="contained"
+                variant="outlined"
                 color="success"
                 disabled={currentStatus.toLowerCase() === "approved"}
                 sx={{
                   opacity: currentStatus.toLowerCase() === "approved" ? 0.5 : 1,
                   cursor: currentStatus.toLowerCase() === "approved" ? "not-allowed" : "pointer",
                   marginRight: "10px",
+                  "&:hover": {
+                    borderColor: "green", 
+                  },
                 }}
               >
-                ✅ Approve
+              Approve
               </Button>
 
               <Button
                 onClick={handleRejectClick}
-                variant="contained"
+                variant="outlined"
                 color="error"
                 disabled={currentStatus.toLowerCase() === "rejected"}
                 sx={{
                   opacity: currentStatus.toLowerCase() === "rejected" ? 0.5 : 1,
                   cursor: currentStatus.toLowerCase() === "rejected" ? "not-allowed" : "pointer",
+                  "&:hover": {
+                    borderColor: "red", 
+                  },
                 }}
               >
-                ❌ Reject
+               Reject
               </Button>
             </div>
           );

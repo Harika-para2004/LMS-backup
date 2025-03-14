@@ -56,7 +56,8 @@ const ReportsAdmin = () => {
             leaveType: formatName(leave.leaveType),
             startDate: formatDate(leave.startDate), // Convert to Date for sorting
             endDate: formatDate(leave.endDate),
-            duration: leave.duration,          }))
+            duration: leave.duration,
+          }))
         : [
             {
               empname: formatName(report.empname),
@@ -81,11 +82,11 @@ const ReportsAdmin = () => {
           report.email.toLowerCase().includes(search.toLowerCase()) ||
           report.project.toLowerCase().includes(search.toLowerCase()) ||
           report.empid.toString().includes(search))
-    )
-    // .map((report) => ({
-    //   ...report,
-    //   startDate: formatDate(report.startDate), // Convert back to dd/mm/yyyy for display
-    // }));
+    );
+  // .map((report) => ({
+  //   ...report,
+  //   startDate: formatDate(report.startDate), // Convert back to dd/mm/yyyy for display
+  // }));
 
   const [currentPage, setCurrentPage] = useState(1);
   const employeesPerPage = 15;
@@ -163,73 +164,71 @@ const ReportsAdmin = () => {
       <div className="filters">
         <h2 className="content-heading">Annual Approved Leave Summary</h2>
 
-        <FormControl
-          sx={{
-            minWidth: 85,
-            bgcolor: "white",
-            borderRadius: 1,
-            boxShadow: "0px 2px 6px rgba(159, 50, 178, 0.2)", // Softer purple glow for elegance
-            "& .MuiOutlinedInput-notchedOutline": { border: "none" }, // Removes default border
-          }}
-        >
-          <Select
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-            displayEmpty
+        <div  >
+        <Button
+            onClick={() => setShowAnalytics(!showAnalytics)}
+            variant="outlined"
             sx={{
-              fontSize: "12px",
-              fontWeight: 500,
-              color: "#fff",
-              background: "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)", // Elegant gradient
+              color: "#313896",
+              border: "1px solid #313896" ,
+              fontSize: "13px",
+              textTransform: "none",
+              height:"40px",
+              mr:2,
+            }}
+            // className="btn-analytics"
+          >
+            {showAnalytics ? "Show Reports" : "Show Analytics"}
+          </Button>
+          <FormControl
+            sx={{
+              minWidth: 85,
+              bgcolor: "white",
               borderRadius: 1,
-              height: 40, // Slightly reduced height for compact look
-              px: 1.2, // Well-balanced padding
-              bgcolor: "#fafafa", // Softer background
-              transition: "all 0.3s ease-in-out",
-              "&:hover": { bgcolor: "#f0f0f0" },
-              "&.Mui-focused": {
-                background: "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)", // Elegant gradient
-                boxShadow: "0px 3px 8px rgba(159, 50, 178, 0.3)", // Elegant focused effect
-              },
+              boxShadow: "0px 2px 6px rgba(159, 50, 178, 0.2)", // Softer purple glow for elegance
+              "& .MuiOutlinedInput-notchedOutline": { border: "none" }, // Removes default border
             }}
           >
-            {yearsRange.map((year) => (
-              <MenuItem
-                key={year}
-                value={year}
-                sx={{
-                  fontSize: "12px",
-                  px: 1.2,
-                  "&:hover": { bgcolor: "#f5e9f7" }, // Subtle hover effect
-                }}
-              >
-                {year}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+            <Select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              displayEmpty
+              sx={{
+                fontSize: "13px",
+                fontWeight: 500,
+                color: "#fff",
+                background: "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)", // Elegant gradient
+                borderRadius: 1,
+                height: 40, // Slightly reduced height for compact look
+                px: 1.2, // Well-balanced padding
+                bgcolor: "#fafafa", // Softer background
+                transition: "all 0.3s ease-in-out",
+                "&:hover": { bgcolor: "#f0f0f0" },
+                "&.Mui-focused": {
+                  background:
+                    "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)", // Elegant gradient
+                  boxShadow: "0px 3px 8px rgba(159, 50, 178, 0.3)", // Elegant focused effect
+                },
+              }}
+            >
+              {yearsRange.map((year) => (
+                <MenuItem
+                  key={year}
+                  value={year}
+                  sx={{
+                    fontSize: "12px",
+                    px: 1.2,
+                    "&:hover": { bgcolor: "#f5e9f7" }, // Subtle hover effect
+                  }}
+                >
+                  {year}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
-        <Button
-          onClick={() => setShowAnalytics(!showAnalytics)}
-          sx={{
-            textTransform: "none",
-            fontSize: "14px",
-            fontWeight: 500,
-            color: "#333", // Normal text color
-            background: "#fff", // Default white background
-            borderRadius: 1,
-            height: 40, // Matches Select height
-            px: 2, // Balanced padding
-            border: "1px solid #ccc", // Light border for structure
-            transition: "all 0.3s ease-in-out",
-            "&:hover": {
-              background: "#f5f5f5", // Subtle hover effect
-            },
-          }}
-          className="btn-analytics"
-        >
-          {showAnalytics ? "Show Reports" : "Show Analytics"}
-        </Button>
+          
+        </div>
       </div>
 
       {/* {!showAnalytics && (

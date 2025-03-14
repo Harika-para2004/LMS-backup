@@ -157,14 +157,14 @@ const ProfilePage = () => {
       console.log("Response received:", response.data);
   
       if (response.status === 200) {
-        alert("Password updated successfully!");
+        showToast("Password updated successfully!","success");
         handleClose();
       } else {
-        alert("Failed to update password. Try again.");
+        showToast("Failed to update password. Try again.","error");
       }
     } catch (error) {
       console.error("Error updating password:", error.response?.data || error.message);
-      alert(error.response?.data?.message || "An error occurred while updating the password.");
+      showToast(error.response?.data?.message || "An error occurred while updating the password.","error");
     }
   };
   

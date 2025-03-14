@@ -85,16 +85,18 @@ const TotalEmployees = () => {
     setEmpData((prev) => ({ ...prev, project: event.target.value })); // ✅ Replace, not append
   };
   const filteredEmployees = employeeList
-  .slice() // Create a shallow copy to avoid mutating original data
-  .sort((a, b) =>
-    a.empid.localeCompare(b.empid, undefined, { numeric: true })
-  )
-  .filter((emp) =>
-    [emp.empname, emp.email, emp.role, emp.project,emp.managerName]
-      .some((field) => (typeof field === "string" ? field.toLowerCase().includes(searchTerm.toLowerCase()) : false))
-  );
-
-
+    .slice() // Create a shallow copy to avoid mutating original data
+    .sort((a, b) =>
+      a.empid.localeCompare(b.empid, undefined, { numeric: true })
+    )
+    .filter((emp) =>
+      [emp.empname, emp.email, emp.role, emp.project, emp.managerName].some(
+        (field) =>
+          typeof field === "string"
+            ? field.toLowerCase().includes(searchTerm.toLowerCase())
+            : false
+      )
+    );
 
   const [currentPage, setCurrentPage] = useState(1);
   const employeesPerPage = 15;
@@ -222,31 +224,33 @@ const TotalEmployees = () => {
       !empData.email ||
       !empData.empid ||
       !empData.empname ||
-      (empData.role === "Employee" && (!empData.project || empData.project.length === 0)) ||
+      (empData.role === "Employee" &&
+        (!empData.project || empData.project.length === 0)) ||
       !empData.role
     ) {
       setError("All fields are required.");
       return;
     }
-  
+
     const requestBody = {
       ...empData,
       project: empData.project,
-      managerEmail: empData.role === "Manager" ? "" : empData.managerEmail || "",
+      managerEmail:
+        empData.role === "Manager" ? "" : empData.managerEmail || "",
     };
-  
+
     try {
       const response = await fetch(`${BASE_URL}updateEmployeeList/${id}`, {
         method: "PUT",
         body: JSON.stringify(requestBody),
         headers: { "Content-Type": "application/json" },
       });
-  
+
       if (!response.ok) {
         const errorResponse = await response.json();
         throw new Error(errorResponse.message);
       }
-  
+
       fetchEmployees();
       setEditingRow(null);
       setError(null);
@@ -259,8 +263,6 @@ const TotalEmployees = () => {
       showToast(error.message); // ✅ Display alert for better visibility
     }
   };
-  
-  
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -286,7 +288,16 @@ const TotalEmployees = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { empname, empid, email, password, project, gender, role ,managerEmail} = empData;
+    const {
+      empname,
+      empid,
+      email,
+      password,
+      project,
+      gender,
+      role,
+      managerEmail,
+    } = empData;
     if (!empname || !empid) {
       showToast("Please Enter Required Fields *");
       return;
@@ -553,13 +564,16 @@ const TotalEmployees = () => {
             gap: "16px",
           }}
         >
+          <div style={{ display: "flex", alignItems: "center",color:"#313896" }}>
+            <InfoPopup handleDownloadTemplate={handleDownloadTemplate} />
+          </div>
           <div>
             <Tooltip title="Upload Employees" arrow>
               <Button
                 component="label"
-                variant="text"
+                variant="outlined"
                 startIcon={<CloudUploadIcon />}
-                sx={{ textTransform: "none" }}
+                sx={{ textTransform: "none", color: "#313896",borderColor:"#313896", }}
               >
                 Upload Excel
                 <input
@@ -577,7 +591,7 @@ const TotalEmployees = () => {
                 variant="contained"
                 color="secondary"
                 disabled={loading}
-                startIcon={!loading && <CloudUploadIcon />}
+                // startIcon={!loading && <CloudUploadIcon />}
                 sx={{ marginLeft: 2 }}
               >
                 {loading ? (
@@ -588,24 +602,18 @@ const TotalEmployees = () => {
               </Button>
             )}
           </div>
-          <div style={{ position: "relative", display: "inline-block" }}>
-  {/* ℹ️ Info Icon */}
-  <InfoPopup handleDownloadTemplate={handleDownloadTemplate} />
-</div>
 
           <Button
             variant="contained"
             onClick={() => handleAddEmployeeClick()}
             // onClick={() => setShowModal(true)}
             sx={{
-              fontSize: "13px",
+              // fontSize: "13px",
               fontWeight: 500,
               color: "#fff",
-              background: "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)", // Elegant gradient
+              background:"#313896",
               borderRadius: 1,
-              bgcolor: "#fafafa", // Softer background
-              transition: "all 0.3s ease-in-out",
-              "&:hover": { bgcolor: "#f0f0f0" },
+              "&:hover": { bgcolor: "#313896" },
               "&.Mui-focused": {
                 background: "linear-gradient(135deg, #9F32B2 0%, #6A1B9A 100%)", // Elegant gradient
                 boxShadow: "0px 3px 8px rgba(159, 50, 178, 0.3)", // Elegant focused effect
@@ -783,11 +791,13 @@ const TotalEmployees = () => {
               <Button
                 onClick={handleAddEmployeeClose}
                 style={{ marginRight: "8px" }}
+                sx={{ color:"#313896",borderColor:"#313896" }}
+                variant="outlined"
               >
                 Cancel
               </Button>
-              <Button variant="contained" type="submit">
-                Add 
+              <Button variant="contained" sx={{ bgcolor:"#313896" }} type="submit">
+                Add
               </Button>
             </div>
           </form>
@@ -933,7 +943,7 @@ const TotalEmployees = () => {
                 color="primary"
                 onClick={() => handleSave1(editingRow)}
               >
-                Update 
+                Update
               </Button>
             </div>
           </div>
@@ -981,16 +991,16 @@ const TotalEmployees = () => {
                     <td style={{ color: !emp.isActive ? "red" : "green" }}>
                       {emp.isActive ? "Yes" : "No"}
                     </td>
-                                       <td>
+                    <td>
                       {" "}
-                      {emp.role === "Employee" && emp.isActive=== true
+                      {emp.role === "Employee" && emp.isActive === true
                         ? emp.managerEmail === "dummy@gmail.com"
                           ? "Not Assigned"
                           : emp.managerName || "-"
                         : emp.managerName || "-"}
                     </td>
                     <td>
-                      {emp.role === "Employee" && emp.isActive===true
+                      {emp.role === "Employee" && emp.isActive === true
                         ? emp.managerEmail === "dummy@gmail.com"
                           ? "Not Assigned"
                           : emp.managerEmail || "-"

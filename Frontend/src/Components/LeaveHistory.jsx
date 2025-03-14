@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { AiFillFilePdf, AiOutlineExclamationCircle } from "react-icons/ai";
 import { MdCheckCircle, MdCancel, MdWatchLater } from "react-icons/md";
-import { FaTrash } from "react-icons/fa";
+import { FaEdit, FaTrash } from "react-icons/fa";
 import { formatDate } from "../utils/dateUtlis";
 import { useManagerContext } from "../context/ManagerContext";
 import {
@@ -14,8 +14,9 @@ import {
   Tooltip,
   TextField,
   InputAdornment,
+  IconButton,
 } from "@mui/material";
-import { Search } from "@mui/icons-material";
+import { Delete, Edit, Search } from "@mui/icons-material";
 
 const LeaveHistory = () => {
   const {
@@ -24,7 +25,8 @@ const LeaveHistory = () => {
     email,
     setEmail,
     showToast,
-    selectedFilterHistory,setSelectedFilterHistory,
+    selectedFilterHistory,
+    setSelectedFilterHistory,
   } = useManagerContext();
 
   const currentYear = new Date().getFullYear();
@@ -66,10 +68,10 @@ const LeaveHistory = () => {
   const displayedData = leaveHistory
     .filter(
       (leave) =>
-      selectedFilterHistory === "All" ||
+        selectedFilterHistory === "All" ||
         (leave.status &&
           leave.status.toString().toLowerCase() ===
-          selectedFilterHistory.toLowerCase())
+            selectedFilterHistory.toLowerCase())
     )
     .filter((leave) =>
       leave.leaveType.toLowerCase().includes(searchQuery.toLowerCase())
@@ -96,7 +98,7 @@ const LeaveHistory = () => {
 
   useEffect(() => {
     setSelectedFilterHistory("Pending");
-  },[])
+  }, []);
 
   // Pagination logic
   // const itemsPerPage = 15;
@@ -141,6 +143,8 @@ const LeaveHistory = () => {
         return null;
     }
   };
+
+  
 
   const handleDelete = async (id, startDate) => {
     if (!id || !startDate) {
@@ -338,7 +342,9 @@ const LeaveHistory = () => {
             <th>No Of Days</th>
             <th>Reason</th>
             <th>Document</th>
-            {["All", "Rejected"].includes(selectedFilterHistory) && <th>Rejection Reason</th>}
+            {["All", "Rejected"].includes(selectedFilterHistory) && (
+              <th>Rejection Reason</th>
+            )}
             <th>Status</th>
             <th>Action</th>
           </tr>
@@ -383,43 +389,70 @@ const LeaveHistory = () => {
                     )}
                   </td>
                   {["All", "Rejected"].includes(selectedFilterHistory) && (
-  <td>
-    <Tooltip title={leave.rejectionComment || "N/A"} arrow>
-      <span>
-     {leave.rejectionComment
-          ? leave.rejectionComment.length > 30
-            ?  truncateReason(formatReason(leave.rejectionComment.substring(0, 30) + "..."))
-            :  truncateReason(formatReason(leave.rejectionComment))
-          : "N/A"}
-      </span>
-    </Tooltip>
-  </td>
-)}
+                    <td>
+                      <Tooltip title={leave.rejectionComment || "N/A"} arrow>
+                        <span>
+                          {leave.rejectionComment
+                            ? leave.rejectionComment.length > 30
+                              ? truncateReason(
+                                  formatReason(
+                                    leave.rejectionComment.substring(0, 30) +
+                                      "..."
+                                  )
+                                )
+                              : truncateReason(
+                                  formatReason(leave.rejectionComment)
+                                )
+                            : "N/A"}
+                        </span>
+                      </Tooltip>
+                    </td>
+                  )}
 
                   <td>{getStatusIcon(leave.status)}</td>
                   <td>
-                    <button
-                      onClick={() =>
-                        handleDelete(leave._id, formatDate(leave.startDate))
-                      }
-                      className="delete-btn"
-                      disabled={leave.status !== "Pending"}
-                      style={{
-                        border: "none",
-                        cursor:
-                          leave.status !== "Pending"
-                            ? "not-allowed"
-                            : "pointer",
-                        opacity: leave.status !== "Pending" ? 0.5 : 1,
-                      }}
-                    >
-                      <FaTrash
-                        size={18}
-                        color={leave.status === "Pending" ? "red" : "gray"}
-                      />
-                    </button>
-                  </td>
+                    <Tooltip title="Edit Leave" arrow>
+                      <span>
+                        <IconButton
+                          onClick={() =>
+                            handleEdit(leave._id, formatDate(leave.startDate))
+                          }
+                          disabled={leave.status !== "Pending"}
+                          sx={{
+                            cursor:
+                              leave.status !== "Pending"
+                                ? "not-allowed"
+                                : "pointer",
+                            opacity: leave.status !== "Pending" ? 0.5 : 1,
+                          }}
+                        >
+                         <Edit sx={{ color: leave.status === "Pending" ? "#313896" : "gray" }} />
 
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+
+                    <Tooltip title="Delete Leave" arrow>
+                      <span>
+                        <IconButton
+                          onClick={() =>
+                            handleDelete(leave._id, formatDate(leave.startDate))
+                          }
+                          disabled={leave.status !== "Pending"}
+                          sx={{
+                            cursor:
+                              leave.status !== "Pending"
+                                ? "not-allowed"
+                                : "pointer",
+                            opacity: leave.status !== "Pending" ? 0.5 : 1,
+                          }}
+                        >
+                           <Delete sx={{ color: leave.status === "Pending" ? "red" : "gray" }} />
+
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  </td>
                 </tr>
               ))
           ) : (

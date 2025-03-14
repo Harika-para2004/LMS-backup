@@ -658,6 +658,8 @@ const ApplyLeave = () =>
                   variant="outlined"
                   component="label"
                   className="attach-button"
+                  sx = {{color:"#313896",borderColor:"#313896" }}
+              
                 >
                   {fileName ? fileName : "Attach"}
                   <input
@@ -673,7 +675,8 @@ const ApplyLeave = () =>
                 <Button
                   type="submit"
                   variant="contained"
-                  sx={{ textTransform: "none" }}
+                  sx={{ bgcolor:"#313896" }}
+
                 >
                   Submit
                 </Button>

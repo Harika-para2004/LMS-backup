@@ -1,4 +1,4 @@
-import React,{useState} from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -28,7 +28,7 @@ const Sidebar = ({
   Profile,
   email,
 }) => {
-  const location = useLocation(); 
+  const location = useLocation();
   const isEmployee = userType === "employee";
   const isAdmin = userType === "admin";
   const isManager = userType === "manager";
@@ -44,97 +44,175 @@ const Sidebar = ({
       return (
         <>
           <li>
-            <Link to="/employee/dashboard" className={location.pathname === "/employee/dashboard" || location.pathname === "/employee" ? "active-tab" : ""}>
+            <Link
+              to="/employee/dashboard"
+              className={
+                location.pathname === "/employee/dashboard" ||
+                location.pathname === "/employee"
+                  ? "active-tab"
+                  : ""
+              }
+            >
               <FontAwesomeIcon icon={faChartLine} /> Dashboard
             </Link>
           </li>
           <li>
-            <Link to="/employee/apply-leave" className={location.pathname === "/employee/apply-leave" ? "active-tab" : ""}>
+            <Link
+              to="/employee/apply-leave"
+              className={
+                location.pathname === "/employee/apply-leave"
+                  ? "active-tab"
+                  : ""
+              }
+            >
               <FontAwesomeIcon icon={faPaperPlane} /> Apply Leave
             </Link>
           </li>
           <li>
-            <Link to="/employee/history" className={location.pathname === "/employee/history" ? "active-tab" : ""}>
-              <FontAwesomeIcon icon={faHistory} />Leave History
+            <Link
+              to="/employee/history"
+              className={
+                location.pathname === "/employee/history" ? "active-tab" : ""
+              }
+            >
+              <FontAwesomeIcon icon={faHistory} />
+              Leave History
             </Link>
           </li>
         </>
       );
     } else if (isAdmin) {
       return (
-         <div className="sidebar-comps-admin">
+        <div className="sidebar-comps-admin">
           <ul>
-         <li>
-           <Link
-             to="/admin/calendar"
-             className={location.pathname.includes("/admin/calendar") || location.pathname === "/admin" ? "active-tab" : ""
-             }
-           >
-             <FontAwesomeIcon icon={faCalendarDays} /> Calendar
-           </Link>
-         </li>
-         <li>
-           <Link
-             to="/admin/all-employees"
-             className={location.pathname.includes("/admin/all-employees") ? "active-tab" : ""}
-           >
-             <FaListAlt style={{ marginRight: "8px" }} />
-             Employee List
-           </Link>
-         </li>
-         <li>
-           <Link
-             to="/admin/all-reports"
-             className={["/admin/all-reports", "/admin/analytics", "/admin/dashboard"].some(path => location.pathname.includes(path)) ? "active-tab" : ""}>
-             <FontAwesomeIcon icon={faFileLines} /> Reports
-           </Link>
-         </li>
-         <li>
-           <Link
-             to="/admin/leave-policies"
-             className={location.pathname.includes("/admin/leave-policies") ? "active-tab" : ""}
-           >
-             <FontAwesomeIcon icon={faClipboardList} /> Configurations
-           </Link>
-         </li>
-         <li>
-           <Link
-             to="/admin/leave-requests"
-             className={location.pathname === "/admin/leave-requests" ? "active-tab" : ""}
-           >
-             <FontAwesomeIcon icon={faEnvelopeOpenText} /> Leave Requests
-           </Link>
-         </li>
-         <li>
-      <Link to="#" onClick={() => setIsProfileOpen(true)} className="admin-profile-link">
-        <FontAwesomeIcon icon={faUser} /> Profile
-      </Link>
-    </li>
-         </ul>
-       </div>
-     );
+            <li>
+              <Link
+                to="/admin/calendar"
+                className={
+                  location.pathname.includes("/admin/calendar") ||
+                  location.pathname === "/admin"
+                    ? "active-tab"
+                    : ""
+                }
+              >
+                <FontAwesomeIcon icon={faCalendarDays} /> Calendar
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/admin/all-employees"
+                className={
+                  location.pathname.includes("/admin/all-employees")
+                    ? "active-tab"
+                    : ""
+                }
+              >
+                <FaListAlt style={{ marginRight: "8px" }} />
+                Employee List
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/admin/all-reports"
+                className={
+                  [
+                    "/admin/all-reports",
+                    "/admin/analytics",
+                    "/admin/dashboard",
+                  ].some((path) => location.pathname.includes(path))
+                    ? "active-tab"
+                    : ""
+                }
+              >
+                <FontAwesomeIcon icon={faFileLines} /> Reports
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/admin/leave-policies"
+                className={
+                  location.pathname.includes("/admin/leave-policies")
+                    ? "active-tab"
+                    : ""
+                }
+              >
+                <FontAwesomeIcon icon={faClipboardList} /> Configurations
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/admin/leave-requests"
+                className={
+                  location.pathname === "/admin/leave-requests"
+                    ? "active-tab"
+                    : ""
+                }
+              >
+                <FontAwesomeIcon icon={faEnvelopeOpenText} /> Leave Requests
+              </Link>
+            </li>
+            {/* <li>
+              <Link
+                to="#"
+                onClick={() => setIsProfileOpen(true)}
+                className="admin-profile-link"
+              >
+                <FontAwesomeIcon icon={faUser} /> Profile
+              </Link>
+            </li> */}
+          </ul>
+        </div>
+      );
     } else {
       return (
         <>
           <li>
-            <Link to="/manager/leave-requests" className={location.pathname === "/manager/leave-requests" || location.pathname === "/manager" ? "active-tab" : ""}>
+            <Link
+              to="/manager/leave-requests"
+              className={
+                location.pathname === "/manager/leave-requests" ||
+                location.pathname === "/manager"
+                  ? "active-tab"
+                  : ""
+              }
+            >
               <FontAwesomeIcon icon={faCalendarCheck} /> Leave Requests
             </Link>
           </li>
           <li>
-            <Link to="/manager/analytics" 
-            className={["/manager/all-reports", "/manager/analytics", "/manager/dashboard"].some(path => location.pathname.includes(path)) ? "active-tab" : ""}>
+            <Link
+              to="/manager/analytics"
+              className={
+                [
+                  "/manager/all-reports",
+                  "/manager/analytics",
+                  "/manager/dashboard",
+                ].some((path) => location.pathname.includes(path))
+                  ? "active-tab"
+                  : ""
+              }
+            >
               <FontAwesomeIcon icon={faChartLine} /> Dashboard
             </Link>
           </li>
           <hr />
           <li>
-            <Link to="/manager/apply-leave" className={location.pathname === "/manager/apply-leave" ? "active-tab" : ""}>
+            <Link
+              to="/manager/apply-leave"
+              className={
+                location.pathname === "/manager/apply-leave" ? "active-tab" : ""
+              }
+            >
               <FontAwesomeIcon icon={faPaperPlane} /> Apply Leave
             </Link>
           </li>
           <li>
-            <Link to="/manager/history" className={location.pathname === "/manager/history" ? "active-tab" : ""}>
+            <Link
+              to="/manager/history"
+              className={
+                location.pathname === "/manager/history" ? "active-tab" : ""
+              }
+            >
               <FontAwesomeIcon icon={faHistory} /> Leave History
             </Link>
           </li>
@@ -149,24 +227,32 @@ const Sidebar = ({
         <img src={logo} alt="Quadface Logo" className="logo_das" />
       </div>
       <div className="sidebar-comps">
-
-
-      <AdminProfileModal
-  isOpen={isProfileOpen}
-  onClose={() => setIsProfileOpen(false)}
-  adminEmail={email}
-  onResetPassword={handleResetPassword}
-/>
-
+        <AdminProfileModal
+          isOpen={isProfileOpen}
+          onClose={() => setIsProfileOpen(false)}
+          adminEmail={email}
+          onResetPassword={handleResetPassword}
+        />
 
         {(isEmployee || isManager) && (
-          <Link to={`/${userType}/profile`} className={selectedCategory === "profile" ? "active-tab" : ""}>
+          <Link
+            // to={`/${userType}/profile`}
+            to=""
+            style={{ cursor: "default" }}
+            className={selectedCategory === "profile" ? "active-tab" : ""}
+          >
             <div className="profile-section">
               <div className="profile-pic" style={{ marginTop: "10%" }}>
                 <img src={Profile} alt="Profile" />
               </div>
-              <div className="profile-details">
-                <p className="emp-name" data-fullname={username}>{username}</p>
+              <div className="profile-details" style={{ cursor: "default" }}>
+                <p
+                  className="emp-name"
+                  style={{ cursor: "default" }}
+                  data-fullname={username}
+                >
+                  {username}
+                </p>
                 <p className="emp-id">Emp ID: {empid}</p>
               </div>
             </div>

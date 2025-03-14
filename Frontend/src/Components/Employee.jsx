@@ -14,6 +14,7 @@ import dayjs from "dayjs";
 import EmployeeDashboard from "./EmployeeDashboard";
 import { Outlet } from "react-router-dom";
 import { useManagerContext } from "../context/ManagerContext";
+import Navbar from "./Navbar";
 
 const App = () => {
   // const [selectedCategory, setSelectedCategory] = useState("dashboard");
@@ -54,37 +55,61 @@ const App = () => {
   // const [leavePolicyRef, setLeavePolicyRef] = useState([]);
 
   const {
-    modalOpen, setModalOpen,
-    leaveRequests, setLeaveRequests,
-        selectedLeave, setSelectedLeave,
-        selectedCategory, setSelectedCategory,
-        leaveData, setLeaveData,
-        managerEmail, setManagerEmail,
-        email, setEmail,
-        gender, setGender,
-        empid, setEmpid,
-        username, setUsername,
-        project, setProject,
-        designation, setDesignation,
-        leaveHistory, setLeaveHistory,
-        holidays, setHolidays,
-        profileImage, setProfileImage,
-        newPassword, setNewPassword,
-        confirmPassword, setConfirmPassword,
-        userData, setUserData,
-        file, setFile,
-        selectedFilter, setSelectedFilter,
-        error, setError,
-        leavePolicyRef, setLeavePolicyRef,
-        mergedLeaveData, setMergedLeaveData,
-        errors, setErrors,
-        formData, setFormData,
-        leavePolicies,setLeavePolicies,
-        navigate,
-        showToast
+    modalOpen,
+    setModalOpen,
+    leaveRequests,
+    setLeaveRequests,
+    selectedLeave,
+    setSelectedLeave,
+    selectedCategory,
+    setSelectedCategory,
+    leaveData,
+    setLeaveData,
+    managerEmail,
+    setManagerEmail,
+    email,
+    setEmail,
+    gender,
+    setGender,
+    empid,
+    setEmpid,
+    username,
+    setUsername,
+    project,
+    setProject,
+    designation,
+    setDesignation,
+    leaveHistory,
+    setLeaveHistory,
+    holidays,
+    setHolidays,
+    profileImage,
+    setProfileImage,
+    newPassword,
+    setNewPassword,
+    confirmPassword,
+    setConfirmPassword,
+    userData,
+    setUserData,
+    file,
+    setFile,
+    selectedFilter,
+    setSelectedFilter,
+    error,
+    setError,
+    leavePolicyRef,
+    setLeavePolicyRef,
+    mergedLeaveData,
+    setMergedLeaveData,
+    errors,
+    setErrors,
+    formData,
+    setFormData,
+    leavePolicies,
+    setLeavePolicies,
+    navigate,
+    showToast,
   } = useManagerContext();
-
-
 
   useEffect(() => {
     const fetchLeavePolicies = async () => {
@@ -158,7 +183,7 @@ const App = () => {
     e.preventDefault();
     localStorage.clear();
     navigate("/"); // Redirects user after logout
-    window.location.reload(); 
+    window.location.reload();
   };
 
   const formatCase = (text) => {
@@ -210,15 +235,16 @@ const App = () => {
       const monthIndexB = monthNames.indexOf(monthB);
       if (monthIndexA !== monthIndexB) {
         return monthIndexA - monthIndexB;
-      }      return parseInt(dayA, 10) - parseInt(dayB, 10);
+      }
+      return parseInt(dayA, 10) - parseInt(dayB, 10);
     });
   };
 
   useEffect(() => {
     const fetchLeaveData = async () => {
       try {
-        console.log("email in emp",email);
-        console.log("user email",userData.email)
+        console.log("email in emp", email);
+        console.log("user email", userData.email);
         const response = await fetch(
           `http://localhost:5001/leavesummary?email=${email}`
         );
@@ -276,7 +302,7 @@ const App = () => {
     }
   };
   useEffect(() => {
-    if (userData && userData.email && userData.role) {  
+    if (userData && userData.email && userData.role) {
       console.log("Fetching leave requests for:", userData.email);
       fetchLeaveHistory();
     }
@@ -290,7 +316,7 @@ const App = () => {
       console.error("Error: ID or startDate is undefined");
       return;
     }
-  
+
     try {
       const response = await fetch(`http://localhost:5001/leaves/${id}`, {
         method: "DELETE",
@@ -299,26 +325,23 @@ const App = () => {
         },
         body: JSON.stringify({ startDate }), // Pass startDate in the body for matching
       });
-  
+
       if (!response.ok) {
         throw new Error("Failed to delete leave");
       }
-  
+
       showToast("Leave deleted successfully!", "success");
       // Remove the deleted leave from the state
- fetchLeaveHistory()
+      fetchLeaveHistory();
     } catch (error) {
       console.error("Error deleting leave:", error);
     }
   };
-  
-  
+
   const renderContent = () => {
     switch (selectedCategory) {
       case "dashboard":
-        return(
-        <EmployeeDashboard email={email}             gender={gender}
-/> );
+        return <EmployeeDashboard email={email} gender={gender} />;
       case "apply-leave":
         return (
           <ApplyLeave
@@ -351,7 +374,12 @@ const App = () => {
           />
         );
       case "history":
-        return <LeaveHistory leaveHistory={leaveHistory} handleDelete={handleDelete}/>;
+        return (
+          <LeaveHistory
+            leaveHistory={leaveHistory}
+            handleDelete={handleDelete}
+          />
+        );
       default:
         return null;
     }
@@ -359,7 +387,6 @@ const App = () => {
 
   return (
     <div className="dashboard-container">
-
       <div className="content">
         <Sidebar
           userType="employee"
@@ -373,12 +400,19 @@ const App = () => {
         />
 
         {/* <div className="main-content">{renderContent()}</div> */}
-        <main className="main-content">
-  <Outlet />
-</main>
+        <div className="nav-main-cont">
+          {" "}
+          <Navbar
+            userType="employee"
+            email={email}
+            handleLogout={handleLogout}
+          />
+          <main className="main-content">
+            <Outlet />
+          </main>
+        </div>
       </div>
     </div>
-
   );
 };
 

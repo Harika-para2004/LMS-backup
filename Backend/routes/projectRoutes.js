@@ -83,27 +83,50 @@ router.put("/projects/:id", async (req, res) => {
 
 
 // ✅ Delete Project (Sync with User Collection)
+// router.delete("/projects/:id", async (req, res) => {
+//   try {
+//     // ✅ Find the project before deleting
+//     const project = await Project.findById(req.params.id);
+//     if (!project) {
+//       return res.status(404).json({ message: "Project not found" });
+//     }
+
+//     // ✅ Delete the project from Project Collection
+//     await Project.findByIdAndDelete(req.params.id);
+
+//     // ✅ Remove Project from Manager (who had that project)
+//     await User.updateMany(
+//       { project: project.projectName.toLowerCase() }, 
+//       { $set: { project: "" } } 
+//     );
+
+//     res.status(200).json({ message: "Project deleted successfully" });
+//   } catch (error) {
+//     res.status(500).json({ message: "Error deleting project" });
+//   }
+// });
 router.delete("/projects/:id", async (req, res) => {
   try {
-    // ✅ Find the project before deleting
+    // ✅ Find the project before attempting to delete
     const project = await Project.findById(req.params.id);
     if (!project) {
       return res.status(404).json({ message: "Project not found" });
     }
 
-    // ✅ Delete the project from Project Collection
-    await Project.findByIdAndDelete(req.params.id);
+    // ✅ Check if any user is assigned to this project
+    const assignedUsers = await User.findOne({ project: project.projectName.toLowerCase() });
+    if (assignedUsers) {
+      return res.status(400).json({ message: "Cannot delete project. Users are assigned to this project." });
+    }
 
-    // ✅ Remove Project from Manager (who had that project)
-    await User.updateMany(
-      { project: project.projectName.toLowerCase() }, 
-      { $set: { project: "" } } 
-    );
+    // ✅ If no users are assigned, delete the project
+    await Project.findByIdAndDelete(req.params.id);
 
     res.status(200).json({ message: "Project deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: "Error deleting project" });
   }
 });
+
 
 module.exports = router;

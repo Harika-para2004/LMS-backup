@@ -5,10 +5,11 @@ const InfoPopup = ({ handleDownloadTemplate }) => {
   const [showPopup, setShowPopup] = useState(false);
 
   return (
-    <div style={{ display: "inline-block" }}>
+    <div >
       {/* ℹ️ Info Icon */}
+    
       <div className="info-icon" onClick={() => setShowPopup(true)}>
-        <FaInfoCircle size={20} color="#007bff" style={{ cursor: "pointer",marginTop:"5px" }} />
+        <FaInfoCircle size={20} color="#007bff" style={{ cursor: "pointer",marginTop:"5px"}} />
       </div>
 
       {/* Popup (Modal) */}
@@ -31,7 +32,7 @@ const InfoPopup = ({ handleDownloadTemplate }) => {
           <div
             style={{
               background: "#fff",
-              padding: "20px",
+              padding: "30px",
               borderRadius: "10px",
               width: "320px",
               textAlign: "left",
@@ -64,10 +65,10 @@ const InfoPopup = ({ handleDownloadTemplate }) => {
 
             <ol style={{ fontSize: "14px", color: "#333", lineHeight: "1.6" }}>
               <li>
-                For <b>Managers</b>, leave the <b>Manager Email</b> column <i>empty</i>.
+                While adding <b>Managers</b> , leave the <b>Manager Email</b> column <i>empty</i>.
               </li>
               <li>
-                For <b>Employees</b>, leave the <b>Project</b> column <i>empty</i>.The <b>Project</b> Automatically assigned from <b>Manager</b>
+              While adding <b>Employees</b>, leave the <b>Project</b> column <i>empty</i>.The <b>Project</b> Automatically assigned from <b>Manager</b>
               </li>
               <li>
                 Ensure all required fields like <b>Email</b> and <b>Password</b> are filled.

@@ -36,6 +36,7 @@ import LeaveRequestsTable from "./LeaveRequestsTable";
 import AdminTrends from "./AdminTrends";
 import HolidayCalendar from "./HolidayCalendar";
 import TotalEmployees from "./TotalEmployees";
+import Navbar from "./Navbar";
 
 function AdminDashboard() {
   const [Email,setEmail] = useState("");
@@ -945,9 +946,20 @@ function AdminDashboard() {
         />
 
         {/* <main className="main-content">{renderContent()}</main> */}
-        <div className="main-content">
+        <div className="nav-main-cont">
+          {" "}
+          <Navbar
+            userType="admin"
+            email={Email}
+            handleLogout={handleLogout}
+          />
+          <main className="main-content">
+            <Outlet />
+          </main>
+        </div>
+        {/* <div className="main-content">
         <Outlet />
-      </div>
+      </div> */}
 
       </div>
 
