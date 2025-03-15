@@ -15,8 +15,6 @@ const ProjectSchema = require('../models/Project');
 const formatCase = (str) => {
   return str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
 };
-
-// Route to handle bulk employee upload
 router.post("/uploadEmployees", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
@@ -51,24 +49,25 @@ router.post("/uploadEmployees", upload.single("file"), async (req, res) => {
 
     const assignedProjects = new Set();
 
-    // ✅ First insert Managers only
     for (let row of sheetData) {
       const {
         EmployeeID,
         EmployeeName,
-        Email,
-        Password,
-        Role,
-        Gender,
-        Project,
-        ManagerEmail,
+        Email = "", // ✅ Default empty string to avoid undefined
+        Password = "", // ✅ Default empty string
+        Role = "", // ✅ Ensure role is not undefined
+        Gender = "", 
+        Project = "", 
+        ManagerEmail = "", 
       } = row;
-      const email = Email ? String(Email).toLowerCase() : "";
-const project = Project ? String(Project).toLowerCase() : "";
-      if (String(Role).toLowerCase() === "manager") {
+    
+      const email = Email.toString().toLowerCase().trim();  // ✅ Convert safely
+      const project = Project.toString().toLowerCase().trim(); // ✅ Convert safely
+    
+      if (String(Role).toLowerCase().trim() === "manager") {
         const userExists = await User.findOne({ email });
         const empidExists = await User.findOne({ empid: EmployeeID });
-
+    
         if (userExists || empidExists) {
           failedEntries.push({
             email,
@@ -76,7 +75,7 @@ const project = Project ? String(Project).toLowerCase() : "";
           });
           continue;
         }
-
+    
         if (assignedProjects.has(project)) {
           failedEntries.push({
             email,
@@ -84,7 +83,7 @@ const project = Project ? String(Project).toLowerCase() : "";
           });
           continue;
         }
-
+    
         const existingManager = await User.findOne({
           project: project,
           role: "Manager",
@@ -97,16 +96,16 @@ const project = Project ? String(Project).toLowerCase() : "";
           });
           continue;
         }
-
+    
         const existingProject = await ProjectSchema.findOne({
           projectName: project,
         });
         if (!existingProject) {
           await ProjectSchema.create({ projectName: project });
         }
-
+    
         const hashedPassword = await bcrypt.hash(Password.toString(), 10);
-
+    
         const newUser = new User({
           empid: EmployeeID,
           empname: formatCase(EmployeeName),
@@ -116,31 +115,33 @@ const project = Project ? String(Project).toLowerCase() : "";
           gender: formatCase(Gender),
           project,
         });
-
+    
         await newUser.save();
         newUsers.push({ ...newUser.toObject(), originalPassword: Password });
         managerEmails.set(email, project);
       }
     }
-
+    
     // ✅ Now insert Employees
     for (let row of sheetData) {
       const {
         EmployeeID,
         EmployeeName,
-        Email,
-        Password,
-        Role,
-        Gender,
-        Project,
-        ManagerEmail,
+        Email = "",
+        Password = "",
+        Role = "",
+        Gender = "",
+        Project = "",
+        ManagerEmail = "",
       } = row;
-      const email = Email ? String(Email).toLowerCase() : "";
-      const managerEmail = ManagerEmail ? String(ManagerEmail).toLowerCase() : "";
-      if (String(Role).toLowerCase() === "employee") {
+    
+      const email = Email.toString().toLowerCase().trim();
+      const managerEmail = ManagerEmail.toString().toLowerCase().trim();
+    
+      if (String(Role).toLowerCase().trim() === "employee") {
         const userExists = await User.findOne({ email });
         const empidExists = await User.findOne({ empid: EmployeeID });
-
+    
         if (userExists || empidExists) {
           failedEntries.push({
             email,
@@ -148,14 +149,14 @@ const project = Project ? String(Project).toLowerCase() : "";
           });
           continue;
         }
-      
+    
         let assignedProject = "";
         if (managerEmails.has(managerEmail)) {
           assignedProject = managerEmails.get(managerEmail);
         } else {
           const manager = await User.findOne({ email: managerEmail });
           if (manager && manager.project) {
-            assignedProject = manager.project.toLowerCase();
+            assignedProject = manager.project.toLowerCase().trim();
           } else {
             failedEntries.push({
               email,
@@ -164,11 +165,19 @@ const project = Project ? String(Project).toLowerCase() : "";
             continue;
           }
         }
-
-
-
+    
+        // ✅ Prevent crash if Project field is empty
+        if (Project) {
+          const existingProject = await ProjectSchema.findOne({
+            projectName: Project.toLowerCase().trim(),
+          });
+          if (!existingProject) {
+            await ProjectSchema.create({ projectName: Project.toLowerCase().trim() });
+          }
+        }
+    
         const hashedPassword = await bcrypt.hash(Password.toString(), 10);
-
+    
         const newUser = new User({
           empid: EmployeeID,
           empname: formatCase(EmployeeName),
@@ -179,7 +188,7 @@ const project = Project ? String(Project).toLowerCase() : "";
           project: assignedProject,
           managerEmail,
         });
-
+    
         await newUser.save();
         newUsers.push({ ...newUser.toObject(), originalPassword: Password });
       }
@@ -219,7 +228,6 @@ const project = Project ? String(Project).toLowerCase() : "";
     res.status(500).json({ message: "Error processing file" });
   }
 });
-
 const formatExcelDate = (serial) => {
   if (!serial || typeof serial !== "number") return null;
 
@@ -259,6 +267,7 @@ router.post("/uploadHolidays", upload.single("file"), async (req, res) => {
     if (!data.length) {
       return res.status(400).json({ message: "Empty file uploaded" });
     }
+
     // Extract column names from the first row
     const expectedColumns = ["date", "name", "type"];
     const fileColumns = Object.keys(data[0]);
@@ -271,12 +280,15 @@ router.post("/uploadHolidays", upload.single("file"), async (req, res) => {
     if (!hasCorrectFormat) {
       return res
         .status(400)
-        .json({
-          message: "Wrong format! Please upload a correctly formatted file.",
-        });
+        .json({ message: "Wrong format! Please upload a correctly formatted file." });
     }
 
     const holidaysToInsert = [];
+    const existingDates = new Set();
+
+    // ✅ Fetch existing holiday dates from the database
+    const existingHolidays = await Holiday.find({}, "date");
+    existingHolidays.forEach((holiday) => existingDates.add(holiday.date));
 
     for (const row of data) {
       let { date, name, type } = row;
@@ -286,8 +298,16 @@ router.post("/uploadHolidays", upload.single("file"), async (req, res) => {
         continue;
       }
 
+      // ✅ Convert Excel serial date to readable format if needed
       const formattedDate =
         typeof date === "number" ? formatExcelDate(date) : date;
+
+      // ✅ Check if the holiday already exists
+      if (existingDates.has(formattedDate)) {
+        console.log(`⚠️ Skipping duplicate holiday: ${formattedDate}`);
+        continue; // Skip duplicates
+      }
+
       const dayOfWeek = new Date(formattedDate).toLocaleString("en-us", {
         weekday: "long",
       });
@@ -312,19 +332,16 @@ router.post("/uploadHolidays", upload.single("file"), async (req, res) => {
     }
 
     const insertedHolidays = await Holiday.insertMany(holidaysToInsert);
-    res
-      .status(201)
-      .json({
-        insertedCount: insertedHolidays.length,
-        newHolidays: insertedHolidays,
-      });
+    res.status(201).json({
+      insertedCount: insertedHolidays.length,
+      newHolidays: insertedHolidays,
+    });
   } catch (error) {
     console.error("Error uploading holidays:", error);
-    res
-      .status(500)
-      .json({ message: "Error processing file", error: error.message });
+    res.status(500).json({ message: "Error processing file", error: error.message });
   }
 });
+
 // Function to format Excel date to "dd-MMM-yyyy"
 function formatDate(excelDate) {
   const parsedDate = new Date((excelDate - 25569) * 86400 * 1000); // Convert Excel serial date

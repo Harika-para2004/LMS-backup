@@ -85,6 +85,8 @@ const ApplyLeave = () =>
       leavehistory,
       setLeavehistory,
       holidays,
+      currentholidays,
+      setCurrentHolidays,
       setHolidays,
       profileImage,
       setProfileImage,
@@ -706,8 +708,8 @@ const ApplyLeave = () =>
                     </tr>
                   </thead>
                   <tbody>
-                    {holidays.length > 0 ? (
-                      holidays.map((holiday) => (
+                    {currentholidays.length > 0 ? (
+                      currentholidays.map((holiday) => (
                         <tr key={holiday._id}>
                           <td>
                             {holiday.date.split("-").slice(0, 2).join("-")}

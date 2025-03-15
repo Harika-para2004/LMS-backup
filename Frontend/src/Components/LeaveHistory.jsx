@@ -53,9 +53,10 @@ const LeaveHistory = () => {
   };
 
   const formatReason = (text) => {
-    if (!text) return "";
+    if (!text || text.toUpperCase() === "N/A") return "N/A"; // Ensure "N/A" remains unchanged
     return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
   };
+  
 
   // const filteredLeaveRequests = leaveHistory.filter((leave) =>
   //   selectedFilter === "All"
@@ -389,25 +390,24 @@ const LeaveHistory = () => {
                     )}
                   </td>
                   {["All", "Rejected"].includes(selectedFilterHistory) && (
-                    <td>
-                      <Tooltip title={leave.rejectionComment || "N/A"} arrow>
-                        <span>
-                          {leave.rejectionComment
-                            ? leave.rejectionComment.length > 30
-                              ? truncateReason(
-                                  formatReason(
-                                    leave.rejectionComment.substring(0, 30) +
-                                      "..."
-                                  )
-                                )
-                              : truncateReason(
-                                  formatReason(leave.rejectionComment)
-                                )
-                            : "N/A"}
-                        </span>
-                      </Tooltip>
-                    </td>
-                  )}
+  <td>
+    <Tooltip title={leave.rejectionComment || "N/A"} arrow>
+      <span>
+        {leave.rejectionComment
+          ? leave.rejectionComment.length > 30
+            ? truncateReason(
+                formatReason(
+                  leave.rejectionComment.substring(0, 30) + "..."
+                )
+              )
+            : truncateReason(formatReason(leave.rejectionComment))
+          : "N/A" // ✅ Explicitly ensure uppercase "N/A"
+        }
+      </span>
+    </Tooltip>
+  </td>
+)}
+
 
                   <td>{getStatusIcon(leave.status)}</td>
                   <td>

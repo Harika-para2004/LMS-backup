@@ -51,6 +51,7 @@ const ReportsAdmin = () => {
         ? report.leaves.map((leave) => ({
             empname: formatName(report.empname),
             empid: report.empid,
+            role:report.role,
             email: report.email || "N/A",
             project: formatName(report.project),
             leaveType: formatName(leave.leaveType),
@@ -62,6 +63,7 @@ const ReportsAdmin = () => {
             {
               empname: formatName(report.empname),
               empid: report.empid,
+              role:report.role,
               email: report.email || "N/A",
               project: formatName(report.project),
               leaveType: "N/A",
@@ -279,7 +281,7 @@ const ReportsAdmin = () => {
             <tbody>
               {currentReports.length > 0 ? (
                 currentReports
-                  .filter((report) => report.email !== "admin@gmail.com")
+                  .filter((report) => report.role !== "Admin")
                   .map((report, index) => (
                     <tr key={index}>
                       <td>{report.empname}</td>

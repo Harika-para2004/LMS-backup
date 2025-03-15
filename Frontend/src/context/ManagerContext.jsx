@@ -21,6 +21,7 @@ export const ManagerProvider = ({ children }) => {
   const [designation, setDesignation] = useState("");
   const [leaveRequests, setLeaveRequests] = useState([]);
   const [holidays, setHolidays] = useState([]);
+  const [currentholidays, setCurrentHolidays] = useState([]);
   const [profileImage, setProfileImage] = useState(Profile);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -93,6 +94,7 @@ export const ManagerProvider = ({ children }) => {
         designation, setDesignation,
         leaveRequests, setLeaveRequests,
         holidays, setHolidays,
+        currentholidays,setCurrentHolidays,
         profileImage, setProfileImage,
         newPassword, setNewPassword,
         confirmPassword, setConfirmPassword,

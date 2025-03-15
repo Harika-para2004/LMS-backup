@@ -572,7 +572,6 @@ app.put("/updatepassword", async (req, res) => {
 });
 app.get("/holidays", async (req, res) => {
   try {
-    console.log("Request Query Params:", req.query); // ✅ Log the full query params
     const { year } = req.query;
 
     if (!year || isNaN(year)) {
@@ -1023,7 +1022,8 @@ app.get("/reports-admin", async (req, res) => {
         // Only return employees who have at least one approved leave in the selected year
         if (approvedLeaves.length > 0) {
           return {
-            empid: employee.empid,
+            empid:employee.empid,
+            role:employee.role,
             empname: employee.empname,
             project: employee.project,
             email: employee.email,
@@ -2027,5 +2027,72 @@ app.delete("/leaves/:id", async (req, res) => {
   } catch (error) {
     console.error("Error deleting leave:", error);
     res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+app.get("/leave-total", async (req, res) => {
+  const { email, year, gender } = req.query;
+  const numericYear = Number(year);
+
+  try {
+    // Fetch all leave policies
+    const policies = await LeavePolicy.find({});
+
+    // ✅ Filter leave policies based on gender
+    const filteredPolicies = policies.filter(policy => {
+      if (gender === "Male" && policy.leaveType === "Maternity Leave") return false;
+      if (gender === "Female" && policy.leaveType === "Paternity Leave") return false;
+      return true;
+    });
+
+    // ✅ Sum up maxAllowedLeaves, ignoring null values
+    const totalLeaves = filteredPolicies.reduce((sum, policy) => sum + (policy.maxAllowedLeaves || 0), 0);
+
+    let usedLeaves = 0;
+
+    // Fetch leave requests for the given email and year
+    const leaves = await Leave.find({
+      email,
+      year: { $elemMatch: { $elemMatch: { $eq: numericYear } } },
+    });
+
+    for (const leave of leaves) {
+      const { leaveType, duration, year, status } = leave;
+
+      // ✅ Skip leaves based on gender
+      if ((gender === "Male" && leaveType === "Maternity Leave") ||
+          (gender === "Female" && leaveType === "Paternity Leave")) {
+        continue;
+      }
+
+      let usedLeavesInYear = 0;
+      for (let i = 0; i < year.length; i++) {
+        for (let j = 0; j < year[i].length; j++) {
+          if (year[i][j] === numericYear && status[i] === "Approved") {
+            usedLeavesInYear += duration[i][j];
+          }
+        }
+      }
+      usedLeaves += usedLeavesInYear;
+    }
+
+    const availableLeaves = Math.max(0, totalLeaves - usedLeaves);
+
+    res.json({
+      totalLeaves,
+      usedLeaves,
+      availableLeaves,
+    });
+  } catch (err) {
+    console.error("Error fetching leave summary:", err);
+    res.status(500).json({ error: "Error fetching leave summary" });
+  }
+});
+app.get("/allholidays", async (req, res) => {
+  try {
+    const holidays = await Holiday.find();
+    res.json(holidays);
+  } catch (err) {
+    console.error("Error fetching holidays:", err);
+    res.status(500).json({ message: "Server Error", error: err.message }); // Include error message
   }
 });

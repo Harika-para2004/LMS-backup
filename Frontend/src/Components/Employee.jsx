@@ -83,6 +83,8 @@ const App = () => {
     setLeaveHistory,
     holidays,
     setHolidays,
+currentholidays,
+setCurrentHolidays,
     profileImage,
     setProfileImage,
     newPassword,
@@ -110,6 +112,7 @@ const App = () => {
     navigate,
     showToast,
   } = useManagerContext();
+  const currentYear = new Date().getFullYear();
 
   useEffect(() => {
     const fetchLeavePolicies = async () => {
@@ -266,7 +269,7 @@ const App = () => {
   useEffect(() => {
     const fetchHolidays = async () => {
       try {
-        const response = await fetch("http://localhost:5001/holidays");
+        const response = await fetch("http://localhost:5001/allholidays");
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
@@ -274,7 +277,6 @@ const App = () => {
 
         // Sort the fetched holidays before setting the state
         const sortedHolidays = sortHolidaysByMonthAndCustomDay(data);
-
         // Set the sorted holidays
         setHolidays(sortedHolidays);
       } catch (error) {
@@ -284,6 +286,28 @@ const App = () => {
     };
 
     fetchHolidays();
+  }, []);
+  useEffect(() => {
+    const fetchcurrentHolidays = async () => {
+      try {
+        const response = await fetch(`http://localhost:5001/holidays?year=${currentYear}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const data = await response.json();
+
+        // Sort the fetched holidays before setting the state
+        const sortedHolidays = sortHolidaysByMonthAndCustomDay(data);
+        console.log("current",sortedHolidays)
+        // Set the sorted holidays
+        setCurrentHolidays(sortedHolidays);
+      } catch (error) {
+        console.error("Error fetching holidays:", error);
+        setError("Failed to fetch holidays.");
+      }
+    };
+
+    fetchcurrentHolidays();
   }, []);
 
   const fetchLeaveHistory = async () => {
@@ -352,6 +376,7 @@ const App = () => {
             handleSubmit={handleSubmit}
             handleFileChange={handleFileChange}
             holidays={holidays}
+            currentholidays={currentholidays}
             getTodayDate={getTodayDate}
             leavePolicies={leavePolicies}
             leavePolicyRef={leavePolicyRef}
