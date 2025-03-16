@@ -11,7 +11,7 @@ const LeaveBalanceChart = ({ email, year }) => {
 
   useEffect(() => {
     const fetchLeaveBalance = async () => {
-      if (!email || !year || !gender) return; // ✅ Ensure all values exist before API call
+      if (!email || !year || !gender) return;
 
       setLoading(true);
       setError(null);
@@ -36,15 +36,26 @@ const LeaveBalanceChart = ({ email, year }) => {
     };
 
     fetchLeaveBalance();
-  }, [email, year, gender]); // ✅ Added `gender` as a dependency
+  }, [email, year, gender]);
 
-  const pieData = leaveData
-    ? [
-        { name: "Total Leaves", value: leaveData.totalLeaves, color: "#8884d8" },
-        { name: "Used Leaves", value: leaveData.usedLeaves, color: "#ff7300" },
-        { name: "Available Leaves", value: leaveData.availableLeaves, color: "#82ca9d" },
-      ]
-    : [];
+  if (!leaveData) return null;
+
+  const total = leaveData.usedLeaves + leaveData.availableLeaves;
+
+  const pieData = [
+    {
+      name: "Used Leaves",
+      value: leaveData.usedLeaves,
+      percentage: ((leaveData.usedLeaves / total) * 100).toFixed(1),
+      color: "#ff7300",
+    },
+    {
+      name: "Available Leaves",
+      value: leaveData.availableLeaves,
+      percentage: ((leaveData.availableLeaves / total) * 100).toFixed(1),
+      color: "#82ca9d",
+    },
+  ];
 
   return (
     <Card sx={{ maxWidth: 800, margin: "auto", boxShadow: 3, backgroundColor: "#F4F5F7" }}>
@@ -56,8 +67,6 @@ const LeaveBalanceChart = ({ email, year }) => {
           <Typography align="center">Loading...</Typography>
         ) : error ? (
           <Typography color="error" align="center">{error}</Typography>
-        ) : pieData.length === 0 ? (
-          <Typography align="center">No data available for {year}.</Typography>
         ) : (
           <PieChart width={400} height={350}>
             <Pie
@@ -68,13 +77,15 @@ const LeaveBalanceChart = ({ email, year }) => {
               outerRadius={100}
               paddingAngle={5}
               dataKey="value"
-              label
+              label={({ value, percentage }) => ` ${value} (${Number(percentage)}%)`}
             >
               {pieData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />
               ))}
             </Pie>
-            <Tooltip />
+            <Tooltip
+              formatter={(value, name, props) => [`${value} (${Number(props.payload.percentage)}%)`, name]}
+            />
             <Legend />
           </PieChart>
         )}
