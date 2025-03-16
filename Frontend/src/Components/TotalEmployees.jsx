@@ -56,7 +56,6 @@ const TotalEmployees = () => {
   const [file, setFile] = useState(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const excludeEmail = "admin@gmail.com"; // Email to exclude from the list
   // const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
@@ -90,7 +89,7 @@ const TotalEmployees = () => {
       a.empid.localeCompare(b.empid, undefined, { numeric: true })
     )
     .filter((emp) =>
-      [emp.empname, emp.email, emp.role, emp.project, emp.managerName].some(
+      [emp.empname,emp.empid, emp.email, emp.role, emp.project, emp.managerName].some(
         (field) =>
           typeof field === "string"
             ? field.toLowerCase().includes(searchTerm.toLowerCase())
@@ -210,7 +209,7 @@ const TotalEmployees = () => {
 
       // Exclude specific email and sort by employee ID
       const filteredAndSortedData = data
-        .filter((item) => item.email !== excludeEmail)
+        .filter((item) => item.role !== "Admin")
         .sort((a, b) => a.empid.localeCompare(b.empid));
 
       setEmpList(filteredAndSortedData); // Update state with filtered and sorted data

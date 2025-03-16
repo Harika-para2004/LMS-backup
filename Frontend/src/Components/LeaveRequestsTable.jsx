@@ -114,12 +114,12 @@ const LeaveRequestsTable = () => {
     const userDataResponse = await fetch(
       `${BASE_URL}api/auth/user/${userData.userId}`
     );
-    const excludeEmail = "admin@gmail.com"; // Replace with the email to exclude
+    const excludeEmail = "Admin"; // Replace with the email to exclude
     try {
       const response = await fetch(`http://localhost:5001/leaverequests`);
       if (response.ok) {
         const data = await response.json();
-        const filteredData = data.filter((item) => item.email !== excludeEmail); // Filter out records with the given email
+        const filteredData = data.filter((item) => item.role !== excludeEmail); // Filter out records with the given email
         setLeaveRequests(filteredData); // Update state with filtered data
       } else {
         console.error("Failed to fetch leave history");
@@ -171,7 +171,9 @@ const LeaveRequestsTable = () => {
   const handleCloseModal = () => {
     setModalOpen(false); // Close the modal
     setRejectionComment("");
+    setShowCommentBox(false)
     setSelectedLeave(null); // Clear selected leave
+    
   };
   const handleRowClick = (leave, index) => {
     setSelectedLeave({ ...leave, selectedIndex: index });
@@ -399,6 +401,9 @@ const LeaveRequestsTable = () => {
       id: `${leave._id}-${index}`,
       empid: leave.empid || "N/A",
       empname: leave.empname || "N/A",
+      role:leave.role,
+    managerEmail: leave.managerEmail || "N/A",
+
       leaveType:
         leave.leaveType.charAt(0).toUpperCase() + leave.leaveType.slice(1),
       duration: leave.duration ? leave.duration[index] : "N/A",
@@ -431,6 +436,7 @@ const LeaveRequestsTable = () => {
     )
     .filter(
       (leave) =>
+        leave.role!=="Admin"&&
         leave.empname.toLowerCase().includes(searchQuery.toLowerCase()) ||
         leave.empid.toString().includes(searchQuery) ||
         leave.leaveType.toLowerCase().includes(searchQuery.toLowerCase())
