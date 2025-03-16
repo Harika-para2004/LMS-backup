@@ -53,9 +53,23 @@ const EmployeeDashboard = () => {
   // console.log("mg3 email", contextEmail);
   // console.log("mg4 email", userData?.email);
 
-  const yearsRange = useMemo(() => {
-    const currentYear = new Date().getFullYear();
-    return Array.from({ length: 15 }, (_, i) => currentYear + 1 - i);
+  const currentYear = new Date().getFullYear();
+  const [years, setYears] = useState([]);
+
+  const yearsRange = useMemo(() => [...years].sort((a, b) => b - a), [years]); 
+
+  useEffect(() => {
+    const fetchYears = async () => {
+      try {
+        const response = await fetch("http://localhost:5001/years"); // Adjust API URL if needed
+        const data = await response.json();
+        setYears(data.years);
+      } catch (error) {
+        console.error("Error fetching years:", error);
+      }
+    };
+
+    fetchYears();
   }, []);
 
   return (

@@ -61,7 +61,7 @@ const LeaveBalanceChart = ({ email, year }) => {
     <Card sx={{ maxWidth: 800, margin: "auto", boxShadow: 3, backgroundColor: "#F4F5F7" }}>
       <CardContent>
         <Typography variant="h6" align="center" gutterBottom>
-          Leave Summary for {year}
+          Leave Balance
         </Typography>
         {loading ? (
           <Typography align="center">Loading...</Typography>

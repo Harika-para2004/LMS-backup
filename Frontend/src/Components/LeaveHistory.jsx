@@ -57,6 +57,7 @@ const LeaveHistory = () => {
   const [openModal, setOpenModal] = useState(false);
   const [selectedLeave, setSelectedLeave] = useState(null);
   const [fileName, setFileName] = useState("");
+  const [years, setYears] = useState([]);
   const [formData, setFormData] = useState({
     leaveType: "",
     applyDate: "",
@@ -353,10 +354,23 @@ const LeaveHistory = () => {
   };
 
   // Generate last 17 years dynamically
-  const yearsRange = useMemo(
-    () => Array.from({ length: 18 }, (_, i) => currentYear + 1 - i),
-    [currentYear]
-  );
+  const yearsRange = useMemo(() => [...years].sort((a, b) => b - a), [years]); 
+
+  useEffect(() => {
+    const fetchYears = async () => {
+      try {
+        const response = await fetch("http://localhost:5001/years"); // Adjust API URL if needed
+        const data = await response.json();
+        setYears(data.years);
+      } catch (error) {
+        console.error("Error fetching years:", error);
+      }
+    };
+
+    fetchYears();
+  }, []);
+
+
 
   const truncateReason = (reason) => {
     if (!reason) return "";
