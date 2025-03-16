@@ -563,12 +563,31 @@ app.get("/leaverequests", async (req, res) => {
       };
     }
 
-    // Fetch leave requests from MongoDB
+    // Fetch leave requests
     const leaveRequests = await Leave.find(query);
+
+    // Extract unique emails from leave requests to find corresponding users
+    const uniqueEmails = [...new Set(leaveRequests.map((leave) => leave.email))];
+
+    // Fetch users based on extracted emails
+    const users = await User.find({ email: { $in: uniqueEmails } }).select("email empid managerEmail role");
+
+    // Convert users array to a dictionary for quick lookup
+    const userMap = {};
+    users.forEach((user) => {
+      userMap[user.email] = {
+        empid: user.empid,
+        managerEmail: user.managerEmail,
+        role:user.role,
+      };
+    });
 
     // Process the fetched data
     let processedLeaves = leaveRequests.map((leave) => ({
       ...leave._doc,
+      empid: userMap[leave.email]?.empid || "N/A", // Get empid from User schema
+      managerEmail: userMap[leave.email]?.managerEmail || "N/A", // Get managerEmail from User schema
+      role:userMap[leave.email]?.role || "N/A",
       endDate: Array.isArray(leave.endDate)
         ? leave.endDate.map((date) =>
             new Date(date).toISOString().split("T")[0]
@@ -593,14 +612,13 @@ app.get("/leaverequests", async (req, res) => {
       );
     }
 
-   // console.log("Final Processed Data:", processedLeaves); // Debugging log
-
     res.json(processedLeaves);
   } catch (error) {
     console.error("Error fetching leave requests:", error);
     res.status(500).send("Server error");
   }
 });
+
 
 app.put("/leaverequests/:id", async (req, res) => {
   try {
@@ -1159,7 +1177,7 @@ app.get("/reports/export-excel", async (req, res) => {
     // const employees = await User.find(query);
     const employees = Array.isArray(reports)
       ? reports
-          .filter((report) => report.email !== "admin@gmail.com")
+          .filter((report) => report.role !== "Admin")
           .map((report) => report.email)
       : [];
 
@@ -1274,7 +1292,7 @@ app.post("/reports/export-excel", async (req, res) => {
     }
 
     const employees = reports
-      .filter((report) => report.email !== "admin@gmail.com")
+      .filter((report) => report.role !== "Admin")
       .map((report) => report.email);
 
     const workbook = new excelJS.Workbook();

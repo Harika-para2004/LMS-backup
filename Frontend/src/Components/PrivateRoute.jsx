@@ -51,7 +51,7 @@ const PrivateRoute = ({ children, allowedRoles }) => {
         );
     }
 
-    if (!allowedRoles.some(r => r.toLowerCase() === role.toLowerCase()) && admin !== "admin@gmail.com") {
+    if (!allowedRoles.some(r => r.toLowerCase() === role.toLowerCase()) ) {
         return <Navigate to="/session-expired" replace />;
     }
 

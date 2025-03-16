@@ -93,12 +93,13 @@ const ReportsAdmin = () => {
     })
     .filter(
       (report) =>
-        report.email !== "admin@gmail.com" &&
         (report.empname.toLowerCase().includes(search.toLowerCase()) ||
           report.email.toLowerCase().includes(search.toLowerCase()) ||
           report.project.toLowerCase().includes(search.toLowerCase()) ||
-          report.empid.toString().includes(search))
-    );
+          report.empid.toString().includes(search)
+        )
+
+        );
   // .map((report) => ({
   //   ...report,
   //   startDate: formatDate(report.startDate), // Convert back to dd/mm/yyyy for display
@@ -114,7 +115,7 @@ const ReportsAdmin = () => {
     indexOfFirstEmployee,
     indexOfLastEmployee
   );
-
+console.log(currentReports);
   // Handle page change
   const handlePageChange = (event, value) => {
     setCurrentPage(value);
@@ -130,6 +131,7 @@ const ReportsAdmin = () => {
         report.email.toLowerCase().includes(search.toLowerCase()) ||
         report.project.toLowerCase().includes(search.toLowerCase()) ||
         report.empid.toString().includes(search)
+
     );
 
     const postData = {
@@ -298,13 +300,13 @@ const ReportsAdmin = () => {
                   .filter((report) => report.role !== "Admin")
                   .map((report, index) => (
                     <tr key={index}>
-                      <td>{report.empname}</td>
-                      <td>{report.empid}</td>
-                      <td>{report.project}</td>
-                      <td>{report.leaveType}</td>
-                      <td>{report.startDate}</td>
-                      <td>{report.endDate}</td>
-                      <td>{report.duration}</td>
+                      <td>{report.empname || ""}</td>
+                      <td>{report.empid||""}</td>
+                      <td>{report.project||""}</td>
+                      <td>{report.leaveType||""}</td>
+                      <td>{report.startDate||""}</td>
+                      <td>{report.endDate||""}</td>
+                      <td>{report.duration||""}</td>
                     </tr>
                   ))
               ) : (
