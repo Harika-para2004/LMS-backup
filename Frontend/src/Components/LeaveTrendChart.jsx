@@ -104,30 +104,29 @@ const LeaveTrendChart = ({ email, year }) => {
       ["#4682B4", "#5F9EA0"], // Steel Blue
     ];
   
-   
     const series = leaveTypes.map((type, index) => ({
       name: type,
       type: "bar",
       stack: "total",
-      data: months.map((monthName, idx) => {
-        const monthData = chartData.find(m => m.month === idx + 1);
-        return monthData ? monthData[type] || 0 : 0;
-      }),
+      data: months.map((_, idx) => chartData[idx]?.[type] || 0),
       emphasis: { focus: "series" },
-      barWidth: 30,
+      barWidth: 20, // Ensure equal bar sizes
       itemStyle: {
         color: {
           type: "linear",
-          x: 0, y: 0, x2: 0, y2: 1,
+          x: 0,
+          y: 0,
+          x2: 0,
+          y2: 1,
           colorStops: [
             { offset: 0, color: colorPalette[index % colorPalette.length][0] },
             { offset: 1, color: colorPalette[index % colorPalette.length][1] },
           ],
         },
-        borderRadius: [6, 6, 0, 0],
+        borderRadius: [6, 6, 0, 0], // Rounded top edges for elegance
       },
     }));
-    
+  
     return {
       animation: true,
       tooltip: {
@@ -148,7 +147,7 @@ const LeaveTrendChart = ({ email, year }) => {
         data: leaveTypes,
         bottom: 0,
         left: "center",
-        itemGap: 15, // Better spacing
+        itemGap: 5, // Better spacing
         textStyle: { fontSize: 12, color: "#333" },
       },
   
@@ -196,7 +195,7 @@ const LeaveTrendChart = ({ email, year }) => {
         ) : chartData.length === 0 ? (
           <Typography align="center">No data available for {year}.</Typography>
         )  : (
-          <ReactECharts option={getOption()} style={{ height: 400 }} />
+          <ReactECharts option={getOption()} style={{ height: 330 }} />
         )}
       </CardContent>
     </Card>

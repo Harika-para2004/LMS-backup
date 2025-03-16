@@ -162,7 +162,7 @@ const isMandatoryHoliday = async (date) => {
 
 app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
   const { email } = req.query;
-  const { empname, empid, leaveType, startDate, endDate, reason, managerEmail } = req.body;
+  const { empname, empid, leaveType, startDate, endDate, reason, managerEmail,prevStart, prevEnd, prevId } = req.body;
   const filePath = req.file ? req.file.buffer.toString("base64") : null; // Convert file to Base64
   try {
     let formattedStartDate = new Date(startDate);
@@ -194,37 +194,78 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
     const endYear = formattedEndDate.getFullYear();
     let existingLeaves = await Leave.find({ email});
 
-    for (let leave of existingLeaves) {
-      for (let i = 0; i < leave.startDate.length; i++) {
-        if (leave.status[i] === "Rejected") continue;
+    // for (let leave of existingLeaves) {
+    //   for (let i = 0; i < leave.startDate.length; i++) {
+    //     if (leave.status[i] === "Rejected") continue;
 
-        const existingStartDate = new Date(leave.startDate[i]);
-        const existingEndDate = new Date(leave.endDate[i]);
+    //     const existingStartDate = new Date(leave.startDate[i]);
+    //     const existingEndDate = new Date(leave.endDate[i]);
     
-        // Convert to dd/mm/yyyy format
-        const formatDate = (date) => {
-          const day = date.getUTCDate().toString().padStart(2, "0");
-          const month = (date.getUTCMonth() + 1).toString().padStart(2, "0"); // Months are 0-based
-          const year = date.getUTCFullYear();
-          return `${day}/${month}/${year}`;
-        };
+    //     // Convert to dd/mm/yyyy format
+    //     const formatDate = (date) => {
+    //       const day = date.getUTCDate().toString().padStart(2, "0");
+    //       const month = (date.getUTCMonth() + 1).toString().padStart(2, "0"); // Months are 0-based
+    //       const year = date.getUTCFullYear();
+    //       return `${day}/${month}/${year}`;
+    //     };
     
-        const existingStartDateStr = formatDate(existingStartDate);
-        const existingEndDateStr = formatDate(existingEndDate);
+    //     const existingStartDateStr = formatDate(existingStartDate);
+    //     const existingEndDateStr = formatDate(existingEndDate);
     
-        if (
-          (formattedStartDate >= existingStartDate && formattedStartDate <= existingEndDate) ||
-          (formattedEndDate >= existingStartDate && formattedEndDate <= existingEndDate) ||
-          (formattedStartDate <= existingStartDate && formattedEndDate >= existingEndDate)
-        ) {
-          return res.status(400).json({
-            message: `You have already applied for leave from ${existingStartDateStr} to ${existingEndDateStr}.`
-          });
+    //     if (
+    //       (formattedStartDate >= existingStartDate && formattedStartDate <= existingEndDate) ||
+    //       (formattedEndDate >= existingStartDate && formattedEndDate <= existingEndDate) ||
+    //       (formattedStartDate <= existingStartDate && formattedEndDate >= existingEndDate)
+    //     ) {
+    //       return res.status(400).json({
+    //         message: `You have already applied for leave from ${existingStartDateStr} to ${existingEndDateStr}.`
+    //       });
+    //     }
+    //   }
+    // }
+    for (let leave of existingLeaves) {
+      if (leave._id.toString() === prevId) {
+        const ignoreIndex = leave.startDate.findIndex(date => 
+          new Date(date).toISOString() === new Date(prevStart).toISOString()
+        );
+    
+        for (let i = 0; i < leave.startDate.length; i++) {
+          if (i === ignoreIndex) continue;
+    
+          let existingStartDate = new Date(leave.startDate[i]);
+          let existingEndDate = new Date(leave.endDate[i]);
+          const endDate = new Date(existingEndDate);
+          endDate.setHours(0, 0, 0, 0);
+          if (
+            (formattedStartDate >= existingStartDate && formattedStartDate <= existingEndDate) ||
+            (formattedEndDate >= existingStartDate && formattedEndDate <= existingEndDate) ||
+            (formattedStartDate <= existingStartDate && formattedEndDate >= existingEndDate)
+          ) {
+            return res.status(400).json({
+              message : `You have already applied for leave from ${existingStartDate.getDate().toString().padStart(2, '0')}/${(existingStartDate.getMonth() + 1).toString().padStart(2, '0')}/${existingStartDate.getFullYear()} to ${(existingEndDate.getDate() - 1).toString().padStart(2, '0')}/${(existingEndDate.getMonth() + 1).toString().padStart(2, '0')}/${existingEndDate.getFullYear()}.`
+            });
+          }
+        }
+      } else {
+        for (let i = 0; i < leave.startDate.length; i++) {
+          let existingStartDate = new Date(leave.startDate[i]);
+          let existingEndDate = new Date(leave.endDate[i]);
+    
+          if (
+            (formattedStartDate >= existingStartDate && formattedStartDate <= existingEndDate) ||
+            (formattedEndDate >= existingStartDate && formattedEndDate <= existingEndDate) ||
+            (formattedStartDate <= existingStartDate && formattedEndDate >= existingEndDate)
+          ) {
+            return res.status(400).json({
+              message : `You have already applied for leave from ${existingStartDate.getDate().toString().padStart(2, '0')}/${(existingStartDate.getMonth() + 1).toString().padStart(2, '0')}/${existingStartDate.getFullYear()} to ${(existingEndDate.getDate() - 1).toString().padStart(2, '0')}/${(existingEndDate.getMonth() + 1).toString().padStart(2, '0')}/${existingEndDate.getFullYear()}.`
+            });
+          }
         }
       }
     }
     
-    let defaultTotalLeaves = 12; // Adjust as per policy
+    
+    let defaultTotalLeaves = 0; // Adjust as per policy
 
     if (startYear === endYear) {
       console.log("start",startYear)
@@ -340,6 +381,7 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
     res.status(500).json({ message: "Server error while applying leave." });
   }
 });
+
 app.get("/leave-history", async (req, res) => {
   const { email, year } = req.query;
   if (!email) {
@@ -572,7 +614,6 @@ app.put("/updatepassword", async (req, res) => {
 });
 app.get("/holidays", async (req, res) => {
   try {
-    console.log("Request Query Params:", req.query); // ✅ Log the full query params
     const { year } = req.query;
 
     if (!year || isNaN(year)) {
@@ -1023,7 +1064,8 @@ app.get("/reports-admin", async (req, res) => {
         // Only return employees who have at least one approved leave in the selected year
         if (approvedLeaves.length > 0) {
           return {
-            empid: employee.empid,
+            empid:employee.empid,
+            role:employee.role,
             empname: employee.empname,
             project: employee.project,
             email: employee.email,
@@ -1965,12 +2007,89 @@ app.get('/employee-yearly-leaves', async (req, res) => {
       res.status(500).json({ message: 'Error fetching yearly leaves', error });
   }
 });
+
+const checkOverlap = async (email, newFrom, newTo, leaveId,leaveType) => {
+  try {
+      let formattedStartDate = new Date(newFrom);
+      let formattedEndDate = new Date(newTo);
+
+      formattedStartDate = new Date(Date.UTC(
+          formattedStartDate.getFullYear(),
+          formattedStartDate.getMonth(),
+          formattedStartDate.getDate(),
+          0, 0, 0
+      ));
+
+      formattedEndDate = new Date(Date.UTC(
+          formattedEndDate.getFullYear(),
+          formattedEndDate.getMonth(),
+          formattedEndDate.getDate(),
+          23, 59, 59
+      ));
+
+      let existingLeaves = await Leave.find({ email });
+
+      for (let leave of existingLeaves) {
+          for (let i = 0; i < leave.startDate.length; i++) {
+              if (leave.status[i] === "Rejected") continue;
+
+              const existingStartDate = new Date(leave.startDate[i]);
+              const existingEndDate = new Date(leave.endDate[i]);
+
+              // 🛑 **Ignore if it's the same leaveId being edited**
+              if (leaveId && leave._id.toString() === leaveId) {
+                continue;
+              }
+              if (leave.leaveType[i] === leaveType || leave.leaveType[i] !== leaveType) {
+
+              // **Updated Overlap Condition**
+              if (
+                  formattedStartDate.getTime() === existingStartDate.getTime() ||  // Start date matches
+                  formattedEndDate.getTime() === existingEndDate.getTime() ||      // End date matches
+                  (formattedStartDate >= existingStartDate && formattedStartDate <= existingEndDate) ||
+                  (formattedEndDate >= existingStartDate && formattedEndDate <= existingEndDate) ||
+                  (formattedStartDate <= existingStartDate && formattedEndDate >= existingEndDate)
+              ) {
+                  return {
+                      hasOverlap: true,
+                      message: `You have already applied for leave from ${existingStartDate.toDateString()} to ${existingEndDate.toDateString()}.`
+                  };
+              }
+          }}
+      }
+
+      return { hasOverlap: false };
+  } catch (error) {
+      console.error("Error checking leave overlap:", error);
+      return { hasOverlap: false, error: "Something went wrong" };
+  }
+};
+
+app.get("/check-overlap", async (req, res) => {
+  const { email, newFrom, newTo, leaveId, leaveType,index } = req.query;
+console.log("index",index)
+  try {
+    const overlap = await checkOverlap(email, newFrom, newTo, leaveId, leaveType,index);
+console.log("overlap",overlap)
+    if (overlap.hasOverlap) {
+      return res.status(400).json(overlap); // 🛑 Return error response instead of proceeding
+    }
+
+    res.json(overlap);
+  } catch (error) {
+    console.error("Error checking overlap:", error);
+    res.status(500).json({ error: "Something went wrong" });
+  }
+});
+
+
 app.delete("/leaves/:id", async (req, res) => {
   const { id } = req.params;
-  const { startDate } = req.body;
+  const { startDate, endDate } = req.body;
 
   console.log("Received ID:", id);
   console.log("Start Date to Match:", startDate);
+  console.log("Start Date to Match:", endDate);
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({ error: "Invalid MongoDB ID format" });
@@ -1995,16 +2114,18 @@ app.delete("/leaves/:id", async (req, res) => {
     }
 
     const parsedStartDate = parseDate(startDate);
+    const parsedEndDate = parseDate(endDate);
 
     const indexToRemove = leave.startDate.findIndex((date, i) => {
       return (
         new Date(date).toISOString() === parsedStartDate.toISOString() &&
+        // new Date(leave.endDate[i]).toISOString() === parsedEndDate.toISOString() &&
         leave.status[i] === "Pending"
       );
     });
 
     if (indexToRemove === -1) {
-      return res.status(404).json({ error: "Start date not found" });
+      return res.status(404).json({ error: "matching leave not found" });
     }
 
     if (leave.status[indexToRemove] === "Pending") {
@@ -2027,5 +2148,72 @@ app.delete("/leaves/:id", async (req, res) => {
   } catch (error) {
     console.error("Error deleting leave:", error);
     res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+app.get("/leave-total", async (req, res) => {
+  const { email, year, gender } = req.query;
+  const numericYear = Number(year);
+
+  try {
+    // Fetch all leave policies
+    const policies = await LeavePolicy.find({});
+
+    // ✅ Filter leave policies based on gender
+    const filteredPolicies = policies.filter(policy => {
+      if (gender === "Male" && policy.leaveType === "Maternity Leave") return false;
+      if (gender === "Female" && policy.leaveType === "Paternity Leave") return false;
+      return true;
+    });
+
+    // ✅ Sum up maxAllowedLeaves, ignoring null values
+    const totalLeaves = filteredPolicies.reduce((sum, policy) => sum + (policy.maxAllowedLeaves || 0), 0);
+
+    let usedLeaves = 0;
+
+    // Fetch leave requests for the given email and year
+    const leaves = await Leave.find({
+      email,
+      year: { $elemMatch: { $elemMatch: { $eq: numericYear } } },
+    });
+
+    for (const leave of leaves) {
+      const { leaveType, duration, year, status } = leave;
+
+      // ✅ Skip leaves based on gender
+      if ((gender === "Male" && leaveType === "Maternity Leave") ||
+          (gender === "Female" && leaveType === "Paternity Leave")) {
+        continue;
+      }
+
+      let usedLeavesInYear = 0;
+      for (let i = 0; i < year.length; i++) {
+        for (let j = 0; j < year[i].length; j++) {
+          if (year[i][j] === numericYear && status[i] === "Approved") {
+            usedLeavesInYear += duration[i][j];
+          }
+        }
+      }
+      usedLeaves += usedLeavesInYear;
+    }
+
+    const availableLeaves = Math.max(0, totalLeaves - usedLeaves);
+
+    res.json({
+      totalLeaves,
+      usedLeaves,
+      availableLeaves,
+    });
+  } catch (err) {
+    console.error("Error fetching leave summary:", err);
+    res.status(500).json({ error: "Error fetching leave summary" });
+  }
+});
+app.get("/allholidays", async (req, res) => {
+  try {
+    const holidays = await Holiday.find();
+    res.json(holidays);
+  } catch (err) {
+    console.error("Error fetching holidays:", err);
+    res.status(500).json({ message: "Server Error", error: err.message }); // Include error message
   }
 });

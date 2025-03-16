@@ -95,7 +95,7 @@ const HolidayCalendar = () => {
       });
 
       if (filteredHolidays.length === 0) {
-        alert(`No holidays found for ${selectedYear}.`);
+        showToast(`No holidays found for ${selectedYear}.`,"error");
         return;
       }
 
@@ -111,12 +111,19 @@ const HolidayCalendar = () => {
         const result = await response.json();
         console.log("Server Response:", result);
 
+     
         if (!response.ok) {
-          alert(`Error: ${result.message}`);
+          showToast(result.message, "error");
           return;
         }
-
-        alert(`${result.insertedCount} holidays were successfully added.`);
+  
+        const { insertedCount, skippedHolidays } = result;
+  
+        if (insertedCount > 0) {
+          showToast(`${insertedCount} holidays were successfully added.`, "success");
+        }
+  
+      
         setFile(null); // Reset file state
         setSelectedFile(null); // Clear selected file display
         fetchHolidays(); // Refresh holidays list

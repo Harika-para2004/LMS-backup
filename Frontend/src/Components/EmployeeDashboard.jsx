@@ -17,9 +17,9 @@ import { useManagerContext } from "../context/ManagerContext";
 import LeaveStatusChart from "./LeaveStatusChart";
 import LeaveBalanceChart from "./LeaveBalanceChart";
 import LeaveTrendChart from "./LeaveTrendChart";
-
+import TotalLeaveSummary from "./TotalLeaveSummary";
 const EmployeeDashboard = () => {
-  const { email: contextEmail ,gender} = useManagerContext();
+  const { email: contextEmail ,gender,setGender} = useManagerContext();
   const { managerEmail, email: paramEmail } = useParams(); // Access both params
   const location = useLocation();
   const [userData, setUserData] = useState(location.state?.userData || {});
@@ -146,8 +146,15 @@ const EmployeeDashboard = () => {
 
       {/* Leave Charts */}
       <Grid container spacing={3}>
-        <Grid item xs={12} md={12}>
+        <Grid item xs={12} md={7}>
           <LeaveTrendChart email={email} year={selectedYear} />
+        </Grid>
+        <Grid
+          item
+          xs={12}
+          md={5}
+        >
+            <TotalLeaveSummary email={email} year={selectedYear}/>
         </Grid>
       </Grid>
 
@@ -166,7 +173,9 @@ const EmployeeDashboard = () => {
         >
             <LeaveBalanceChart email={email} year={selectedYear} gender={gender}/>
         </Grid>
+       
       </Grid>
+     
     </Grid>
   );
 };
