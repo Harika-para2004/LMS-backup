@@ -107,6 +107,7 @@ function LeaveRequests() {
   const location = useLocation();
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [years, setYears] = useState([]);
   const [userData, setUserData] = useState(() => {
     const storedAdmin = localStorage.getItem("admin");
     return (
@@ -117,7 +118,22 @@ function LeaveRequests() {
   });
 
 
-  const yearsRange = useMemo(() => Array.from({ length: 18 }, (_, i) => currentYear + 1 - i), [currentYear]);
+  const yearsRange = useMemo(() => [...years].sort((a, b) => b - a), [years]); 
+
+  useEffect(() => {
+    const fetchYears = async () => {
+      try {
+        const response = await fetch("http://localhost:5001/years"); // Adjust API URL if needed
+        const data = await response.json();
+        setYears(data.years);
+      } catch (error) {
+        console.error("Error fetching years:", error);
+      }
+    };
+
+    fetchYears();
+  }, []);
+
   const filteredLeaves = leaveRequests.filter((leave) => {
     const yearValues = leave.year.flat(2); // Flatten nested arrays
     return yearValues.includes(Number(selectedYear)); // Check if selectedYear exists in the array

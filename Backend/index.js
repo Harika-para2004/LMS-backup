@@ -6,6 +6,7 @@ const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const leavepolicyRoutes = require("./routes/LeavePolicyRoutes");
 const projectRoutes=require("./routes/projectRoutes");
+const ValidYear = require("./models/ValidYear");
 const Leave = require("./models/Leave");
 const User = require("./models/User");
 const bcrypt = require("bcrypt");
@@ -160,6 +161,43 @@ const isMandatoryHoliday = async (date) => {
   return mandatoryHolidays.includes(formattedDate);
 };
 
+app.get("/years", async (req, res) => {
+  try {
+    let existingYears = await ValidYear.findOne(); 
+    const years = existingYears ? existingYears.year.sort((a, b) => a - b) : [];
+    console.log("years",years)
+    res.status(200).json({ years });
+  } catch (error) {
+    console.error("Error fetching years:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+const updateValidYears = async (startYear, endYear) => {
+  try {
+    let existingYears = await ValidYear.findOne(); // Get the existing record
+
+    if (!existingYears) {
+      // If no record exists, create one with unique years
+      const uniqueYears = startYear === endYear ? [startYear] : [startYear, endYear];
+      existingYears = new ValidYear({ year: uniqueYears });
+    } else {
+      // Add startYear if it's not already stored
+      if (!existingYears.year.includes(startYear)) {
+        existingYears.year.push(startYear);
+      }
+      // Add endYear only if it's different and not already stored
+      if (startYear !== endYear && !existingYears.year.includes(endYear)) {
+        existingYears.year.push(endYear);
+      }
+    }
+
+    await existingYears.save(); // Save the updated document
+  } catch (error) {
+    console.error("Error updating valid years:", error);
+  }
+};
+
 app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
   const { email } = req.query;
   const { empname, empid, leaveType, startDate, endDate, reason, managerEmail,prevStart, prevEnd, prevId } = req.body;
@@ -276,7 +314,7 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
         year: { $elemMatch: { $elemMatch: { $eq: Number(startYear) } } }  // Convert to number
       });
       
-            console.log(leaveRecord)
+            // console.log(leaveRecord)
       let durationDays = Math.ceil((formattedEndDate - formattedStartDate) / (1000 * 60 * 60 * 24)) + 1;
 
       if (!leaveRecord) {
@@ -313,6 +351,7 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
 
       leaveRecord.availableLeaves = leaveRecord.totalLeaves; // ✅ Leave is still pending, don't deduct from available
 
+      await updateValidYears(startYear, endYear);
       await leaveRecord.save();
     } else {
       let currentStartDate = formattedStartDate;
@@ -368,7 +407,8 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
         leaveRecord.duration.push([days]);
 
         leaveRecord.availableLeaves = leaveRecord.totalLeaves; // ✅ Do not deduct from available leaves initially
-
+        
+        await updateValidYears(startYear, endYear);
         await leaveRecord.save();
         currentStartDate = new Date(Date.UTC(year + 1, 0, 1));
       }

@@ -26,11 +26,25 @@ const Reports = () => {
   const [search, setSearch] = useState("");
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [years, setYears] = useState([]);
+
   const currentYear = new Date().getFullYear();
 
-  const yearsRange = useMemo(() => {
-    return Array.from({ length: 17 }, (_, i) => currentYear - (i - 1));
-  }, [currentYear]);
+  const yearsRange = useMemo(() => [...years].sort((a, b) => b - a), [years]); 
+
+  useEffect(() => {
+    const fetchYears = async () => {
+      try {
+        const response = await fetch("http://localhost:5001/years"); // Adjust API URL if needed
+        const data = await response.json();
+        setYears(data.years);
+      } catch (error) {
+        console.error("Error fetching years:", error);
+      }
+    };
+
+    fetchYears();
+  }, []);
 
   const formatCase = (text) => {
     return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());

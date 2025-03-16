@@ -39,6 +39,7 @@ const LeaveRequestsTable = () => {
     showToast,
   } = useManagerContext();
   const [searchQuery, setSearchQuery] = useState("");
+  const [years, setYears] = useState([]);
   const location = useLocation();
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
@@ -344,11 +345,21 @@ const LeaveRequestsTable = () => {
     }
   };
   
+  const yearsRange = useMemo(() => [...years].sort((a, b) => b - a), [years]); 
 
-  const yearsRange = useMemo(
-    () => Array.from({ length: 18 }, (_, i) => currentYear + 1 - i),
-    [currentYear]
-  );
+  useEffect(() => {
+    const fetchYears = async () => {
+      try {
+        const response = await fetch("http://localhost:5001/years"); // Adjust API URL if needed
+        const data = await response.json();
+        setYears(data.years);
+      } catch (error) {
+        console.error("Error fetching years:", error);
+      }
+    };
+
+    fetchYears();
+  }, []);
 
   const filteredLeaves = leaveRequests.filter((leave) => {
     const yearValues = leave.year.flat(2); // Flatten nested arrays
