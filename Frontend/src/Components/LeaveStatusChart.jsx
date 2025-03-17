@@ -1,9 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { Card, CardContent, Typography, Select, MenuItem, FormControl } from "@mui/material";
+import {
+  Card,
+  CardContent,
+  Typography,
+  Select,
+  MenuItem,
+  FormControl,
+} from "@mui/material";
 import ReactECharts from "echarts-for-react";
 
-const LeaveStatusChart = ({ email,year }) => {
+const LeaveStatusChart = ({ email, year }) => {
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -15,7 +22,9 @@ const LeaveStatusChart = ({ email,year }) => {
       setLoading(true);
       setError(null);
       try {
-        const res = await axios.get(`http://localhost:5001/leave-type-status/${email}/${year}`);
+        const res = await axios.get(
+          `http://localhost:5001/leave-type-status/${email}/${year}`
+        );
         const data = res.data;
 
         if (data.length === 0) {
@@ -40,13 +49,13 @@ const LeaveStatusChart = ({ email,year }) => {
     const statuses = ["Pending", "Approved", "Rejected"];
     const barCount = leaveTypes.length;
     const barWidth = barCount < 4 ? 30 : "40%";
-  
+
     const statusColors = {
       Pending: ["#F4C542", "#FFD700"], // Golden gradient
       Approved: ["#4CAF50", "#81C784"], // Green gradient
       Rejected: ["#F44336", "#FF6B6B"], // Red gradient
     };
-  
+
     const seriesData = statuses.map((status) => ({
       name: status,
       type: "bar",
@@ -70,10 +79,10 @@ const LeaveStatusChart = ({ email,year }) => {
       data: chartData.map((item) => item.statuses[status] || 0),
       label: { show: false }, // ❌ Hides numbers on bars
     }));
-  
+
     return {
       animation: true,
-  
+
       tooltip: {
         trigger: "item", // ✅ Shows only hovered bar details
         backgroundColor: "rgba(0, 0, 0, 0.75)",
@@ -84,24 +93,24 @@ const LeaveStatusChart = ({ email,year }) => {
           return `<b>${params.seriesName}:</b> ${params.value}`;
         },
         axisPointer: {
-          type: "shadow", 
+          type: "shadow",
         },
       },
-  
+
       legend: {
         data: statuses,
         bottom: "2%",
         left: "center",
         textStyle: { fontSize: 14, fontWeight: "bold" },
       },
-  
+
       grid: {
         left: "5%",
         right: "5%",
         bottom: "15%",
         containLabel: true,
       },
-  
+
       xAxis: {
         type: "category",
         data: leaveTypes,
@@ -113,14 +122,14 @@ const LeaveStatusChart = ({ email,year }) => {
           formatter: (value) =>
             value.length > 6 ? value.substring(0, 6) + "..." : value,
         },
-        axisTick: { show: false }, 
-        axisLine: { lineStyle: { color: "#ddd" } }, 
+        axisTick: { show: false },
+        axisLine: { lineStyle: { color: "#ddd" } },
         tooltip: {
           show: true,
           formatter: (params) => params.value,
         },
       },
-  
+
       yAxis: {
         type: "value",
         minInterval: 1,
@@ -129,14 +138,25 @@ const LeaveStatusChart = ({ email,year }) => {
         axisLabel: { fontSize: 12, color: "#555" },
         splitLine: { lineStyle: { type: "dashed", color: "#ddd" } },
       },
-  
+
       series: seriesData,
     };
   };
-  
 
   return (
-    <Card sx={{ maxWidth: 700,maxHeight:460,overflowY:"auto", margin: "auto", padding: 3, boxShadow: 3,backgroundColor: "#F4F5F7" }}>
+    <Card
+      sx={{
+        maxWidth: 700,
+        maxHeight: 460,
+        minHeight: 400,
+        overflowY: "auto",
+        margin: "auto",
+        padding: 3,
+        boxShadow: 3,
+        backgroundColor: "#F4F5F7",
+        
+      }}
+    >
       <CardContent>
         <Typography variant="h6" align="center">
           Leave Status Overview
@@ -144,7 +164,9 @@ const LeaveStatusChart = ({ email,year }) => {
         {loading ? (
           <Typography align="center">Loading...</Typography>
         ) : error ? (
-          <Typography color="error" align="center">{error}</Typography>
+          <Typography color="error" align="center">
+            {error}
+          </Typography>
         ) : chartData.length === 0 ? (
           <Typography align="center">No data available for {year}.</Typography>
         ) : (

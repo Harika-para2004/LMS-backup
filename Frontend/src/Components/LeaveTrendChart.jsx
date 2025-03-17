@@ -182,7 +182,7 @@ const LeaveTrendChart = ({ email, year }) => {
   
 
   return (
-    <Card sx={{margin: "auto", padding: 2, boxShadow: 3,backgroundColor: "#F4F5F7" }}>
+    <Card sx={{margin: "auto",minHeight:400, padding: 2, boxShadow: 3,backgroundColor: "#F4F5F7" }}>
       <CardContent>
         <Typography variant="h6" align="center">
           Monthly Approved Leave Trends
