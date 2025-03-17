@@ -268,6 +268,7 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
         );
     
         for (let i = 0; i < leave.startDate.length; i++) {
+          if (leave.status[i] === "Rejected") continue;
           if (i === ignoreIndex) continue;
     
           let existingStartDate = new Date(leave.startDate[i]);
@@ -286,6 +287,7 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
         }
       } else {
         for (let i = 0; i < leave.startDate.length; i++) {
+          if (leave.status[i] === "Rejected") continue;
           let existingStartDate = new Date(leave.startDate[i]);
           let existingEndDate = new Date(leave.endDate[i]);
     

@@ -162,17 +162,17 @@ const ApplyLeave = () =>
       }
 
       // **✅ No Duplicate Leave Requests**
-      const alreadyApplied = leaveHistory.some(
-        (leave) =>
-          leave.leaveType === leaveType &&
-          leave.status !== "Rejected" &&
-          dayjs(leave.startDate).isSame(startDayjs, "day") &&
-          dayjs(leave.endDate).isSame(endDayjs, "day")
-      );
-      if (alreadyApplied) {
-        showToast(`You have already applied for ${leaveType}.`, "info");
-        return;
-      }
+      // const alreadyApplied = leaveHistory.some(
+      //   (leave) =>
+      //     leave.leaveType === leaveType &&
+      //     leave.status !== "Rejected" &&
+      //     dayjs(leave.startDate).isSame(startDayjs, "day") &&
+      //     dayjs(leave.endDate).isSame(endDayjs, "day")
+      // );
+      // if (alreadyApplied) {
+      //   showToast(`You have already applied for ${leaveType}.`, "info");
+      //   return;
+      // }
 
       // **✅ Leave Balance Check**
       const appliedLeave = leaveData.find(
