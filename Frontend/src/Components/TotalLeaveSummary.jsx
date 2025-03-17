@@ -7,14 +7,41 @@ const LeaveBalanceChart = ({ email, year }) => {
   const [leaveData, setLeaveData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const { gender } = useManagerContext();
+  const [gender,setGender] = useState("");
+  // const { gender } = useManagerContext();
+
+
+  const fetchGenderByEmail = async (email) => {
+    try {
+      const response = await fetch(`http://localhost:5001/user/gender?email=${encodeURIComponent(email)}`);
+      const data = await response.json();
+  
+      if (response.ok) {
+        console.log("Gender:", data.gender);
+        setGender(data.gender);
+      } else {
+        console.error("Error:", data.error);
+      }
+    } catch (error) {
+      console.error("Fetch error:", error);
+    }
+  };
+
+  useEffect(() => {
+    if(email){
+      fetchGenderByEmail(email);
+    }
+  },[email])
 
   useEffect(() => {
     const fetchLeaveBalance = async () => {
-      if (!email || !year || !gender) return;
+      if (!email || !year || !gender ) return;
 
       setLoading(true);
       setError(null);
+
+      // await fetchGenderByEmail(email);
+      // console.log("gender",gender)
 
       try {
         const response = await fetch(
@@ -58,17 +85,17 @@ const LeaveBalanceChart = ({ email, year }) => {
   ];
 
   return (
-    <Card sx={{ maxWidth: 800, margin: "auto", boxShadow: 3, backgroundColor: "#F4F5F7" }}>
+    <Card sx={{ maxWidth: 600, margin: "auto", boxShadow: 3, backgroundColor: "#F4F5F7" }}>
       <CardContent>
         <Typography variant="h6" align="center" gutterBottom>
-          Leave Balance
-        </Typography>
+        Casual & Sick Leave Balance
+                </Typography>
         {loading ? (
           <Typography align="center">Loading...</Typography>
         ) : error ? (
           <Typography color="error" align="center">{error}</Typography>
         ) : (
-          <PieChart width={400} height={350}>
+          <PieChart width={400} height={320}>
             <Pie
               data={pieData}
               cx="50%"

@@ -90,7 +90,7 @@ const LeaveStatusChart = ({ email,year }) => {
   
       legend: {
         data: statuses,
-        bottom: "5%",
+        bottom: "2%",
         left: "center",
         textStyle: { fontSize: 14, fontWeight: "bold" },
       },
@@ -107,7 +107,6 @@ const LeaveStatusChart = ({ email,year }) => {
         data: leaveTypes,
         axisLabel: {
           interval: 0,
-          rotate: barCount > 2 ? 25 : 0,
           margin: 10,
           fontSize: 12,
           color: "#555",
@@ -149,7 +148,7 @@ const LeaveStatusChart = ({ email,year }) => {
         ) : chartData.length === 0 ? (
           <Typography align="center">No data available for {year}.</Typography>
         ) : (
-          <ReactECharts option={getOption()} style={{ height: 340 }} />
+          <ReactECharts option={getOption()} style={{ height: 280 }} />
         )}
       </CardContent>
     </Card>

@@ -42,7 +42,7 @@ const HolidayCalendar = () => {
     holidayType: "Mandatory",
   });
 
-  const yearsRange = useMemo(() => [...years].sort((a, b) => b - a), [years]); 
+  const yearsRange = useMemo(() => [...years].sort((a, b) => b - a), [years]);
 
   useEffect(() => {
     const fetchYears = async () => {
@@ -72,7 +72,7 @@ const HolidayCalendar = () => {
 
   const handleHolidayUpload = async (file) => {
     if (!file) {
-      alert("Please select a file first.");
+      showToast("Please select a file first.");
       return;
     }
 
@@ -108,7 +108,7 @@ const HolidayCalendar = () => {
       });
 
       if (filteredHolidays.length === 0) {
-        showToast(`No holidays found for ${selectedYear}.`,"error");
+        showToast(`No holidays found for ${selectedYear}.`, "error");
         return;
       }
 
@@ -124,19 +124,20 @@ const HolidayCalendar = () => {
         const result = await response.json();
         console.log("Server Response:", result);
 
-     
         if (!response.ok) {
           showToast(result.message, "error");
           return;
         }
-  
+
         const { insertedCount, skippedHolidays } = result;
-  
+
         if (insertedCount > 0) {
-          showToast(`${insertedCount} holidays were successfully added.`, "success");
+          showToast(
+            `${insertedCount} holidays were successfully added.`,
+            "success"
+          );
         }
-  
-      
+
         setFile(null); // Reset file state
         setSelectedFile(null); // Clear selected file display
         fetchHolidays(); // Refresh holidays list
@@ -190,13 +191,7 @@ const HolidayCalendar = () => {
 
     setFormData((prevState) => ({
       ...prevState,
-      [name]:
-        name === "holidayName"
-          ? value
-              .split(" ")
-              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-              .join(" ")
-          : value,
+      [name]:value,
     }));
   };
   const handleEdit = (index) => {
@@ -346,6 +341,15 @@ const HolidayCalendar = () => {
         return;
       }
 
+      const selectedDate = new Date(formattedDate);
+      const dayOfWeek = selectedDate.getDay(); // 0 = Sunday, 6 = Saturday
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        showToast(
+          `The selected holiday falls on a weekend (${formattedDate}).`
+        );
+        return;
+      }
+
       const url = isEditMode
         ? `${BASE_URL}holidays/${holidays[editingRow]._id}`
         : `${BASE_URL}/holidays`;
@@ -435,6 +439,15 @@ const HolidayCalendar = () => {
       const formattedDate = `${day}-${
         monthNames[parseInt(month, 10) - 1]
       }-${year}`;
+
+      const selectedDate = new Date(date);
+      const dayOfWeek = selectedDate.getDay(); // 0 = Sunday, 6 = Saturday
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        showToast(
+          `The selected holiday falls on a weekend (${formattedDate}).`
+        );
+        return;
+      }
 
       // ✅ Normalize name (trim spaces & convert to lowercase)
       const trimmedName = holidayName.trim().toLowerCase();

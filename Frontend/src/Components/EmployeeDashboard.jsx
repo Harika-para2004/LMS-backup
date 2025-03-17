@@ -168,7 +168,7 @@ const EmployeeDashboard = () => {
           xs={12}
           md={5}
         >
-            <TotalLeaveSummary email={email} year={selectedYear}/>
+            <LeaveBalanceChart email={email} year={selectedYear} gender={gender}/>
         </Grid>
       </Grid>
 
@@ -176,18 +176,18 @@ const EmployeeDashboard = () => {
         <Grid
           item
           xs={12}
-          md={6}
+          md={7}
         >
             <LeaveStatusChart email={email} year={selectedYear} />
         </Grid>
+        
         <Grid
           item
           xs={12}
-          md={6}
+          md={5}
         >
-            <LeaveBalanceChart email={email} year={selectedYear} gender={gender}/>
+            <TotalLeaveSummary email={email} year={selectedYear}/>
         </Grid>
-       
       </Grid>
      
     </Grid>

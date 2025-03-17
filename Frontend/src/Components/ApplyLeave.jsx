@@ -223,21 +223,7 @@ const ApplyLeave = () =>
       }
 
       // ✅ Allow Bereavement and LOP without limit checks
-      const isUnlimitedLeave =
-        leaveType.toLowerCase().includes("bereavement") ||
-        leaveType.toLowerCase().includes("lop");
 
-      if (
-        !isUnlimitedLeave &&
-        leaveBalance !== null &&
-        requestedDays > leaveBalance
-      ) {
-        showToast(
-          `Only ${leaveBalance} ${leaveType} leaves are available.`,
-          "error"
-        );
-        return;
-      }
 
       // **✅ Gender-Based Leave Restrictions**
 

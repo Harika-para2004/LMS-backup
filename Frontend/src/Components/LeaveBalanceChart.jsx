@@ -3,12 +3,35 @@ import axios from "axios";
 import { Card, CardContent, Typography, Grid, MenuItem, Select, CircularProgress, Box, Divider, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, FormControl } from "@mui/material";
 import ReactECharts from "echarts-for-react";
 
-const LeaveBalanceChart = ({ email,year,gender }) => {
+const LeaveBalanceChart = ({ email,year }) => {
   const currentYear = new Date().getFullYear();
   const [leaveBalance, setLeaveBalance] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [gender,setGender] = useState("");
 
+
+  const fetchGenderByEmail = async (email) => {
+    try {
+      const response = await fetch(`http://localhost:5001/user/gender?email=${encodeURIComponent(email)}`);
+      const data = await response.json();
+  
+      if (response.ok) {
+        console.log("Gender:", data.gender);
+        setGender(data.gender);
+      } else {
+        console.error("Error:", data.error);
+      }
+    } catch (error) {
+      console.error("Fetch error:", error);
+    }
+  };
+
+  useEffect(() => {
+    if(email){
+      fetchGenderByEmail(email);
+    }
+  },[email])
 
   useEffect(() => {
     if (!email || !year) return;
@@ -79,14 +102,23 @@ const LeaveBalanceChart = ({ email,year,gender }) => {
     value: data.availableLeaves,
   }));
   const filteredLeaveBalance = Object.fromEntries(
-    Object.entries(leaveBalance).filter(([type]) => 
-      !((gender === "Male" && type === "Maternity Leave") || (gender === "Female" && type === "Paternity Leave"))
-    )
+    Object.entries(leaveBalance)
+      .filter(([type]) => 
+        !((gender === "Male" && type === "Maternity Leave") || (gender === "Female" && type === "Paternity Leave"))
+      )
   );
+  
+  // Prioritize Casual Leave and Sick Leave
+  const sortedLeaveBalance = Object.fromEntries([
+    ...Object.entries(filteredLeaveBalance).filter(([type]) => type === "Casual Leave"),
+    ...Object.entries(filteredLeaveBalance).filter(([type]) => type === "Sick Leave"),
+    ...Object.entries(filteredLeaveBalance).filter(([type]) => type !== "Casual Leave" && type !== "Sick Leave"),
+  ]);
+  
   
 
   return (
-    <Card sx={{ maxWidth: 800,maxHeight:460,overflowY:"auto", margin: "auto", padding: 3, boxShadow: 3, borderRadius: 2,backgroundColor: "#F4F5F7" }}>
+    <Card sx={{ maxWidth: 800,height:400,overflowY:"auto", margin: "auto", padding: 2, boxShadow: 3, borderRadius: 2,backgroundColor: "#F4F5F7" }}>
       <CardContent>
         {/* <Typography variant="h5" align="center" sx={{ fontWeight: "bold", mb: 2 }}>
           Leave Balance Overview
@@ -96,32 +128,36 @@ const LeaveBalanceChart = ({ email,year,gender }) => {
         <Typography variant="h6" align="center" sx={{ fontWeight: "bold", mb: 2 }}>
           Leave Summary
         </Typography>
-        <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 1 }}>
+        <TableContainer 
+  component={Paper} 
+  sx={{ 
+    borderRadius: 2, 
+    boxShadow: 1, 
+    maxHeight: Object.keys(sortedLeaveBalance).length > 7 ? 500 : "none",
+    overflowY: Object.keys(sortedLeaveBalance).length > 7 ? "auto" : "hidden",
+  }}
+>
+
           <Table>
             <TableHead>
               <TableRow sx={{ backgroundColor: "#ccc" }}>
-                <TableCell sx={{ fontWeight: "bold" }}>Leave Type</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }} align="center">
-                  Total 
-                </TableCell>
-                <TableCell sx={{ fontWeight: "bold" }} align="center">
-                  Available 
-                </TableCell>
-                <TableCell sx={{ fontWeight: "bold" }} align="center">
-                  Used 
-                </TableCell>
+              <TableCell sx={{ fontWeight: "bold", padding: "2px 4px" }}>Leave Type</TableCell>
+<TableCell sx={{ fontWeight: "bold", padding: "2px 4px" }} align="center">Total</TableCell>
+<TableCell sx={{ fontWeight: "bold", padding: "2px 4px" }} align="center">Available</TableCell>
+<TableCell sx={{ fontWeight: "bold", padding: "2px 4px" }} align="center">Used</TableCell>
+
               </TableRow>
             </TableHead>
             <TableBody>
-            {Object.entries(filteredLeaveBalance).map(([type, data]) => (
-                              <TableRow key={type}>
-                  <TableCell>{type}</TableCell>
-                  <TableCell align="center">{data.totalLeaves === null ? "-" : data.totalLeaves}</TableCell>
-                  <TableCell align="center">{data.totalLeaves === null ? "-" : data.availableLeaves}</TableCell>
-                  <TableCell align="center">{ data.usedLeaves}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
+      {Object.entries(sortedLeaveBalance).map(([type, data]) => (
+        <TableRow key={type} sx={{ height: "30px" }}> {/* Reduce row height */}
+          <TableCell sx={{ padding: "8px 8px" }}>{type}</TableCell>
+          <TableCell sx={{ padding: "8px 8px" }} align="center">{data.totalLeaves === null ? "-" : data.totalLeaves}</TableCell>
+          <TableCell sx={{ padding: "8px 8px" }} align="center">{data.totalLeaves === null ? "-" : data.availableLeaves}</TableCell>
+          <TableCell sx={{ padding: "8px 8px" }} align="center">{data.usedLeaves}</TableCell>
+        </TableRow>
+      ))}
+    </TableBody>
           </Table>
         </TableContainer>
       </CardContent>

@@ -108,8 +108,10 @@ const LeaveTrendChart = ({ email, year }) => {
       name: type,
       type: "bar",
       stack: "total",
-      data: months.map((_, idx) => chartData[idx]?.[type] || 0),
-      emphasis: { focus: "series" },
+      data: months.map((_, idx) => {
+        const monthData = chartData.find((entry) => entry.month === idx + 1);
+        return monthData ? monthData[type] || 0 : 0;
+      }),      emphasis: { focus: "series" },
       barWidth: 20, // Ensure equal bar sizes
       itemStyle: {
         color: {
@@ -151,7 +153,7 @@ const LeaveTrendChart = ({ email, year }) => {
         textStyle: { fontSize: 12, color: "#333" },
       },
   
-      grid: { left: "5%", right: "5%", bottom: "12%", containLabel: true },
+      grid: { left: "5%", right: "5%", bottom: "20%", containLabel: true },
   
       xAxis: {
         type: "category",
@@ -195,7 +197,7 @@ const LeaveTrendChart = ({ email, year }) => {
         ) : chartData.length === 0 ? (
           <Typography align="center">No data available for {year}.</Typography>
         )  : (
-          <ReactECharts option={getOption()} style={{ height: 330 }} />
+          <ReactECharts option={getOption()} style={{ height: 300 }} />
         )}
       </CardContent>
     </Card>

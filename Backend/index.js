@@ -197,7 +197,30 @@ const updateValidYears = async (startYear, endYear) => {
     console.error("Error updating valid years:", error);
   }
 };
+const getValidLeaveDays = async (startDate, endDate) => {
+  let validDays = 0;
+  let currentDate = new Date(startDate);
 
+  const mandatoryHolidays = await getMandatoryHolidays();
+
+  while (currentDate <= endDate) {
+    const dayOfWeek = currentDate.getUTCDay(); 
+    const formatDate = (dateObj) => {
+      const day = dateObj.getUTCDate().toString().padStart(2, "0");
+      const month = dateObj.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
+      const year = dateObj.getUTCFullYear();
+      return `${day}-${month}-${year}`;
+    };
+    
+    const formattedDate = formatDate(currentDate);
+    if (dayOfWeek !== 0 && dayOfWeek !== 6 && !mandatoryHolidays.includes(formattedDate)) {
+      validDays++;
+    }
+    currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+  }
+
+  return validDays;
+};
 app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
   const { email } = req.query;
   const { empname, empid, leaveType, startDate, endDate, reason, managerEmail,prevStart, prevEnd, prevId } = req.body;
@@ -232,35 +255,7 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
     const endYear = formattedEndDate.getFullYear();
     let existingLeaves = await Leave.find({ email});
 
-    // for (let leave of existingLeaves) {
-    //   for (let i = 0; i < leave.startDate.length; i++) {
-    //     if (leave.status[i] === "Rejected") continue;
-
-    //     const existingStartDate = new Date(leave.startDate[i]);
-    //     const existingEndDate = new Date(leave.endDate[i]);
-    
-    //     // Convert to dd/mm/yyyy format
-    //     const formatDate = (date) => {
-    //       const day = date.getUTCDate().toString().padStart(2, "0");
-    //       const month = (date.getUTCMonth() + 1).toString().padStart(2, "0"); // Months are 0-based
-    //       const year = date.getUTCFullYear();
-    //       return `${day}/${month}/${year}`;
-    //     };
-    
-    //     const existingStartDateStr = formatDate(existingStartDate);
-    //     const existingEndDateStr = formatDate(existingEndDate);
-    
-    //     if (
-    //       (formattedStartDate >= existingStartDate && formattedStartDate <= existingEndDate) ||
-    //       (formattedEndDate >= existingStartDate && formattedEndDate <= existingEndDate) ||
-    //       (formattedStartDate <= existingStartDate && formattedEndDate >= existingEndDate)
-    //     ) {
-    //       return res.status(400).json({
-    //         message: `You have already applied for leave from ${existingStartDateStr} to ${existingEndDateStr}.`
-    //       });
-    //     }
-    //   }
-    // }
+   
     for (let leave of existingLeaves) {
       if (leave._id.toString() === prevId) {
         const ignoreIndex = leave.startDate.findIndex(date => 
@@ -281,7 +276,7 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
             (formattedStartDate <= existingStartDate && formattedEndDate >= existingEndDate)
           ) {
             return res.status(400).json({
-              message : `You have already applied for leave from ${existingStartDate.getDate().toString().padStart(2, '0')}/${(existingStartDate.getMonth() + 1).toString().padStart(2, '0')}/${existingStartDate.getFullYear()} to ${(existingEndDate.getDate() - 1).toString().padStart(2, '0')}/${(existingEndDate.getMonth() + 1).toString().padStart(2, '0')}/${existingEndDate.getFullYear()}.`
+              message: `You have already applied for leave from ${existingStartDate.getDate().toString().padStart(2, '0')}/${(existingStartDate.getMonth() + 1).toString().padStart(2, '0')}/${existingStartDate.getFullYear()} to ${new Date(existingEndDate.getTime() - 86400000).getDate().toString().padStart(2, '0')}/${(existingEndDate.getMonth() + 1).toString().padStart(2, '0')}/${existingEndDate.getFullYear()}.`
             });
           }
         }
@@ -297,7 +292,7 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
             (formattedStartDate <= existingStartDate && formattedEndDate >= existingEndDate)
           ) {
             return res.status(400).json({
-              message : `You have already applied for leave from ${existingStartDate.getDate().toString().padStart(2, '0')}/${(existingStartDate.getMonth() + 1).toString().padStart(2, '0')}/${existingStartDate.getFullYear()} to ${(existingEndDate.getDate() - 1).toString().padStart(2, '0')}/${(existingEndDate.getMonth() + 1).toString().padStart(2, '0')}/${existingEndDate.getFullYear()}.`
+              message: `You have already applied for leave from ${existingStartDate.getDate().toString().padStart(2, '0')}/${(existingStartDate.getMonth() + 1).toString().padStart(2, '0')}/${existingStartDate.getFullYear()} to ${new Date(existingEndDate.getTime() - 86400000).getDate().toString().padStart(2, '0')}/${(existingEndDate.getMonth() + 1).toString().padStart(2, '0')}/${existingEndDate.getFullYear()}.`
             });
           }
         }
@@ -306,7 +301,44 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
     
     
     let defaultTotalLeaves = 0; // Adjust as per policy
+    const policy = await LeavePolicy.findOne({ leaveType });
+    if (!policy) return res.status(400).json({ message: "Invalid leave type" });
 
+    const totalAllowedLeaves = policy.maxAllowedLeaves || 0;
+    let requestedLeaveDays = await getValidLeaveDays(formattedStartDate, formattedEndDate);
+
+    // 🔹 Fetch year-wise leave balance
+    let leaveRecords = await Leave.find({ email, leaveType });
+
+    let usedLeavesByYear = {};
+    for (let record of leaveRecords) {
+      for (let i = 0; i < record.startDate.length; i++) {
+        if (record.status[i] == "Approved" ) {
+          let leaveYear = new Date(record.startDate[i]).getFullYear();
+          usedLeavesByYear[leaveYear] = (usedLeavesByYear[leaveYear] || 0) + record.duration[i][0];
+        }
+      }
+    }
+
+    let availableLeavesStartYear = totalAllowedLeaves - (usedLeavesByYear[startYear] || 0);
+    let availableLeavesEndYear = totalAllowedLeaves - (usedLeavesByYear[endYear] || 0);
+
+    // 🔹 Check if leave request spans two years
+    if (startYear !== endYear) {
+      let firstYearDays = await getValidLeaveDays(formattedStartDate, new Date(startYear, 11, 31));
+      let secondYearDays = requestedLeaveDays - firstYearDays;
+
+      if (firstYearDays > availableLeavesStartYear) {
+        return res.status(400).json({ message: `Only ${availableLeavesStartYear} ${leaveType}s available in ${startYear}.` });
+      }
+      if (secondYearDays > availableLeavesEndYear) {
+        return res.status(400).json({ message: `Only ${availableLeavesEndYear} ${leaveType}s available in ${endYear}.` });
+      }
+    } else {
+      if (requestedLeaveDays > availableLeavesStartYear) {
+        return res.status(400).json({ message: `Only ${availableLeavesStartYear} ${leaveType}s available in ${startYear}.` });
+      }
+    }
     if (startYear === endYear) {
       console.log("start",startYear)
       console.log("end",endYear)
@@ -1541,7 +1573,7 @@ app.get("/leave-trends/:email/:year", async (req, res) => {
         });
       });
     });
-
+console.log(leaveTrends)
    // console.log("Leave Trends Data:", JSON.stringify(leaveTrends, null, 2)); // Log data before sending
     res.json(leaveTrends);
   } catch (error) {
@@ -2215,22 +2247,25 @@ app.get("/leave-total", async (req, res) => {
   const numericYear = Number(year);
 
   try {
-    // Fetch all leave policies
+    // ✅ Fetch all leave policies
     const policies = await LeavePolicy.find({});
 
-    // ✅ Filter leave policies based on gender
-    const filteredPolicies = policies.filter(policy => {
+    // ✅ Filter only "Casual Leave" and "Sick Leave" based on gender
+    const validPolicies = policies.filter(policy => {
       if (gender === "Male" && policy.leaveType === "Maternity Leave") return false;
       if (gender === "Female" && policy.leaveType === "Paternity Leave") return false;
-      return true;
+      return policy.leaveType === "Casual Leave" || policy.leaveType === "Sick Leave";
     });
 
-    // ✅ Sum up maxAllowedLeaves, ignoring null values
-    const totalLeaves = filteredPolicies.reduce((sum, policy) => sum + (policy.maxAllowedLeaves || 0), 0);
+    // ✅ Create a Set of valid leave types
+    const validLeaveTypes = new Set(validPolicies.map(policy => policy.leaveType));
+
+    // ✅ Sum up maxAllowedLeaves only for valid policies
+    const totalLeaves = validPolicies.reduce((sum, policy) => sum + (policy.maxAllowedLeaves || 0), 0);
 
     let usedLeaves = 0;
 
-    // Fetch leave requests for the given email and year
+    // ✅ Fetch leave requests for the given email and year
     const leaves = await Leave.find({
       email,
       year: { $elemMatch: { $elemMatch: { $eq: numericYear } } },
@@ -2239,11 +2274,8 @@ app.get("/leave-total", async (req, res) => {
     for (const leave of leaves) {
       const { leaveType, duration, year, status } = leave;
 
-      // ✅ Skip leaves based on gender
-      if ((gender === "Male" && leaveType === "Maternity Leave") ||
-          (gender === "Female" && leaveType === "Paternity Leave")) {
-        continue;
-      }
+      // ✅ Skip leave types not in the LeavePolicy schema
+      if (!validLeaveTypes.has(leaveType)) continue;
 
       let usedLeavesInYear = 0;
       for (let i = 0; i < year.length; i++) {
@@ -2268,6 +2300,8 @@ app.get("/leave-total", async (req, res) => {
     res.status(500).json({ error: "Error fetching leave summary" });
   }
 });
+
+
 app.get("/allholidays", async (req, res) => {
   try {
     const holidays = await Holiday.find();
@@ -2275,5 +2309,25 @@ app.get("/allholidays", async (req, res) => {
   } catch (err) {
     console.error("Error fetching holidays:", err);
     res.status(500).json({ message: "Server Error", error: err.message }); // Include error message
+  }
+});
+app.get("/user/gender", async (req, res) => {
+  try {
+    const { email } = req.query;
+
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
+    const user = await User.findOne({ email }, "gender");
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.status(200).json({ gender: user.gender });
+  } catch (error) {
+    console.error("Error fetching gender:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
