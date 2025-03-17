@@ -26,7 +26,10 @@ function LeavePolicyPage() {
     maxLeaves: "",
     description: "",
     policyId: "",
+    carryForward: false, // ✅ New Field
+    carryForwardLimit: "", // ✅ New Field
   });
+  
   const showToast = useToast();
 
   const [showForm, setShowForm] = useState(false);
@@ -52,8 +55,13 @@ function LeavePolicyPage() {
   };
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === "checkbox" ? checked : value,
+    });
   };
+  
 
   const isDuplicate = (leaveType) => {
     return policies.some(
@@ -74,13 +82,14 @@ function LeavePolicyPage() {
       await axios[formData.policyId ? "put" : "post"](
         `http://localhost:5001/api/leave-policies/${url}`,
         {
-          leaveType: formData.leaveType.replace(/\b\w/g, (c) =>
-            c.toUpperCase()
-          ),
+          leaveType: formData.leaveType.replace(/\b\w/g, (c) => c.toUpperCase()),
           maxAllowedLeaves: formData.maxLeaves,
           description: formData.description,
+          carryForward: formData.carryForward, // ✅ Include
+          carryForwardLimit: formData.carryForward ? formData.carryForwardLimit : null, // ✅ Only if carry forward is enabled
         }
       );
+      
       showToast(
         `Leave policy ${
           formData.policyId ? "updated" : "created"
@@ -188,6 +197,34 @@ function LeavePolicyPage() {
                 rows="4"
               />
             </div>
+            <div className="form-group" style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+  <label style={{ fontSize: "14px", margin: "0" }}>Carry Forward</label>
+  <input
+    type="checkbox"
+    name="carryForward"
+    checked={formData.carryForward}
+    onChange={handleChange}
+    style={{ width: "14px", height: "14px", margin: "0", cursor: "pointer" }}
+  />
+</div>
+
+
+
+
+{formData.carryForward && (
+  <div className="form-group">
+    <label>Carry Forward Limit</label>
+    <input
+      type="number"
+      name="carryForwardLimit"
+      value={formData.carryForwardLimit}
+      onChange={handleChange}
+      placeholder="Carry Forward Limit"
+      className="input-field"
+    />
+  </div>
+)}
+
 
             <div className="form-actions">
               <button type="submit" disabled={isLoading} className="submit-btn">
@@ -275,6 +312,10 @@ function LeavePolicyPage() {
                           ? p.maxAllowedLeaves
                           : "N/A"}
                       </p>
+                      <p variant="small"  style={{ marginLeft: "8px" }}>
+  Carry Forward: {p.carryForward ? "Yes" : "No"}
+</p>
+
                       <Tooltip title="Edit">
                         <IconButton
                           color="primary"

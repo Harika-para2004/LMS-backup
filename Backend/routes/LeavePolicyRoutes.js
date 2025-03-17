@@ -11,13 +11,15 @@ const formatCase = (str) => {
 
 router.post('/create', async (req, res) => {
   try {
-    const { leaveType, maxAllowedLeaves, description } = req.body;
+    const { leaveType, maxAllowedLeaves, description, carryForward, carryForwardLimit } = req.body;
 
     if (!leaveType || !description) {
       return res.status(400).json({ message: "All fields are required." });
     }
 
-    const newPolicy = new LeavePolicy({ leaveType : formatCase(leaveType), maxAllowedLeaves, description });
+    const newPolicy = new LeavePolicy({ leaveType : formatCase(leaveType), maxAllowedLeaves, description, carryForward,
+      carryForwardLimit: carryForward ? carryForwardLimit : null, // ✅ Set to null if false
+   });
     await newPolicy.save();
     res.status(201).json({ message: "Leave policy created successfully!", data: newPolicy });
   } catch (error) {
@@ -43,12 +45,14 @@ router.get('/', async (req, res) => {
 // Update a leave policy
 router.put('/update/:id', async (req, res) => {
   const { id } = req.params;
-  const { leaveType, maxAllowedLeaves, description } = req.body;
+  const { leaveType, maxAllowedLeaves, description, carryForward, carryForwardLimit } = req.body;
 
   try {
     const updatedPolicy = await LeavePolicy.findByIdAndUpdate(
       id,
-      { leaveType : formatCase(leaveType), maxAllowedLeaves, description },
+      { leaveType : formatCase(leaveType), maxAllowedLeaves, description,carryForward,
+        carryForwardLimit: carryForward ? carryForwardLimit : null, // ✅ Ensure null if carryForward is false
+     },
       { new: true }
     );
 

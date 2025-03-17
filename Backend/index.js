@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const cron = require("node-cron");
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const leavepolicyRoutes = require("./routes/LeavePolicyRoutes");
@@ -22,6 +23,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 const exceluploads = require("./routes/exceluploads")
 const forgotPasswordRoutes = require("./routes/ForgotPasswordRoutes");
+
 dotenv.config();
 
 const app = express();
@@ -137,6 +139,65 @@ app.get("/managers-list", async (req, res) => {
 //     res.status(500).json({ message: "Server error while applying leave." });
 //   }
 // });
+cron.schedule("32 7 17 3 *", async () => {
+  console.log("⏳ Running Year-End Carry Forward Cron Job...");
+
+  try {
+    const users = await User.find({ isActive: true }); // Fetch all active users
+    const leavePolicies = await LeavePolicy.find(); // Fetch all leave policies
+
+    for (const user of users) {
+      let updatedCarryForward = new Map();
+
+      for (const policy of leavePolicies) {
+        const { leaveType, carryForward, carryForwardLimit, maxAllowedLeaves } = policy;
+
+        if (carryForward) {
+          // Fetch used leaves from Leave collection
+          const usedLeavesResult = await Leave.aggregate([
+            { $match: { email: user.email, leaveType } },
+            { $group: { _id: null, totalUsed: { $sum: "$usedLeaves" } } }
+          ]);
+
+          const usedLeaves = usedLeavesResult.length ? usedLeavesResult[0].totalUsed : 0;
+          const availableLeaves = maxAllowedLeaves - usedLeaves;
+
+          // ✅ Apply Carry Forward Limit
+          const carryForwardedLeaves = Math.min(availableLeaves, carryForwardLimit);
+          updatedCarryForward.set(leaveType, carryForwardedLeaves);
+
+          // ✅ Update Leave Collection for New Year
+          await Leave.updateOne(
+            { email: user.email, leaveType },
+            {
+              $set: {
+                carryForwardedLeaves: carryForwardedLeaves, // Store carry-forwarded leaves
+                availableLeaves: carryForwardedLeaves + maxAllowedLeaves, // New Available Leaves
+                usedLeaves: 0, // Reset used leaves for the new year
+              },
+            },
+            { upsert: true } // Create if not exists
+          );
+        }
+      }
+
+      // ✅ Update User's Carry Forward Balance & Reset Yearly Leaves
+      await User.updateOne(
+        { _id: user._id },
+        {
+          $set: {
+            carryForwardBalance: Object.fromEntries(updatedCarryForward), // Convert Map to Object
+            yearlyLeavesTaken: {}, // Reset yearly leaves for new year
+          },
+        }
+      );
+    }
+
+    console.log("✅ Year-End Carry Forward Completed!");
+  } catch (error) {
+    console.error("❌ Error in Carry Forward Cron Job:", error);
+  }
+});
 const getMandatoryHolidays = async () => {
   try {
     const mandatoryHolidays = await Holiday.find({ type: "Mandatory" }).select("date");

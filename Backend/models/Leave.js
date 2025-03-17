@@ -15,14 +15,19 @@ const LeaveSchema = new mongoose.Schema({
   status: { type: [String], default: [] },
   totalLeaves: { type: Number, default: null },
   usedLeaves: { type: Number, default: 0 },
-  availableLeaves: { type: Number, default: 0 },
+  carryForwardedLeaves: { type: Number, default: 0 }, // ✅ NEW: Store carry forwarded leaves
+  availableLeaves: { 
+    type: Number, 
+    default: function () {
+      return this.carryForwardedLeaves + this.totalLeaves; // ✅ Update available leaves
+    } 
+  },
   createdAt: { type: Date, default: Date.now },
-  attachments: { type: [String] }, // Storing Base64 string
-  duration: { type: [[Number]] }, // Store duration as a nested array per month
+  attachments: { type: [String] },
+  duration: { type: [[Number]] }, 
   year: { type: [[Number]] },
   month: { type: [[Number]] },
-  rejectionComment: { type: [String], default: [] } // ✅ New field for rejection comments
-
+  rejectionComment: { type: [String], default: [] } 
 });
 
 LeaveSchema.pre("save", async function (next) {
