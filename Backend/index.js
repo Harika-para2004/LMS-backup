@@ -322,21 +322,24 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
 
     let availableLeavesStartYear = totalAllowedLeaves - (usedLeavesByYear[startYear] || 0);
     let availableLeavesEndYear = totalAllowedLeaves - (usedLeavesByYear[endYear] || 0);
-
+    const formatMessage = (available, year) => {
+      if (available === 0) return `No ${leaveType} leaves are available in ${year}.`;
+      return `Only ${available} ${leaveType}${available === 1 ? "" : "s"} available in ${year}.`;
+    };
     // 🔹 Check if leave request spans two years
     if (startYear !== endYear) {
       let firstYearDays = await getValidLeaveDays(formattedStartDate, new Date(startYear, 11, 31));
       let secondYearDays = requestedLeaveDays - firstYearDays;
 
       if (firstYearDays > availableLeavesStartYear) {
-        return res.status(400).json({ message: `Only ${availableLeavesStartYear} ${leaveType}s available in ${startYear}.` });
+        return res.status(400).json({ message: formatMessage(availableLeavesStartYear, startYear) });
       }
       if (secondYearDays > availableLeavesEndYear) {
-        return res.status(400).json({ message: `Only ${availableLeavesEndYear} ${leaveType}s available in ${endYear}.` });
+        return res.status(400).json({ message: formatMessage(availableLeavesEndYear, endYear) });
       }
     } else {
       if (requestedLeaveDays > availableLeavesStartYear) {
-        return res.status(400).json({ message: `Only ${availableLeavesStartYear} ${leaveType}s available in ${startYear}.` });
+        return res.status(400).json({ message: formatMessage(availableLeavesStartYear, startYear) });
       }
     }
     if (startYear === endYear) {
