@@ -326,6 +326,8 @@ function LeavePolicyPage() {
                               maxLeaves: p.maxAllowedLeaves,
                               description: p.description,
                               policyId: p._id,
+                              carryForward:p.carryForward,
+                              carryForwardLimit:p.carryForwardLimit,
                             });
                             setTimeout(() => {
                               formRef.current.scrollIntoView({
