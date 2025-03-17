@@ -329,14 +329,14 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
       let secondYearDays = requestedLeaveDays - firstYearDays;
 
       if (firstYearDays > availableLeavesStartYear) {
-        return res.status(400).json({ message: `Only ${availableLeavesStartYear} ${leaveType}s available in ${startYear}.` });
+        return res.status(400).json({ message: `Only ${availableLeavesStartYear} ${leaveType}s` });
       }
       if (secondYearDays > availableLeavesEndYear) {
-        return res.status(400).json({ message: `Only ${availableLeavesEndYear} ${leaveType}s available in ${endYear}.` });
+        return res.status(400).json({ message: `Only ${availableLeavesEndYear} ${leaveType}s` });
       }
     } else {
       if (requestedLeaveDays > availableLeavesStartYear) {
-        return res.status(400).json({ message: `Only ${availableLeavesStartYear} ${leaveType}s available in ${startYear}.` });
+        return res.status(400).json({ message: `Only ${availableLeavesStartYear} ${leaveType}s` });
       }
     }
     if (startYear === endYear) {

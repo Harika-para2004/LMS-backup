@@ -125,6 +125,8 @@ const ProjectManager = () => {
         flexDirection: "column",
         alignItems: "center",
         gap: "20px",
+        height: "700px",
+        overflow: "auto"
       }}
     >
       <div className="header">
