@@ -362,6 +362,7 @@ const TotalEmployees = () => {
   const handleOpenDialog = (id) => {
     setSelectedEmployeeId(id);
     setOpenDialog(true);
+    
   };
 
   const handleCloseDialog = () => {
@@ -467,6 +468,7 @@ const TotalEmployees = () => {
       role: "",
       managerEmail: "",
     });
+    setSelectedManager("")
     setShowAddEmployeeModal(false);
   };
 

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { AiFillFilePdf, AiOutlineExclamationCircle } from "react-icons/ai";
 import { MdCheckCircle, MdCancel, MdWatchLater } from "react-icons/md";
 import { FaEdit, FaTrash } from "react-icons/fa";
+import CloseIcon from "@mui/icons-material/Close";
 import { formatDate } from "../utils/dateUtlis";
 import { PickersDay } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -445,11 +446,11 @@ const LeaveHistory = () => {
   const getStatusIcon = (status) => {
     switch (status) {
       case "Pending":
-        return <MdWatchLater size={23} color="blue" />;
+        return <MdWatchLater size={21} color="blue"/>;
       case "Approved":
-        return <MdCheckCircle size={23} color="green" />;
+        return <MdCheckCircle size={21} color="green" />;
       case "Rejected":
-        return <MdCancel size={23} color="red" />;
+        return <MdCancel size={21} color="red" />;
       default:
         return null;
     }
@@ -521,7 +522,10 @@ const LeaveHistory = () => {
       });
     }
   }, [selectedLeave]);
-
+  const handleRemoveFile = () => {
+    setFileName("");
+    setFile(null);
+  };
   return (
     <div className="history-container">
       {/* Year Filter Dropdown */}
@@ -750,12 +754,12 @@ const LeaveHistory = () => {
                             opacity: leave.status !== "Pending" ? 0.5 : 1,
                           }}
                         >
-                          <Edit
-                            sx={{
-                              color:
-                                leave.status === "Pending" ? "#313896" : "gray",
-                            }}
-                          />
+                            <Edit
+        sx={{
+          color: leave.status === "Pending" ? "#313896" : "gray",
+          fontSize: 18, 
+        }}
+      />
                         </IconButton>
                       </span>
                     </Tooltip>
@@ -782,7 +786,7 @@ const LeaveHistory = () => {
                           <Delete
                             sx={{
                               color:
-                                leave.status === "Pending" ? "red" : "gray",
+                                leave.status === "Pending" ? "red" : "gray",          fontSize: 18, 
                             }}
                           />
                         </IconButton>
@@ -1030,33 +1034,58 @@ const LeaveHistory = () => {
 
               {/* Document */}
               <Box fullWidth sx={{ display: "flex", gap: "10px", mt: 2 }}>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  component="label"
-                  sx={{ color: "#313896", borderColor: "#313896" }}
-                >
-                  {formData.attachments
-                    ? "Replace Attachment"
-                    : "Attach Document"}
-                  <input
-                    type="file"
-                    name="attachment"
-                    onChange={handleFileChangeWithState}
-                    hidden
-                    accept=".pdf"
-                  />
-                </Button>
+  <Button
+    fullWidth
+    variant="outlined"
+    component="label"
+    sx={{
+      color: "#313896",
+      borderColor: "#313896",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      textTransform: "none", // To prevent text from changing height due to capitalization
+      padding: "6px 12px", // Ensures consistent padding
+    }}
+  >
+    <Tooltip title={fileName.length > 22 ? fileName : ""}>
+      <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+        {fileName
+          ? fileName.length > 22
+            ? `${fileName.substring(0, 22)}...`
+            : fileName
+          : "Attach Document"}
+      </span>
+    </Tooltip>
+    <input
+      type="file"
+      name="attachment"
+      onChange={handleFileChangeWithState}
+      hidden
+      accept=".pdf"
+    />
+    {fileName && (
+      <IconButton
+        onClick={handleRemoveFile}
+        sx={{
+          color: "red",
+          padding: "4px", // Reduce padding to prevent affecting button height
+        }}
+      >
+        <CloseIcon fontSize="small" />
+      </IconButton>
+    )}
+  </Button>
 
-                <Button
-                  fullWidth
-                  type="submit"
-                  variant="contained"
-                  sx={{ bgcolor: "#313896" }}
-                >
-                  Save Changes
-                </Button>
-              </Box>
+  <Button
+    fullWidth
+    type="submit"
+    variant="contained"
+    sx={{ bgcolor: "#313896" }}
+  >
+    Save Changes
+  </Button>
+</Box>
             </form>
           )}
         </Box>

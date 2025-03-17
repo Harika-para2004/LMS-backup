@@ -1090,9 +1090,9 @@ body, html {
 }
 
 .history-container table th, table td {
-  padding: 4px;
+  padding: 2px;
   text-align: left; 
-  font-size: 14px;
+  font-size: 12px;
   border: 1px solid #ddd;
 }
 

@@ -3,6 +3,7 @@ import { DatePicker, PickersDay } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import dayjs from "dayjs";
+import CloseIcon from "@mui/icons-material/Close";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
 // import Tooltip from "@mui/material/Tooltip";
@@ -414,7 +415,11 @@ const ApplyLeave = () =>
       }
       handleFileChange(event);
     };
-
+ 
+    const handleRemoveFile = () => {
+      setFileName("");
+      setFile(null);
+    };
     return (
       <div className="leave-management-container">
         <div className="left-section">
@@ -656,22 +661,36 @@ const ApplyLeave = () =>
 
               <Box display="flex" alignItems="center" gap={2} mt={2}>
                 {/* Attach Button */}
-                <Button
-                  variant="outlined"
-                  component="label"
-                  className="attach-button"
-                  sx = {{color:"#313896",borderColor:"#313896" }}
-              
-                >
-                  {fileName ? fileName : "Attach"}
-                  <input
-                    type="file"
-                    name="attachment"
-                    onChange={handleFileChangeWithState}
-                    hidden
-                    accept=" .pdf"
-                  />
-                </Button>
+      <Button
+        variant="outlined"
+        component="label"
+        className="attach-button"
+        sx={{ color: "#313896", borderColor: "#313896" }}
+      >
+      <Tooltip title={fileName.length > 22 ? fileName : ""}>
+      <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+        {fileName
+          ? fileName.length > 22
+            ? `${fileName.substring(0, 22)}...`
+            : fileName
+          : "Attach Document"}
+      </span>
+    </Tooltip>
+       <input
+          type="file"
+          name="attachment"
+          onChange={handleFileChangeWithState}
+          hidden
+          accept=".pdf"
+        />
+        {fileName && (
+        <IconButton onClick={handleRemoveFile} sx={{ color: "red", padding: "1px", }}>
+          <CloseIcon />
+        </IconButton>
+      )}
+      </Button>
+      
+
 
                 {/* Submit Button */}
                 <Button
