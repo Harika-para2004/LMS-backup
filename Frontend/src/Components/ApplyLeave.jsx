@@ -36,21 +36,6 @@ const style = {
 };
 
 const ApplyLeave = () =>
-  //   {
-  //   formData,
-  //   errors,
-  //   handleInputChange,
-  //   handleBlur,
-  //   handleSubmit,
-  //   handleFileChange,
-  //   holidays,
-  //   getTodayDate,
-  //   leavePolicies,
-  //   leavePolicyRef,
-  //   leaveHistory,
-  //   leaveData,
-  //   gender,
-  // }
   {
     const [showHolidays, setShowHolidays] = useState(false);
     const [showLeavePolicies, setShowLeavePolicies] = useState(false);
@@ -59,14 +44,6 @@ const ApplyLeave = () =>
     const [fileName, setFileName] = useState("");
     const year = new Date().getFullYear();
     const {
-      modalOpen,
-      setModalOpen,
-      leaveHistory,
-      setLeaveHistory,
-      selectedLeave,
-      setSelectedLeave,
-      selectedCategory,
-      setSelectedCategory,
       leaveData,
       setLeaveData,
       managerEmail,
@@ -78,45 +55,56 @@ const ApplyLeave = () =>
       empid,
       setEmpid,
       username,
-      setUsername,
-      project,
-      setProject,
-      designation,
-      setDesignation,
-      leavehistory,
-      setLeavehistory,
       holidays,
       currentholidays,
-      setCurrentHolidays,
-      setHolidays,
-      profileImage,
-      setProfileImage,
-      newPassword,
-      setNewPassword,
-      confirmPassword,
-      setConfirmPassword,
-      userData,
-      setUserData,
       file,
       setFile,
-      selectedFilter,
-      setSelectedFilter,
-      error,
-      setError,
       leavePolicyRef,
       setLeavePolicyRef,
-      mergedLeaveData,
       setMergedLeaveData,
       errors,
       setErrors,
       formData,
       setFormData,
       leavePolicies,
-      setLeavePolicies,
-      navigate,
+   
       showToast,
     } = useManagerContext();
 
+
+
+    const [Holidays, setHolidays] = useState([]);
+
+    // Function to fetch all optional holidays
+    const fetchAllOptionalHolidays = async () => {
+      try {
+        const currentYear = new Date().getFullYear(); // Get current year
+        const response = await fetch(`http://localhost:5001/all-optional-holidays?year=${currentYear}`);
+        console.log("Fetching optional holidays for year:", currentYear);
+    
+        if (!response.ok) {
+          throw new Error("Failed to fetch optional holidays.");
+        }
+    
+        const holidaysData = await response.json();
+        console.log("Fetched optional holidays:", holidaysData);
+    
+        // Set fetched holidays to state
+        setHolidays(holidaysData);
+      } catch (error) {
+        console.error("Error fetching optional holidays:", error.message);
+        setHolidays([]); // Reset to empty if error occurs
+      }
+    };
+    
+  
+    // Fetch holidays when the component loads
+    useEffect(() => {
+      fetchAllOptionalHolidays();
+    }, []);
+
+
+    
     const handleSubmit = async (event) => {
       event.preventDefault();
 
@@ -162,20 +150,7 @@ const ApplyLeave = () =>
         currentDate = currentDate.add(1, "day"); // Move to the next day
       }
 
-      // **✅ No Duplicate Leave Requests**
-      // const alreadyApplied = leaveHistory.some(
-      //   (leave) =>
-      //     leave.leaveType === leaveType &&
-      //     leave.status !== "Rejected" &&
-      //     dayjs(leave.startDate).isSame(startDayjs, "day") &&
-      //     dayjs(leave.endDate).isSame(endDayjs, "day")
-      // );
-      // if (alreadyApplied) {
-      //   showToast(`You have already applied for ${leaveType}.`, "info");
-      //   return;
-      // }
 
-      // **✅ Leave Balance Check**
       const appliedLeave = leaveData.find(
         (leave) => formatCase(leave.leaveType) === formatCase(leaveType)
       );
@@ -186,11 +161,9 @@ const ApplyLeave = () =>
 
       const leaveBalance =
         appliedLeave?.availableLeaves ??
-        (policy?.maxAllowedLeaves !== null ? policy?.maxAllowedLeaves : null); // ✅ Preserve `null` for unlimited leaves
+        (policy?.maxAllowedLeaves !== null ? policy?.maxAllowedLeaves : null); 
 
-      // const requestedDays = endDayjs.diff(startDayjs, "day") + 1;
-      // let currentDate = startDayjs;
-      // Initialize requestedDays
+
       let requestedDays = 0;
 
       currentDate = startDayjs.clone();
@@ -199,7 +172,7 @@ const ApplyLeave = () =>
       while (currentDate.isBefore(endLimit, "day")) {
         const isWeekend = currentDate.day() === 0 || currentDate.day() === 6;
         const isHoliday = holidays.some((holiday) =>
-        dayjs(holiday.date, "DD-MMM-YYYY").isSame(currentDate, "day") // Corrected date format
+        dayjs(holiday.date, "DD-MMM-YYYY").isSame(currentDate, "day") 
         );
 
         if (!isWeekend && !isHoliday) {
@@ -222,12 +195,38 @@ const ApplyLeave = () =>
         return;
       }
 
-      // ✅ Allow Bereavement and LOP without limit checks
 
 
-      // **✅ Gender-Based Leave Restrictions**
+// ✅ Optional Holiday Validation Block (Revised)
+if (leaveType.toLowerCase().includes("optional")) {
+  // Check if start and end date are the same for Optional Holiday
+  if (!startDayjs.isSame(endDayjs, "day")) {
+    showToast(
+      "Optional Holiday can only be applied for a single valid holiday date.",
+      "warning"
+    );
+    return;
+  }
 
-      // **✅ Sick Leave Past or Current Dates Only**
+  // Check if the selected date matches any valid Optional Holiday date
+  const isOptionalHolidayValid = holidays.some(
+    (holiday) =>
+      holiday.type === "Optional" &&
+      dayjs(holiday.date, "DD-MMM-YYYY").isSame(startDayjs, "day")
+  );
+
+  if (!isOptionalHolidayValid) {
+    showToast(
+      "Optional Holiday can only be applied on valid optional holiday dates.",
+      "error"
+    );
+    return;
+  }
+}
+
+
+
+
       if (leaveType === "Sick Leave" && startDayjs.isAfter(today)) {
         showToast(
           "Sick Leave can only be applied for past or current dates.",
@@ -236,22 +235,6 @@ const ApplyLeave = () =>
         return;
       }
 
-      // **✅ LOP (Unpaid Leave) only when Casual Leaves are exhausted**
-      const casualLeave = leaveData.find((leave) =>
-        leave.leaveType.toLowerCase().includes("casual")
-      );
-      console.log("casual leaves count: ",casualLeave?.availableLeaves )
-
-      if (
-        leaveType.toLowerCase().includes("lop") &&
-        (!casualLeave || casualLeave.availableLeaves > 0)
-        ) {
-        showToast(
-          "LOP can only be applied when Casual Leaves are exhausted.",
-          "info"
-        );
-        return;
-      }
 
       // **✅ File Validation (New Check)**
       if (file) {

@@ -52,6 +52,37 @@ const LeaveBalanceChart = ({ email, year }) => {
     }
   }, [email]);
 
+  const [totalMatLeaves, setTotalMatLeaves] = useState(0);
+  
+  useEffect(() => {
+    const fetchMaternityLimit = async () => {
+      try {
+        const response = await fetch("http://localhost:5001/maternity-limit", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: email,
+            leaveType: "Maternity Leave"
+          }),
+        });
+  
+        const data = await response.json();
+        if (data.totalSplits >= 2) {
+          setTotalMatLeaves(84);
+        }
+        console.log("Mat Response:", data);
+      } catch (error) {
+        console.error("Error getting maternity limit:", error);
+      }
+    };
+  
+    fetchMaternityLimit();
+  }, [email]); // Add dependencies if they change
+  
+  
+
   useEffect(() => {
     if (!email || !year) return;
     const fetchData = async () => {
@@ -160,6 +191,7 @@ const LeaveBalanceChart = ({ email, year }) => {
     ),
   ]);
 
+
   return (
     <Card
       sx={{
@@ -229,10 +261,13 @@ const LeaveBalanceChart = ({ email, year }) => {
                   {/* Reduce row height */}
                   <TableCell sx={{ padding: "8px 8px" }}>{type}</TableCell>
                   <TableCell sx={{ padding: "8px 8px" }} align="center">
-                    {data.totalLeaves === null ? "-" : data.totalLeaves}
+                    {/* {data.totalLeaves === null ? "-" : data.totalLeaves} */}
+                    {type === "Maternity Leave" ? totalMatLeaves : data.totalLeaves ?? "-"}
+
                   </TableCell>
                   <TableCell sx={{ padding: "8px 8px" }} align="center">
-                    {data.totalLeaves === null ? "-" : data.availableLeaves}
+                    {/* {data.totalLeaves === null ? "-" : data.availableLeaves} */}
+                    {type === "Maternity Leave" ? totalMatLeaves - data.usedLeaves : data.availableLeaves ?? "-"}
                   </TableCell>
                   <TableCell sx={{ padding: "8px 8px" }} align="center">
                     {data.usedLeaves}
