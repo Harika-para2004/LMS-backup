@@ -23,6 +23,7 @@ const LeavePolicySchema = new mongoose.Schema({
   },
   carryForward: {
     type: Boolean,
+  
     default: false, // ✅ Default to false if not provided
   },
   carryForwardLimit: {

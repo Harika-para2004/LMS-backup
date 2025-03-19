@@ -166,9 +166,23 @@ const isMandatoryHoliday = async (date) => {
 
 app.get("/years", async (req, res) => {
   try {
-    let existingYears = await ValidYear.findOne(); 
-    const years = existingYears ? existingYears.year.sort((a, b) => a - b) : [];
-    console.log("years",years)
+    let existingYears = await ValidYear.findOne();
+    
+    // Extract existing years or use an empty array if none exist
+    let years = existingYears ? existingYears.year : [];
+
+    // Get the current year
+    const currentYear = new Date().getFullYear();
+
+    // Add the current year if it's not already in the array
+    if (!years.includes(currentYear)) {
+      years.push(currentYear);
+    }
+
+    // Sort the years in ascending order
+    years.sort((a, b) => a - b);
+
+    console.log("years", years);
     res.status(200).json({ years });
   } catch (error) {
     console.error("Error fetching years:", error);
@@ -763,6 +777,7 @@ app.put("/leaverequests/:id", async (req, res) => {
 
       // 🔹 Find the current year's leave record
       let employeeLeave = await Leave.findOne({ 
+        leaveType:"Casual Leave",
         email: leave.email, 
         year: { $elemMatch: { $eq: [year] } } ,
       });
@@ -785,6 +800,7 @@ app.put("/leaverequests/:id", async (req, res) => {
 
         // 🔹 Find or create next year's record
         let nextYearLeave = await Leave.findOne({ 
+          leaveType:"Casual Leave",
           email: leave.email, 
           year: { $elemMatch: { $eq: [nextYear] } } 
         });
