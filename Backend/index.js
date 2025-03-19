@@ -1980,7 +1980,7 @@ app.get("/leave-trends/:email/:year", async (req, res) => {
 app.get("/leave-balance/:email/:year", async (req, res) => {
   const { email, year } = req.params;
   const numericYear = Number(year);
-
+  const previousYear = numericYear - 1; // Get the previous year
   try {
     // ✅ Fetch all leave policies
     const policies = await LeavePolicy.find({});
@@ -1993,12 +1993,22 @@ app.get("/leave-balance/:email/:year", async (req, res) => {
         usedLeaves: 0,
         availableLeaves: policy.maxAllowedLeaves, // Initially set to total leaves
       };
+      const previousYearLeave = await Leave.findOne({
+        email,
+        leaveType: policy.leaveType,
+        year: { $elemMatch: { $elemMatch: { $eq: previousYear } } }, // Fetch previous year
+      });
+
+      let previousAvailable = previousYearLeave?.availableLeaves || 0;
 
       // ✅ If carry forward is enabled, fetch totalLeaves from Leave schema
       if (policy.carryForward) {
         const carryForwardLeave = await Leave.findOne({ email,       year: { $elemMatch: { $elemMatch: { $eq: numericYear } } },
           leaveType: policy.leaveType });
-        if (carryForwardLeave) {
+          if (!carryForwardLeave) {
+            leaveBalance[policy.leaveType].totalLeaves = previousAvailable + policy.maxAllowedLeaves;
+            leaveBalance[policy.leaveType].availableLeaves = previousAvailable + policy.maxAllowedLeaves;
+          } else if(carryForwardLeave) {
           leaveBalance[policy.leaveType].totalLeaves = carryForwardLeave.totalLeaves;
           leaveBalance[policy.leaveType].availableLeaves = carryForwardLeave.totalLeaves; // Set available correctly
         }
