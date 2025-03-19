@@ -132,22 +132,22 @@ const LeaveHistory = () => {
     }
 
     // **✅ No Duplicate Leave Requests**
-    const alreadyApplied = leaveHistory.some(
-      (leave) =>
-        leave.leaveType === leaveType &&
-        leave.status !== "Rejected" &&
-        dayjs(leave.startDate).isSame(startDayjs, "day") &&
-        dayjs(leave.endDate).isSame(endDayjs, "day") &&
-        !(
-          leave._id === prevFormData.leaveId &&
-          dayjs(leave.startDate).isSame(prevFormData.startDate, "day") &&
-          dayjs(leave.endDate).isSame(prevFormData.endDate, "day")
-        )
-    );
-    if (alreadyApplied) {
-      showToast(`You have already applied for ${leaveType}.`, "info");
-      return;
-    }
+    // const alreadyApplied = leaveHistory.some(
+    //   (leave) =>
+    //     leave.leaveType === leaveType &&
+    //     leave.status !== "Rejected" &&
+    //     dayjs(leave.startDate).isSame(startDayjs, "day") &&
+    //     dayjs(leave.endDate).isSame(endDayjs, "day") &&
+    //     !(
+    //       leave._id === prevFormData.leaveId &&
+    //       dayjs(leave.startDate).isSame(prevFormData.startDate, "day") &&
+    //       dayjs(leave.endDate).isSame(prevFormData.endDate, "day")
+    //     )
+    // );
+    // if (alreadyApplied) {
+    //   showToast(`You have already applied for ${leaveType}.`, "info");
+    //   return;
+    // }
 
     // **✅ Leave Balance Check**
     const appliedLeave = leaveData.find(
@@ -194,6 +194,32 @@ const LeaveHistory = () => {
       return;
     }
 
+    if (leaveType.toLowerCase().includes("optional")) {
+      // Check if start and end date are the same for Optional Holiday
+      if (!startDayjs.isSame(endDayjs, "day")) {
+        showToast(
+          "Optional Holiday can only be applied for a single valid optional holiday.",
+          "warning"
+        );
+        return;
+      }
+    
+      // Check if the selected date matches any valid Optional Holiday date
+      const isOptionalHolidayValid = holidays.some(
+        (holiday) =>
+          holiday.type === "Optional" &&
+          dayjs(holiday.date, "DD-MMM-YYYY").isSame(startDayjs, "day")
+      );
+    
+      if (!isOptionalHolidayValid) {
+        showToast(
+          "Optional Holiday can only be applied on valid optional holiday dates.",
+          "error"
+        );
+        return;
+      }
+    }
+
     // ✅ Allow Bereavement and LOP without limit checks
     const isUnlimitedLeave =
       leaveType.toLowerCase().includes("bereavement") ||
@@ -223,21 +249,21 @@ const LeaveHistory = () => {
     }
 
     // **✅ LOP (Unpaid Leave) only when Casual Leaves are exhausted**
-    const casualLeave = leaveData.find((leave) =>
-      leave.leaveType.toLowerCase().includes("casual")
-    );
-    console.log("casual leaves count: ", casualLeave?.availableLeaves);
+    // const casualLeave = leaveData.find((leave) =>
+    //   leave.leaveType.toLowerCase().includes("casual")
+    // );
+    // console.log("casual leaves count: ", casualLeave?.availableLeaves);
 
-    if (
-      leaveType.toLowerCase().includes("lop") &&
-      (!casualLeave || casualLeave.availableLeaves > 0)
-    ) {
-      showToast(
-        "LOP can only be applied when Casual Leaves are exhausted.",
-        "info"
-      );
-      return;
-    }
+    // if (
+    //   leaveType.toLowerCase().includes("lop") &&
+    //   (!casualLeave || casualLeave.availableLeaves > 0)
+    // ) {
+    //   showToast(
+    //     "LOP can only be applied when Casual Leaves are exhausted.",
+    //     "info"
+    //   );
+    //   return;
+    // }
 
     // **✅ File Validation (New Check)**
     if (file) {

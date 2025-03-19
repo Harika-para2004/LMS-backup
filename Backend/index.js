@@ -334,8 +334,9 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
       for (let i = 0; i < record.startDate.length; i++) {
         if (record.status[i] == "Approved" ) {
           let leaveYear = new Date(record.startDate[i]).getFullYear();
-          usedLeavesByYear[leaveYear] = (usedLeavesByYear[leaveYear] || 0) + record.duration[i][0];
-        }
+          for(let j=0;j<record.year[i].length ;j++){
+            usedLeavesByYear[leaveYear] = (usedLeavesByYear[leaveYear] || 0) + record.duration[i][j];
+          }        }
         if ((record.status[i] == "Approved" && record.leaveType=="Paternity Leave") || (record.status[i] == "Approved" && record.leaveType=="Adoption Leave")  ) {
           let leaveYear = new Date(record.startDate[i]).getFullYear();
           count[leaveYear] = (count[leaveYear] || 0) + 1;
@@ -343,10 +344,10 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
         }
       }
     }
-    console.log()
     console.log(count)
     const maxSplits = 2;
     const currentSplits = Number(count[startYear]) || 0; // Ensure it's a number
+    
     console.log(currentSplits)
     if (currentSplits >= maxSplits) {
       return res.status(400).json({ message: "Exceeding max splits" });
@@ -375,7 +376,7 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
       return res.status(400).json({ message:"You have Only 84 Leaves"});}
         totalAllowedLeaves=84
     }
-
+console.log(totalSplits)
     let availableLeavesStartYear = totalAllowedLeaves - (usedLeavesByYear[startYear] || 0);
     let availableLeavesEndYear = totalAllowedLeaves - (usedLeavesByYear[endYear] || 0);
     const formatMessage = (available, year) => {
@@ -403,8 +404,16 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
   }
     // Apply leave logic remains the same
     let leaveRecord = await Leave.findOne({ email, leaveType, year: { $elemMatch: { $elemMatch: { $eq: Number(startYear) } } } });
+console.log("leaveRecord",leaveRecord)
 
     if (!leaveRecord) {
+      if (totalSplits >= 2) {
+        totalAllowedLeaves = 84;
+      availableLeaves = 84;
+    }
+    console.log(totalSplits)
+    console.log(totalAllowedLeaves)
+    console.log(availableLeaves)
       leaveRecord = new Leave({
         email,
         empname,
@@ -464,6 +473,7 @@ else {
           year: { $elemMatch: { $elemMatch: { $eq: Number(year) } } }  // Convert to number
         });
         if (!leaveRecord) {
+          
           leaveRecord = new Leave({
             email,
             empname,
