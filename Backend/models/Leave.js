@@ -18,9 +18,7 @@ const LeaveSchema = new mongoose.Schema({
   carryForwardedLeaves: { type: Number, default: 0 }, // ✅ NEW: Store carry forwarded leaves
   availableLeaves: { 
     type: Number, 
-    default: function () {
-      return this.carryForwardedLeaves + this.totalLeaves; // ✅ Update available leaves
-    } 
+   
   },
   createdAt: { type: Date, default: Date.now },
   attachments: { type: [String] },
@@ -121,11 +119,38 @@ LeaveSchema.pre("save", async function (next) {
         this.totalLeaves = (policy.maxAllowedLeaves || 0) + (this.carryForwardedLeaves || 0);
         
         // Ensure available leaves reflect the updated total leaves
-        if (this.availableLeaves === 0) {
-          this.availableLeaves = this.totalLeaves;
-        } else {
-          this.availableLeaves = this.totalLeaves;
-        }
+   // Fetch all past leaves to correctly calculate available leaves
+// Fetch all past leaves for this employee and leave type
+const pastLeaves = await mongoose.model("leaveData").find({
+  email: this.email,
+  leaveType: this.leaveType,
+});
+
+// 🔹 Track used and available leaves per year
+const usedLeavesByYear = {};
+const availableLeavesByYear = {};
+
+// 🔹 Count approved leaves per year
+pastLeaves.forEach((leave) => {
+  leave.year.flat().forEach((yr, index) => {
+    if (!usedLeavesByYear[yr]) usedLeavesByYear[yr] = 0;
+
+    // Only count "Approved" leaves
+    if (leave.status[index] === "Approved") {
+      usedLeavesByYear[yr] += leave.duration.flat()[index] || 0;
+    }
+  });
+});
+
+// 🔹 Assign available leaves per year
+this.year.flat().forEach((yr) => {
+  const usedLeaves = usedLeavesByYear[yr] || 0;
+  availableLeavesByYear[yr] = Math.max(this.totalLeaves - usedLeaves, 0);
+});
+
+// 🔹 Set availableLeaves for the latest year
+const latestYear = Math.max(...this.year.flat());
+this.availableLeaves = availableLeavesByYear[latestYear] || this.totalLeaves;
       } else {
         this.totalLeaves = this.carryForwardedLeaves || 0;
       }

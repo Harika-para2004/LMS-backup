@@ -140,12 +140,20 @@ const ApplyLeave = () =>
       let currentDate = startDayjs;
 
       // ✅ Loop through the date range but only check for holidays (ignore weekends in between)
-      while (currentDate.isBefore(endDayjs.add(1, "day"))) {
-        const isHoliday = holidays.some(
-          (holiday) =>
-            holiday.type === "Mandatory" &&
-            dayjs(holiday.date).isSame(currentDate, "day")
+      while (currentDate.isBefore(endLimit, "day")) {
+        const isWeekend = currentDate.day() === 0 || currentDate.day() === 6;
+        const isHoliday = holidays.some((holiday) =>
+        holiday.type == "Mandatory" &&
+        dayjs(holiday.date, "DD-MMM-YYYY").isSame(currentDate, "day") 
         );
+
+        if(leaveType == "Maternity Leave"){
+          requestedDays++;
+        }else{
+        if (!isWeekend && !isHoliday) {
+          requestedDays++;
+        }
+      }
 
         currentDate = currentDate.add(1, "day"); // Move to the next day
       }

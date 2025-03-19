@@ -209,11 +209,10 @@ const ProjectManager = () => {
       textOverflow: "ellipsis",
     }}
   >
-   {project.projectName.length > 25
-  ? project.projectName.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase()).slice(0, 25) + "..."
+   {project.projectName.length > 15
+  ? project.projectName.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase()).slice(0, 15) + "..."
   : project.projectName.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
-}
-
+   }
   </Typography>
 </Tooltip>
 

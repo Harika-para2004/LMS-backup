@@ -218,6 +218,23 @@ const LeaveRequestsTable = () => {
         showToast("Not enough available leaves.");
         return;
       }
+
+      if(leave.leaveType === "Paternity Leave" || leave.leaveType === "Adoption Leave"){
+        let cnt = 0;
+        for(let i=0;i<leave.status.length;i++){
+          if(leave.status[i] === "Approved"){
+            cnt++;
+          }
+        }
+        if(cnt >= 2){
+          showToast("Exceeding maximum splits.");
+          return;
+        }
+      }
+      if (leave.totalLeaves && leave.availableLeaves < totalLeaveDays) {
+        showToast("Not enough available leaves.");
+        return;
+      }
       // console.log("totalLeaves",leave.totalLeaves === 0);
       const updatedLeave = {
         availableLeaves:
@@ -237,6 +254,7 @@ const LeaveRequestsTable = () => {
         );
         if (response.ok) {
           const updatedLeaveFromServer = await response.json();
+          console.log("updated leave",updatedLeaveFromServer)
           setLeaveRequests((prevHistory) =>
             prevHistory.map((item) =>
               item._id === updatedLeaveFromServer._id
@@ -244,6 +262,7 @@ const LeaveRequestsTable = () => {
                 : item
             )
           );
+
           setSelectedLeave(null);
           setModalOpen(false);
           console.log(
