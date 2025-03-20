@@ -285,10 +285,14 @@ router.post("/uploadHolidays", upload.single("file"), async (req, res) => {
 
     const holidaysToInsert = [];
     const existingDates = new Set();
+    const existingNames = new Set();
 
     // ✅ Fetch existing holiday dates from the database
-    const existingHolidays = await Holiday.find({}, "date");
-    existingHolidays.forEach((holiday) => existingDates.add(holiday.date));
+    const existingHolidays = await Holiday.find({}, "date name");
+existingHolidays.forEach((holiday) => {
+  existingDates.add(holiday.date);
+  existingNames.add(holiday.name.toLowerCase()); // To avoid case sensitivity
+});
 
     for (const row of data) {
       let { date, name, type } = row;
@@ -303,14 +307,20 @@ router.post("/uploadHolidays", upload.single("file"), async (req, res) => {
         typeof date === "number" ? formatExcelDate(date) : date;
 
       // ✅ Check if the holiday already exists
-      if (existingDates.has(formattedDate)) {
-        console.log(`⚠️ Skipping duplicate holiday: ${formattedDate}`);
+      if (existingDates.has(formattedDate) || existingNames.has(name.toLowerCase())) {
+        console.log(
+          `⚠️ Skipping duplicate holiday (Date/Name): ${formattedDate} - ${name}`
+        );
         continue; // Skip duplicates
       }
 
       const dayOfWeek = new Date(formattedDate).toLocaleString("en-us", {
         weekday: "long",
       });
+      if (dayOfWeek === "Saturday" || dayOfWeek === "Sunday") {
+        console.log(`⚠️ Skipping weekend holiday: ${formattedDate}`);
+        continue; // Skip weekends
+      }
 
       console.log("✅ Processed Holiday:", {
         date: formattedDate,
@@ -341,7 +351,6 @@ router.post("/uploadHolidays", upload.single("file"), async (req, res) => {
     res.status(500).json({ message: "Error processing file", error: error.message });
   }
 });
-
 // Function to format Excel date to "dd-MMM-yyyy"
 function formatDate(excelDate) {
   const parsedDate = new Date((excelDate - 25569) * 86400 * 1000); // Convert Excel serial date
