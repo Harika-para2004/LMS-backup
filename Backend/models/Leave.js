@@ -25,7 +25,9 @@ const LeaveSchema = new mongoose.Schema({
   duration: { type: [[Number]] }, 
   year: { type: [[Number]] },
   month: { type: [[Number]] },
-  rejectionComment: { type: [String], default: [] } 
+  rejectionComment: { type: [String], default: [] } ,
+  childNumber:{type:Number,default:0},
+  continous:{type:Boolean,default:false},
 });
 
 LeaveSchema.pre("save", async function (next) {
@@ -159,6 +161,54 @@ this.availableLeaves = availableLeavesByYear[latestYear] || this.totalLeaves;
     }
     
 
+       // ✅ Maternity Leave Adjustment
+       if (this.leaveType === "Maternity Leave") {
+        // Fetch past approved maternity leave records
+        const pastMaternityLeaves = await mongoose.model("leaveData").find({
+            email: this.email,
+            leaveType: "Maternity Leave",
+        });
+    
+        // Find the highest childNumber from past records
+        let maxChildNumber = 0;
+        pastMaternityLeaves.forEach(leave => {
+            if (leave.childNumber > maxChildNumber) {
+                maxChildNumber = leave.childNumber;
+            }
+        });
+    
+        // Count the number of approved maternity leaves
+        const maternityLeavesTaken = pastMaternityLeaves.length;
+    
+        // Determine leave allocation
+        if (maternityLeavesTaken >= 2 && maxChildNumber >= 2) {
+            this.totalLeaves = 84;
+            this.availableLeaves = 84;
+        } else if (maternityLeavesTaken == 1 && maxChildNumber >= 2) {
+            this.totalLeaves = 84;
+            this.availableLeaves = 84;
+        }
+    
+        // ✅ **NEW CONDITION: Add previously approved leaves in the same year**
+        const approvedMaternityLeavesSameYear = await mongoose.model("leaveData").find({
+            email: this.email,
+            leaveType: "Maternity Leave",
+            status: "Approved",
+            "year.0": this.year[0] // Match the current application year
+        });
+    
+        let previouslyApprovedLeaves = 0;
+        approvedMaternityLeavesSameYear.forEach(leave => {
+            previouslyApprovedLeaves += leave.usedLeaves; // Sum all used leaves for the same year
+        });
+    
+        // Adjust total leaves
+        this.totalLeaves += previouslyApprovedLeaves;
+        this.availableLeaves = this.totalLeaves - this.usedLeaves; 
+    }
+    
+    
+  
     next();
   } catch (error) {
     console.error("Error in LeaveSchema pre-save:", error);

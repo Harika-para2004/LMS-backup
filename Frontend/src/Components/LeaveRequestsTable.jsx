@@ -188,87 +188,107 @@ const LeaveRequestsTable = () => {
         leave.duration.length === 0 ||
         selectedIndex >= leave.duration.length
       ) {
-        console.error(
-          "Invalid leave duration or selected index:",
-          selectedLeave
-        );
+        console.error("Invalid leave duration or selected index:", selectedLeave);
         return;
       }
+  
       const leaveDuration = Array.isArray(leave.duration[selectedIndex])
         ? leave.duration[selectedIndex]
         : [leave.duration[selectedIndex]];
+  
       const totalLeaveDays = leaveDuration.reduce(
         (sum, num) =>
           sum + (Array.isArray(num) ? num.reduce((a, b) => a + b, 0) : num),
         0
       );
+  
       if (typeof totalLeaveDays !== "number") {
         console.error("Unexpected leave duration format:", leaveDuration);
         return;
       }
+  
       const currentStatus = leave.status[selectedIndex]?.toLowerCase();
-      if (
-        !currentStatus ||
-        (currentStatus !== "pending" && currentStatus !== "rejected")
-      ) {
+      if (!currentStatus || (currentStatus !== "pending" && currentStatus !== "rejected")) {
         console.log("This leave is already approved.");
         return;
       }
+  
       if (leave.totalLeaves && leave.availableLeaves < totalLeaveDays) {
         showToast("Not enough available leaves.");
         return;
       }
 
-      if(leave.leaveType === "Paternity Leave" || leave.leaveType === "Adoption Leave"){
-        let cnt = 0;
-        for(let i=0;i<leave.status.length;i++){
-          if(leave.status[i] === "Approved"){
-            cnt++;
+  
+      let chilNumber = null;
+  
+      // Fetch maternity leave limits if applicable
+      if (leave.leaveType === "Maternity Leave") {
+        try {
+          const response = await fetch(`http://localhost:5001/maternity-limit`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: leave.email, leaveType: "Maternity Leave", continous: leave.continous }),
+          });
+          
+          if (!response.ok) {
+            console.error("Server error:", response.status, await response.text());
+            return;
           }
+          
+          const data = await response.json();
+          console.log("Mat Response:", data.totalSplits, "Child Number:", data.chilNumber);
+          
+          chilNumber = data.chilNumber; // Use the fetched child number
+       
+        } catch (error) {
+          console.error("Error getting maternity limit:", error);
+          return;
         }
-        if(cnt >= 2){
+      }
+  if(chilNumber>2 && totalLeaveDays>84){
+    showToast("Not enough available leaves.");
+        return;
+  }
+      // Validation for Paternity Leave and Adoption Leave (Max 2 splits)
+      if (leave.leaveType === "Paternity Leave" || leave.leaveType === "Adoption Leave") {
+        let approvedCount = leave.status.filter((status) => status === "Approved").length;
+        if (approvedCount >= 2) {
           showToast("Exceeding maximum splits.");
           return;
         }
       }
-      if (leave.totalLeaves && leave.availableLeaves < totalLeaveDays) {
-        showToast("Not enough available leaves.");
-        return;
-      }
-      // console.log("totalLeaves",leave.totalLeaves === 0);
+  
+      // Construct updated leave data
       const updatedLeave = {
-        availableLeaves:
-          leave.totalLeaves === 0 ? 0 : leave.availableLeaves - totalLeaveDays,
+        availableLeaves: leave.totalLeaves === 0 ? 0 : leave.availableLeaves - totalLeaveDays,
         usedLeaves: leave.usedLeaves + totalLeaveDays,
-        [`status.${selectedIndex}`]: "Approved", // Only update the status at selected index
-        [`rejectionComment.${selectedIndex}`] :  "",
+        [`status.${selectedIndex}`]: "Approved",
+        [`rejectionComment.${selectedIndex}`]: "",
+        ...(leave.leaveType === "Maternity Leave" ? { childNumber: chilNumber } : {}),  // ✅ Properly assigning chilNumber
       };
+      
+  
+      // Update leave record in the backend
       try {
-        const response = await fetch(
-          `http://localhost:5001/leaverequests/${leave._id}`,
-          {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ $set: updatedLeave }), // ✅ Use `$set` to prevent modifying `duration`
-          }
-        );
+        const response = await fetch(`http://localhost:5001/leaverequests/${leave._id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ $set: updatedLeave }), // ✅ Use `$set` to prevent modifying `duration`
+        });
+  
         if (response.ok) {
           const updatedLeaveFromServer = await response.json();
-          console.log("updated leave",updatedLeaveFromServer)
+          console.log("Updated leave:", updatedLeaveFromServer);
+  
           setLeaveRequests((prevHistory) =>
             prevHistory.map((item) =>
-              item._id === updatedLeaveFromServer._id
-                ? updatedLeaveFromServer
-                : item
+              item._id === updatedLeaveFromServer._id ? updatedLeaveFromServer : item
             )
           );
-
+  
           setSelectedLeave(null);
           setModalOpen(false);
-          console.log(
-            "Approved and updated in the database:",
-            updatedLeaveFromServer
-          );
+          console.log("Approved and updated in the database:", updatedLeaveFromServer);
           fetchLeaveRequests();
         } else {
           console.error("Failed to update leave in the database");
@@ -278,6 +298,7 @@ const LeaveRequestsTable = () => {
       }
     }
   };
+  
   const handleReject = async (comment) => {
     if (selectedLeave) {
       const { selectedIndex, ...leave } = selectedLeave;

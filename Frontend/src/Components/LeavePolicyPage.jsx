@@ -85,7 +85,7 @@ function LeavePolicyPage() {
           leaveType: formData.leaveType.replace(/\b\w/g, (c) => c.toUpperCase()),
           maxAllowedLeaves: formData.maxLeaves,
           description: formData.description,
-          carryForward: formData.carryForward, // ✅ Include
+          carryForward: formData.leaveType.replace(/\b\w/g, (c) => c.toUpperCase()) === "Casual Leave" ? true : false, // ✅ Include
           carryForwardLimit: formData.carryForward ? formData.carryForwardLimit : null, // ✅ Only if carry forward is enabled
         }
       );
@@ -161,7 +161,7 @@ function LeavePolicyPage() {
               {formData.policyId ? "Edit" : "Create"} Leave Policy
             </h3>
             <div className="form-group">
-              <label>Leave Type</label> <br />
+              <label>Leave Type</label>
               <input
                 type="text"
                 name="leaveType"
@@ -173,7 +173,7 @@ function LeavePolicyPage() {
               />
             </div>
             <div className="form-group">
-              <label>Max Leaves</label> <br />
+              <label>Max Leaves</label> 
               <input
                 type="number"
                 name="maxLeaves"
@@ -186,7 +186,7 @@ function LeavePolicyPage() {
               />
             </div>
             <div className="form-group">
-              <label>Description</label> <br />
+              <label>Description</label> 
               <textarea
                 name="description"
                 value={formData.description}
@@ -197,21 +197,21 @@ function LeavePolicyPage() {
                 rows="4"
               />
             </div>
-            <div className="form-group" style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-  <label style={{ fontSize: "14px", margin: "0" }}>Carry Forward</label>
-  <input
+         {/*   <div className="form-group" style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+   <label style={{ fontSize: "14px", margin: "0" }}>Carry Forward</label>
+ {false && <input
     type="checkbox"
     name="carryForward"
     checked={formData.carryForward}
     onChange={handleChange}
     style={{ width: "14px", height: "14px", margin: "0", cursor: "pointer" }}
-  />
-</div>
+  />} 
+</div>*/}
 
 
 
 
-{formData.carryForward && (
+{formData.leaveType.toLowerCase().includes("casual") && (
   <div className="form-group">
     <label>Carry Forward Limit</label>
     <input
@@ -312,9 +312,7 @@ function LeavePolicyPage() {
                           ? p.maxAllowedLeaves
                           : "N/A"}
                       </p>
-                      <p variant="small"  style={{ marginLeft: "8px" }}>
-  Carry Forward: {p.carryForward ? "Yes" : "No"}
-</p>
+                     
 
                       <Tooltip title="Edit">
                         <IconButton
@@ -326,7 +324,6 @@ function LeavePolicyPage() {
                               maxLeaves: p.maxAllowedLeaves,
                               description: p.description,
                               policyId: p._id,
-                              carryForward:p.carryForward,
                               carryForwardLimit:p.carryForwardLimit,
                             });
                             setTimeout(() => {

@@ -21,12 +21,13 @@ import {
 } from "@mui/material";
 import ReactECharts from "echarts-for-react";
 
-const LeaveBalanceChart = ({ email, year }) => {
+const LeaveBalanceChart = ({ email, year, years }) => {
   const currentYear = new Date().getFullYear();
   const [leaveBalance, setLeaveBalance] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [gender, setGender] = useState("");
+  console.log(years.includes(year - 1));
 
   const fetchGenderByEmail = async (email) => {
     try {
@@ -53,7 +54,7 @@ const LeaveBalanceChart = ({ email, year }) => {
   }, [email]);
 
   const [totalMatLeaves, setTotalMatLeaves] = useState(0);
-  
+
   useEffect(() => {
     const fetchMaternityLimit = async () => {
       try {
@@ -64,10 +65,10 @@ const LeaveBalanceChart = ({ email, year }) => {
           },
           body: JSON.stringify({
             email: email,
-            leaveType: "Maternity Leave"
+            leaveType: "Maternity Leave",
           }),
         });
-  
+
         const data = await response.json();
         if (data.totalSplits >= 2) {
           setTotalMatLeaves(84);
@@ -77,11 +78,84 @@ const LeaveBalanceChart = ({ email, year }) => {
         console.error("Error getting maternity limit:", error);
       }
     };
-  
+
     fetchMaternityLimit();
   }, [email]); // Add dependencies if they change
+
+  // const [prevleave, setPrevleave] = useState([]);
+  // const [currleave, setCurrleave] = useState([]);
+  // const isCasualForFreshYear =
+  //   (Array.isArray(prevleave) &&
+  //   prevleave.length === 0) && ( Array.isArray(currleave) &&
+  //   currleave.length === 0 )&&
+  //   years.includes(year - 1);
+  // console.log("isCasualForFreshYear", isCasualForFreshYear);
+  // useEffect(() => {
+  //   if (!email || !year) return;
+  //   const fetchData = async () => {
+  //     setLoading(true);
+  //     setError(null);
+  //     if (years.includes(year - 1)) {
+  //       try {
+  //         const res1 = await axios.get(
+  //           `http://localhost:5001/get-leave/${email}/${year - 1}`
+  //         );
+  //         const res2 = await axios.get(
+  //           `http://localhost:5001/get-leave/${email}/${year }`
+  //         );
+  //         setPrevleave(res1.data);
+  //         setCurrleave(res2.data);
+  //       } catch (err) {
+  //         console.error("Error fetching leave balance:", err);
+  //         setError("Failed to load leave balance.");
+  //       } finally {
+  //         setLoading(false);
+  //       }
+  //     }
+  //   };
+
+  //   fetchData();
+  // }, [year]);
+
+  const [prevleave, setPrevleave] = useState([]);
+const [currleave, setCurrleave] = useState([]);
+const [isCasualForFreshYear, setIsCasualForFreshYear] = useState(false);
+
+useEffect(() => {
+  if (!email || !year) return;
   
-  
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res1 = await axios.get(`http://localhost:5001/get-leave/${email}/${year - 1}`);
+      const res2 = await axios.get(`http://localhost:5001/get-leave/${email}/${year}`);
+      setPrevleave(res1.data);
+      setCurrleave(res2.data);
+    } catch (err) {
+      console.error("Error fetching leave balance:", err);
+      setError("Failed to load leave balance.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchData();
+}, [year]);
+
+// ✅ Compute isCasualForFreshYear *after* fetching data
+useEffect(() => {
+  setIsCasualForFreshYear(
+    Array.isArray(prevleave) && prevleave.length === 0 &&
+    Array.isArray(currleave) && currleave.length === 0 &&
+    years.includes(year - 1)
+  );
+}, [prevleave, currleave, year]);
+
+console.log("isCasualForFreshYear", isCasualForFreshYear);
+
+  console.log("prevleave", currleave);
 
   useEffect(() => {
     if (!email || !year) return;
@@ -191,7 +265,6 @@ const LeaveBalanceChart = ({ email, year }) => {
     ),
   ]);
 
-
   return (
     <Card
       sx={{
@@ -262,12 +335,22 @@ const LeaveBalanceChart = ({ email, year }) => {
                   <TableCell sx={{ padding: "8px 8px" }}>{type}</TableCell>
                   <TableCell sx={{ padding: "8px 8px" }} align="center">
                     {/* {data.totalLeaves === null ? "-" : data.totalLeaves} */}
-                    {type === "Maternity Leave" ? totalMatLeaves : data.totalLeaves ?? "-"}
-
+                    {type === "Casual Leave"
+                      ? isCasualForFreshYear
+                        ? data.carrylimit + 14
+                        : data.totalLeaves ?? "-"
+                      : data.totalLeaves ?? "-"}
                   </TableCell>
                   <TableCell sx={{ padding: "8px 8px" }} align="center">
                     {/* {data.totalLeaves === null ? "-" : data.availableLeaves} */}
-                    {type === "Maternity Leave" ? totalMatLeaves - data.usedLeaves : data.availableLeaves ?? "-"}
+                    {type === "Casual Leave"
+                      ? isCasualForFreshYear
+                        ? data.carrylimit + 14
+                        : data.availableLeaves ?? "-"
+                      : data.availableLeaves == 0 ||
+                        data.availableLeaves == null
+                      ? "-"
+                      : data.availableLeaves}
                   </TableCell>
                   <TableCell sx={{ padding: "8px 8px" }} align="center">
                     {data.usedLeaves}

@@ -332,9 +332,16 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
     // Check carried forward leaves
     let previousYearLeaves = await Leave.findOne({ email, leaveType, year: [startYear - 1] });
     let carryForwardedLeaves = 0;
-    if (carryForwardEnabled && previousYearLeaves) {
+    let existingYears = await ValidYear.findOne();
+    
+    let years = existingYears ? existingYears.year : [];
+    if (carryForwardEnabled  ) {
+      if(previousYearLeaves){
       let unusedLeaves = previousYearLeaves.availableLeaves;
       carryForwardedLeaves = Math.min(unusedLeaves, carryForwardLimit);
+    }else if(years.includes(startYear - 1)){
+      carryForwardedLeaves = carryForwardLimit;
+    }
     }
      
 
@@ -371,7 +378,7 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
       for (let i = 0; i < record.startDate.length; i++) {
         
         if (
-          (record.status[i] == "Approved" &&
+          (
             record.leaveType == "Maternity Leave")
         ) {
           let leaveYear = new Date(record.startDate[i]).getFullYear();
@@ -385,12 +392,6 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
 
     const flag = totalSplits >= 2;
 
-    if(flag){
-      if (requestedLeaveDays>84){
-      return res.status(400).json({ message:"You have Only 84 Leaves"});}
-        totalAllowedLeaves=84
-    }
-console.log(totalSplits)
 
 let availableLeavesStartYear, availableLeavesEndYear;
 
@@ -443,27 +444,80 @@ if (policy.carryForward) {
     // Apply leave logic remains the same
     let leaveRecord = await Leave.findOne({ email, leaveType, year: { $elemMatch: { $elemMatch: { $eq: Number(startYear) } } } });
 console.log("leaveRecord",leaveRecord)
-
-    if (!leaveRecord) {
+if (startYear === endYear) {
+  if (!leaveRecord) {
       let availableLeaves = totalAllowedLeaves + carryForwardedLeaves;
 
-      if (totalSplits >= 2) {
-        totalAllowedLeaves = 84;
-      availableLeaves = 84;
+      leaveRecord = new Leave({
+          email,
+          empname,
+          empid,
+          managerEmail,
+          leaveType,
+          totalLeaves: totalAllowedLeaves,
+          carryForwardedLeaves,
+          usedLeaves: 0,
+          availableLeaves: availableLeaves,
+          applyDate: [],
+          startDate: [],
+          endDate: [],
+          reason: [],
+          status: [],
+          attachments: [],
+          month: [],
+          year: [],
+          duration: [],
+          continous: false,  // ✅ Single-year leave → `continous` remains `false`
+      });
+  }
+
+  leaveRecord.startDate.push(formattedStartDate);
+  leaveRecord.endDate.push(formattedEndDate);
+  leaveRecord.applyDate.push(new Date());
+  leaveRecord.status.push("Pending");
+  leaveRecord.attachments.push(filePath || "");
+  leaveRecord.reason.push(reason || "N/A");
+  leaveRecord.month.push([formattedStartDate.getMonth() + 1]);
+  leaveRecord.year.push([startYear]);
+  leaveRecord.duration.push([requestedLeaveDays]);
+
+  await leaveRecord.save();
+  await updateValidYears(startYear, endYear);
+
+  return res.status(200).json({ message: "Leave application submitted successfully" });
+
+} else {
+  let currentStartDate = formattedStartDate;
+
+  for (let year = startYear; year <= endYear; year++) {
+    let yearStart = new Date(Date.UTC(year, 0, 1));
+    let yearEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59));
+
+    let leaveStart = year === startYear ? currentStartDate : yearStart;
+    console.log("leaveStart",leaveStart)
+    while (await isMandatoryHoliday(leaveStart)) {
+      leaveStart.setUTCDate(leaveStart.getUTCDate() + 1);
     }
-    console.log(totalSplits)
-    console.log(totalAllowedLeaves)
-    console.log(availableLeaves)
+    
+    let leaveEnd = year === endYear ? formattedEndDate : yearEnd;
+    let days = Math.ceil((leaveEnd - leaveStart) / (1000 * 60 * 60 * 24)) + 1;
+
+    let leaveRecord = await Leave.findOne({
+      email,
+      leaveType,
+      year: { $elemMatch: { $elemMatch: { $eq: Number(year) } } }  // Convert to number
+    });
+    if (!leaveRecord) {
+      
       leaveRecord = new Leave({
         email,
         empname,
         empid,
         managerEmail,
         leaveType,
-        totalLeaves: totalAllowedLeaves,
-        carryForwardedLeaves,
-        usedLeaves: 0,
-        availableLeaves:availableLeaves,
+        totalLeaves: defaultTotalLeaves,
+        usedLeaves: 0,  // ✅ Keep usedLeaves as 0 initially
+        availableLeaves: defaultTotalLeaves,
         applyDate: [],
         startDate: [],
         endDate: [],
@@ -472,90 +526,38 @@ console.log("leaveRecord",leaveRecord)
         attachments: [],
         month: [],
         year: [],
-        duration: []
-      });
-    
+        duration: [],
+                      continous: year > startYear,  // ✅ Future year → `continous = true`, else false
 
-    leaveRecord.startDate.push(formattedStartDate);
-    leaveRecord.endDate.push(formattedEndDate);
+      });
+    }else if (year > startYear) {
+      leaveRecord.continous = true;  // ✅ Update only future year's `continous` to `true`
+  }
+
+    leaveRecord.startDate.push(leaveStart);
+    leaveRecord.endDate.push(leaveEnd);
     leaveRecord.applyDate.push(new Date());
     leaveRecord.status.push("Pending");
     leaveRecord.attachments.push(filePath || "");
     leaveRecord.reason.push(reason || "N/A");
-    leaveRecord.month.push([formattedStartDate.getMonth() + 1]);
-    leaveRecord.year.push([startYear]);
-    leaveRecord.duration.push([requestedLeaveDays]);
+    leaveRecord.month.push([leaveStart.getMonth() + 1]);
+    leaveRecord.year.push([year]);
+    leaveRecord.duration.push([days]);
 
+    leaveRecord.availableLeaves = leaveRecord.totalLeaves; // ✅ Do not deduct from available leaves initially
+    
+    await updateValidYears(startYear, endYear);
     await leaveRecord.save();
-    return res.status(200).json({ message: "Leave application submitted successfully" });
+    currentStartDate = new Date(Date.UTC(year + 1, 0, 1));
+  }
+}
 
-  } 
+return res.status(200).json({ message: "Leave application submitted successfully" });
 
-else {
-      let currentStartDate = formattedStartDate;
+} 
+  
 
-      for (let year = startYear; year <= endYear; year++) {
-        let yearStart = new Date(Date.UTC(year, 0, 1));
-        let yearEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59));
-
-        let leaveStart = year === startYear ? currentStartDate : yearStart;
-        console.log("leaveStart",leaveStart)
-        while (await isMandatoryHoliday(leaveStart)) {
-          leaveStart.setUTCDate(leaveStart.getUTCDate() + 1);
-        }
-        
-        let leaveEnd = year === endYear ? formattedEndDate : yearEnd;
-        let days = Math.ceil((leaveEnd - leaveStart) / (1000 * 60 * 60 * 24)) + 1;
-
-        let leaveRecord = await Leave.findOne({
-          email,
-          leaveType,
-          year: { $elemMatch: { $elemMatch: { $eq: Number(year) } } }  // Convert to number
-        });
-        if (!leaveRecord) {
-          
-          leaveRecord = new Leave({
-            email,
-            empname,
-            empid,
-            managerEmail,
-            leaveType,
-            totalLeaves: defaultTotalLeaves,
-            usedLeaves: 0,  // ✅ Keep usedLeaves as 0 initially
-            availableLeaves: defaultTotalLeaves,
-            applyDate: [],
-            startDate: [],
-            endDate: [],
-            reason: [],
-            status: [],
-            attachments: [],
-            month: [],
-            year: [],
-            duration: []
-          });
-        }
-
-        leaveRecord.startDate.push(leaveStart);
-        leaveRecord.endDate.push(leaveEnd);
-        leaveRecord.applyDate.push(new Date());
-        leaveRecord.status.push("Pending");
-        leaveRecord.attachments.push(filePath || "");
-        leaveRecord.reason.push(reason || "N/A");
-        leaveRecord.month.push([leaveStart.getMonth() + 1]);
-        leaveRecord.year.push([year]);
-        leaveRecord.duration.push([days]);
-
-        leaveRecord.availableLeaves = leaveRecord.totalLeaves; // ✅ Do not deduct from available leaves initially
-        
-        await updateValidYears(startYear, endYear);
-        await leaveRecord.save();
-        currentStartDate = new Date(Date.UTC(year + 1, 0, 1));
-      }
-    }
-
-    return res.status(200).json({ message: "Leave application submitted successfully" });
-
-  } catch (error) {
+catch (error) {
     console.error("Error applying for leave:", error);
     res.status(500).json({ message: "Server error while applying leave." });
   }
@@ -1573,47 +1575,125 @@ allReports.forEach((report) => {
     res.status(500).json({ message: "Server Error" });
   }
 });
-
-
-
+/*
 app.post("/maternity-limit", async (req, res) => {
   try {
-    const { email, leaveType } = req.body;
+    const { email, leaveType,continous } = req.body;
 
     if (!email || !leaveType) {
-      return res
-        .status(400)
-        .json({ message: "Email and leave type are required." });
+      return res.status(400).json({ message: "Email and leave type are required." });
     }
 
-    let leaveRecords = await Leave.find({ email, leaveType });
+    // Fetch all approved maternity leave records for the employee
+    let leaveRecords = await Leave.find({ email, leaveType: "Maternity Leave" });
 
-    let count = {};
+    let childNumbers = new Set();
+    let yearWiseCount = {}; // Track leave approvals by year
+    let maxChildNumber = 0; // Track the highest childNumber
+
     for (let record of leaveRecords) {
+      if (record.childNumber) {
+        childNumbers.add(record.childNumber);
+        maxChildNumber = Math.max(maxChildNumber, record.childNumber); // Find highest child number
+      }
       for (let i = 0; i < record.startDate.length; i++) {
-        
-        if (
-          (record.status[i] == "Approved" &&
-            record.leaveType == "Maternity Leave")
-        ) {
+        if (record.status[i] === "Approved") {
           let leaveYear = new Date(record.startDate[i]).getFullYear();
-          count[leaveYear] = (count[leaveYear] || 0) + 1;
-          // console.log("inside");
+          yearWiseCount[leaveYear] = (yearWiseCount[leaveYear] || 0) + 1;
         }
       }
     }
-    console.log(count);
-    const totalSplits = Object.values(count).reduce((sum, value) => sum + value, 0);
+
+    console.log("Existing Child Numbers:", childNumbers);
+    console.log("Max Child Number:", maxChildNumber);
+
+    // Compute total approved maternity leave splits
+    const totalSplits = Object.values(yearWiseCount).reduce((sum, value) => sum + value, 0);
+
+    // Existing condition: If `childNumber` already exists, keep it as `1`
+    let chilNumber = childNumbers.has(1) ? 2 : totalSplits + 1;
+
+    // ✅ New condition: Ensure childNumber is always incremented
+    chilNumber = Math.max(chilNumber, maxChildNumber + 1);
 
     const flag = totalSplits >= 1;
 
-    return res.status(200).json({ email, leaveType, flag,totalSplits,count });
-    // return res.status(200).json({ message: "Data received successfully.", email, leaveType });
+    return res.status(200).json({ email, leaveType, flag, totalSplits, yearWiseCount, chilNumber });
+
+  } catch (error) {
+    console.error("Error:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+});*/
+
+app.post("/maternity-limit", async (req, res) => {
+  try {
+    const { email, leaveType, continous } = req.body;
+
+    if (!email || !leaveType) {
+      return res.status(400).json({ message: "Email and leave type are required." });
+    }
+
+    // Fetch all approved maternity leave records for the employee
+    let leaveRecords = await Leave.find({ email, leaveType: "Maternity Leave" });
+
+    let childNumbers = new Set();
+    let yearWiseCount = {}; // Track leave approvals by year
+    let maxChildNumber = 0; // Track the highest childNumber
+    let previousYearChildNumber = 0; // Track childNumber of the previous year
+
+    for (let record of leaveRecords) {
+      if (record.childNumber) {
+        childNumbers.add(record.childNumber);
+        maxChildNumber = Math.max(maxChildNumber, record.childNumber); // Find highest child number
+      }
+      for (let i = 0; i < record.startDate.length; i++) {
+        if (record.status[i] === "Approved") {
+          let leaveYear = new Date(record.startDate[i]).getFullYear();
+          yearWiseCount[leaveYear] = (yearWiseCount[leaveYear] || 0) + 1   
+          
+        }
+      }
+    }
+    const latestYear = Math.max(...Object.keys(yearWiseCount).map(Number), 0);
+    if (latestYear) {
+      let latestRecord = leaveRecords.find(record =>
+        record.startDate.some(date => new Date(date).getFullYear() === latestYear)
+      );
+      previousYearChildNumber = latestRecord ? latestRecord.childNumber : 0;
+    }
+
+    console.log("Existing Child Numbers:", childNumbers);
+    console.log("Max Child Number:", maxChildNumber);
+
+    // Compute total approved maternity leave splits
+    const totalSplits = Object.values(yearWiseCount).reduce((sum, value) => sum + value, 0);
+    console.log(totalSplits);
+
+    let chilNumber;
+console.log(continous)
+    // ✅ Handling continuous leave condition
+    if (continous) {
+      chilNumber = totalSplits;
+    } else {
+      chilNumber = childNumbers.has(1) ? 2 : totalSplits + 1;
+      chilNumber = Math.max(chilNumber, maxChildNumber + 1);
+    }
+
+    // ✅ Ensure chilNumber is always incremented based on the highest past childNumber
+
+    const flag = totalSplits >= 1;
+
+    return res.status(200).json({ email, leaveType, flag, totalSplits, yearWiseCount, chilNumber });
+
   } catch (error) {
     console.error("Error:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 });
+
+
+
 const PDFDocument = require("pdfkit");
 const moment = require("moment");
 const { appendFile } = require("fs/promises");
@@ -2072,6 +2152,7 @@ app.get("/leave-balance/:email/:year", async (req, res) => {
   try {
     // ✅ Fetch all leave policies
     const policies = await LeavePolicy.find({});
+    let carrylimit =0 ;
 
     // ✅ Initialize leave balance with all leave types
     const leaveBalance = {};
@@ -2080,7 +2161,42 @@ app.get("/leave-balance/:email/:year", async (req, res) => {
         totalLeaves: policy.maxAllowedLeaves,
         usedLeaves: 0,
         availableLeaves: policy.maxAllowedLeaves, // Initially set to total leaves
+        carrylimit: policy.carryForwardLimit,
       };
+      if (policy.leaveType === "Maternity Leave") {
+        const maternityLeaveRecord = await Leave.findOne({
+          email,
+          leaveType: "Maternity Leave",
+          year: { $elemMatch: { $elemMatch: { $eq: numericYear } } },
+        });
+
+        if (maternityLeaveRecord) {
+          leaveBalance["Maternity Leave"].totalLeaves = maternityLeaveRecord.totalLeaves;
+          leaveBalance["Maternity Leave"].availableLeaves = maternityLeaveRecord.availableLeaves;
+          continue; // ✅ Skip further calculations for Maternity Leave
+        }
+        const highestMaternityLeave = await Leave.findOne({
+          email,
+          leaveType: "Maternity Leave"
+        }).sort({ childNumber: -1 }); // Sort by childNumber in descending order
+        
+        const highestChildNumber = highestMaternityLeave ? highestMaternityLeave.childNumber : 0; // Default to 0 if no record found
+        console.log(highestChildNumber)
+        const pastMaternityLeave = await Leave.findOne({
+          email,
+          leaveType: "Maternity Leave",
+          totalLeaves: 84, // ✅ Find the first year when 84 was recorded
+          year: { $elemMatch: { $elemMatch: { $lt: numericYear } } },
+        }).sort({ year: 1 }); // ✅ Find the earliest occurrence of 84
+        
+        if ((pastMaternityLeave && pastMaternityLeave.year < numericYear) || highestChildNumber >= 2) {
+          leaveBalance["Maternity Leave"].totalLeaves = 84;
+          leaveBalance["Maternity Leave"].availableLeaves = 84;
+        }
+        
+        
+      }
+      
 
       // ✅ Find the most recent non-zero available leave balance from past years
       const pastYearsLeaves = await Leave.find({
@@ -2090,7 +2206,7 @@ app.get("/leave-balance/:email/:year", async (req, res) => {
       }).sort({ year: -1 }); // Sort in descending order (latest first)
 
       let carryForwardLeave = 0; // ✅ Default to 0 if no valid past leave is found
-
+     
       for (const prevLeave of pastYearsLeaves) {
           const prevAvailable = prevLeave?.availableLeaves ?? 0; // ✅ Handle null/undefined
           if (prevAvailable > 0) {
@@ -2147,17 +2263,82 @@ app.get("/leave-balance/:email/:year", async (req, res) => {
         0,
         leaveBalance[leaveType].totalLeaves - leaveBalance[leaveType].usedLeaves
       );
+
     }
 
     res.json(leaveBalance);
+    console.log("leaveBalance",leaveBalance);
   } catch (err) {
     console.error("Error fetching leave balance:", err);
     res.status(500).json({ error: "Error fetching leave balance" });
   }
 });
+app.post("/maternity-limit-display", async (req, res) => {
+  try {
+    const { email, leaveType } = req.body;
+
+    if (!email || !leaveType) {
+      return res
+        .status(400)
+        .json({ message: "Email and leave type are required." });
+    }
+
+    let leaveRecords = await Leave.find({ email, leaveType });
+
+    let count = {};
+    for (let record of leaveRecords) {
+      for (let i = 0; i < record.startDate.length; i++) {
+        
+        if (
+          (record.status[i] == "Approved" &&
+            record.leaveType == "Maternity Leave")
+        ) {
+          let leaveYear = new Date(record.startDate[i]).getFullYear();
+          count[leaveYear] = (count[leaveYear] || 0) + 1;
+          // console.log("inside");
+        }
+      }
+    }
+    console.log(count);
+    const totalSplits = Object.values(count).reduce((sum, value) => sum + value, 0);
+
+    const flag = totalSplits >= 1;
+
+    return res.status(200).json({ email, leaveType, flag,totalSplits,count });
+    // return res.status(200).json({ message: "Data received successfully.", email, leaveType });
+  } catch (error) {
+    console.error("Error:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+app.get("/get-leave/:email/:year", async (req, res) => {
+  try {
+    const { email, year } = req.params;
+
+    if (!email || !year) {
+      return res.status(400).json({ message: "Email and year are required." });
+    }
+
+    // Convert year to number
+    const targetYear = parseInt(year, 10);
+
+    // Find leaves where leaveType is "Casual Leave" and the year matches
+    const leaves = await Leave.find({
+      email,
+      leaveType: "Casual Leave",
+      year: { $elemMatch: { $elemMatch: { $eq: targetYear } } }, 
+    });
+
+    console.log("leaves",leaves);
 
 
-
+    res.status(200).json(leaves);
+  } catch (error) {
+    console.error("Error fetching leave data:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
 // Get Pending/Approved/Rejected Requests
 app.get('/leave-status/:managerEmail', async (req, res) => {
   const { managerEmail } = req.params;

@@ -168,8 +168,8 @@ const EmployeeDashboard = () => {
           xs={12}
           md={5}
         >
-            <LeaveBalanceChart email={email} year={selectedYear} gender={gender}/>
-        </Grid>
+<LeaveBalanceChart email={email} year={selectedYear} gender={gender} years={years}/>
+       </Grid>
       </Grid>
 
       <Grid container spacing={3} sx={{ mt: 3 }}>
