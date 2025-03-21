@@ -61,10 +61,9 @@ LeaveSchema.pre("save", async function (next) {
         const currentYear = currentDate.getFullYear();
 
         if (
-          dayOfWeek !== 0 &&
-          dayOfWeek !== 6 &&
-          !holidayDates.includes(formattedDate)
-        ) {
+          this.leaveType === "Maternity Leave" || 
+          (!holidayDates.includes(formattedDate) && dayOfWeek !== 0 && dayOfWeek !== 6)
+        )  {
           if (!durationPerMonth[currentYear]) {
             durationPerMonth[currentYear] = {};
           }

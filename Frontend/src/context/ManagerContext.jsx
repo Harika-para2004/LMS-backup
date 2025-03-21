@@ -28,7 +28,7 @@ export const ManagerProvider = ({ children }) => {
   const [userData, setUserData] = useState(null);
   const [file, setFile] = useState(null);
   const [selectedFilter, setSelectedFilter] = useState("Pending");
-  const [selectedFilterHistory, setSelectedFilterHistory] = useState("Pending");
+  const [selectedFilterHistory, setSelectedFilterHistory] = useState("All");
   const [error, setError] = useState("");
   const [leavePolicyRef, setLeavePolicyRef] = useState([]);
   const [mergedLeaveData, setMergedLeaveData] = useState([]);

@@ -448,7 +448,7 @@ const LeaveHistory = () => {
   };
 
   useEffect(() => {
-    setSelectedFilterHistory("Pending");
+    setSelectedFilterHistory("All");
   }, []);
 
   const [currentPage, setCurrentPage] = useState(1);

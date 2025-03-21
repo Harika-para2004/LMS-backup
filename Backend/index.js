@@ -214,30 +214,33 @@ const updateValidYears = async (startYear, endYear) => {
     console.error("Error updating valid years:", error);
   }
 };
-const getValidLeaveDays = async (startDate, endDate) => {
+const getValidLeaveDays = async (startDate, endDate, leaveType) => {
   let validDays = 0;
   let currentDate = new Date(startDate);
-
   const mandatoryHolidays = await getMandatoryHolidays();
 
-  while (currentDate <= endDate) {
-    const dayOfWeek = currentDate.getUTCDay(); 
-    const formatDate = (dateObj) => {
-      const day = dateObj.getUTCDate().toString().padStart(2, "0");
-      const month = dateObj.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
-      const year = dateObj.getUTCFullYear();
-      return `${day}-${month}-${year}`;
-    };
-    
+  const formatDate = (dateObj) => {
+    const day = dateObj.getUTCDate().toString().padStart(2, "0");
+    const month = dateObj.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
+    const year = dateObj.getUTCFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
+  while (currentDate <= new Date(endDate)) {
+    const dayOfWeek = currentDate.getUTCDay();
     const formattedDate = formatDate(currentDate);
-    if (dayOfWeek !== 0 && dayOfWeek !== 6 && !mandatoryHolidays.includes(formattedDate)) {
+console.log(leaveType)
+    // Count all days for Maternity Leave, exclude weekends & holidays otherwise
+    if (leaveType === "Maternity Leave" || (dayOfWeek !== 0 && dayOfWeek !== 6 && !mandatoryHolidays.includes(formattedDate))) {
       validDays++;
     }
-    currentDate.setUTCDate(currentDate.getUTCDate() + 1);
-  }
 
+    currentDate.setUTCDate(currentDate.getUTCDate() + 1); // Move to the next day
+  }
+console.log(validDays)
   return validDays;
 };
+
 app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
   const { email } = req.query;
   const { empname, empid, leaveType, startDate, endDate, reason, managerEmail, prevStart, prevEnd, prevId } = req.body;
@@ -248,7 +251,7 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
     let formattedEndDate = new Date(endDate);
 
     if (!leaveType || !startDate || !endDate) {
-      return res.status(400).json({ message: "All fields (Leave Type, Start Date, End Date) are required." });
+      return res.status(400).json({ message: "Fill Required Fields" });
     }
 
     if (formattedEndDate < formattedStartDate) {
@@ -345,8 +348,8 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
     }
      
 
-    let requestedLeaveDays = await getValidLeaveDays(formattedStartDate, formattedEndDate);
-
+    let requestedLeaveDays = await getValidLeaveDays(formattedStartDate, formattedEndDate,leaveType);
+console.log("requestedDays",requestedLeaveDays)
     let leaveRecords = await Leave.find({ email, leaveType });
 
     let usedLeavesByYear = {};
@@ -470,7 +473,7 @@ if (startYear === endYear) {
           continous: false,  // ✅ Single-year leave → `continous` remains `false`
       });
   }
-
+console.log("in",requestedLeaveDays)
   leaveRecord.startDate.push(formattedStartDate);
   leaveRecord.endDate.push(formattedEndDate);
   leaveRecord.applyDate.push(new Date());
@@ -480,9 +483,9 @@ if (startYear === endYear) {
   leaveRecord.month.push([formattedStartDate.getMonth() + 1]);
   leaveRecord.year.push([startYear]);
   leaveRecord.duration.push([requestedLeaveDays]);
-
-  await leaveRecord.save();
   await updateValidYears(startYear, endYear);
+  await leaveRecord.save();
+  console.log(leaveRecord)
 
   return res.status(200).json({ message: "Leave application submitted successfully" });
 
