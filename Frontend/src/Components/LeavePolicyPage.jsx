@@ -113,8 +113,10 @@ function LeavePolicyPage() {
       );
       setPolicies(policies.filter((p) => p._id !== id));
       showToast("Leave policy deleted successfully!");
-    } catch {
-      showToast("Failed to delete leave policy.");
+    } catch(error) {
+      const errorMessage =
+      error.response?.data?.message || "Failed to delete leave policy.";
+      showToast(errorMessage);
     }
   };
 

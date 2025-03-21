@@ -382,6 +382,7 @@ console.log("requestedDays",requestedLeaveDays)
         
         if (
           (
+            record.status[i]=="Approved" &&
             record.leaveType == "Maternity Leave")
         ) {
           let leaveYear = new Date(record.startDate[i]).getFullYear();
@@ -394,7 +395,10 @@ console.log("requestedDays",requestedLeaveDays)
     const totalSplits = Object.values(count1).reduce((sum, value) => sum + value, 0);
 
     const flag = totalSplits >= 2;
+if(flag && requestedLeaveDays>84){
+  return res.status(400).json({ message: "You are allowed to take only 84 days of maternity leave from 2nd child onwards" });
 
+}
 
 let availableLeavesStartYear, availableLeavesEndYear;
 
@@ -1021,11 +1025,14 @@ app.put("/updateEmployeeList/:id", async (req, res) => {
       _id: { $ne: req.params.id }, // Exclude current employee
     });
 
-    if (otherManager) {
-      return res.status(400).json({
-        message: `Project is already assigned to another manager (${otherManager.empname})!`,
-      });
+    if (project && project.trim() !== "") { 
+      if (otherManager) {
+        return res.status(400).json({
+          message: `Project is already assigned to another manager (${otherManager.empname})!`,
+        });
+      }
     }
+    
   }
     // ✅ Handle Project Assignment When Role Changes to Employee
     if (role === "Employee" && existingEmployee.role !== "Employee") {
@@ -2314,7 +2321,6 @@ app.post("/maternity-limit-display", async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 });
-
 app.get("/get-leave/:email/:year", async (req, res) => {
   try {
     const { email, year } = req.params;

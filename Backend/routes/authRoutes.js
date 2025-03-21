@@ -30,12 +30,14 @@ router.post('/addEmployee', async (req, res) => {
 
     let assignedProject = "";
     if (role === "Manager") {
-      const projectExists = await User.findOne({ project, role: "Manager",isActive:true });
-
-      if (projectExists) {
-        return res.status(400).json({ message: `Project "${project}" is already assigned to another manager.` });
+      if (project && project.trim() !== "") { 
+        const projectExists = await User.findOne({ project, role: "Manager", isActive: true });
+      
+        if (projectExists) {
+          return res.status(400).json({ message: `Project "${project}" is already assigned to another manager.` });
+        }
       }
-
+      
       assignedProject = project;
     }
 
@@ -50,11 +52,14 @@ router.post('/addEmployee', async (req, res) => {
 
     if (role === "Manager") {
       // Check if another active manager already has the project
-      const activeManager = await User.findOne({ project, role: "Manager", isActive: true });
-    
-      if (activeManager) {
-        return res.status(400).json({ message: `Project "${project}" is already assigned to another active manager.` });
+      if (project && project.trim() !== "") { 
+        const activeManager = await User.findOne({ project, role: "Manager", isActive: true });
+      
+        if (activeManager) {
+          return res.status(400).json({ message: `Project "${project}" is already assigned to another active manager.` });
+        }
       }
+      
     
       // Assign project to the new manager
       assignedProject = project;

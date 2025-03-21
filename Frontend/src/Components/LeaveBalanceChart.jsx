@@ -27,6 +27,7 @@ const LeaveBalanceChart = ({ email, year, years }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [gender, setGender] = useState("");
+  const [maxCasual, setMaxCasual] = useState();
   console.log(years.includes(year - 1));
 
   const fetchGenderByEmail = async (email) => {
@@ -53,6 +54,32 @@ const LeaveBalanceChart = ({ email, year, years }) => {
     }
   }, [email]);
 
+  const fetchPolicies = async () => {
+    try {
+      const response = await fetch(`http://localhost:5001/api/leave-policies`);
+      const data = await response.json();
+
+      if (response.ok) {
+        const casualLeave = data.data.find(
+          (leave) => leave.leaveType === "Casual Leave"
+        );
+
+        const maxAllowedLeaves = casualLeave
+          ? casualLeave.maxAllowedLeaves
+          : null;
+          setMaxCasual(maxAllowedLeaves);
+      } else {
+        console.error("Error:", data.error);
+      }
+    } catch (error) {
+      console.error("Fetch error:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchPolicies();
+  }, []);
+
   const [totalMatLeaves, setTotalMatLeaves] = useState(0);
 
   useEffect(() => {
@@ -73,7 +100,6 @@ const LeaveBalanceChart = ({ email, year, years }) => {
         if (data.totalSplits >= 2) {
           setTotalMatLeaves(84);
         }
-        console.log("Mat Response:", data);
       } catch (error) {
         console.error("Error getting maternity limit:", error);
       }
@@ -118,42 +144,48 @@ const LeaveBalanceChart = ({ email, year, years }) => {
   // }, [year]);
 
   const [prevleave, setPrevleave] = useState([]);
-const [currleave, setCurrleave] = useState([]);
-const [isCasualForFreshYear, setIsCasualForFreshYear] = useState(false);
+  const [currleave, setCurrleave] = useState([]);
+  const [isCasualForFreshYear, setIsCasualForFreshYear] = useState(false);
 
-useEffect(() => {
-  if (!email || !year) return;
-  
-  const fetchData = async () => {
-    setLoading(true);
-    setError(null);
+  useEffect(() => {
+    if (!email || !year) return;
 
-    try {
-      const res1 = await axios.get(`http://localhost:5001/get-leave/${email}/${year - 1}`);
-      const res2 = await axios.get(`http://localhost:5001/get-leave/${email}/${year}`);
-      setPrevleave(res1.data);
-      setCurrleave(res2.data);
-    } catch (err) {
-      console.error("Error fetching leave balance:", err);
-      setError("Failed to load leave balance.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
 
-  fetchData();
-}, [year]);
+      try {
+        const res1 = await axios.get(
+          `http://localhost:5001/get-leave/${email}/${year - 1}`
+        );
+        const res2 = await axios.get(
+          `http://localhost:5001/get-leave/${email}/${year}`
+        );
+        setPrevleave(res1.data);
+        setCurrleave(res2.data);
+      } catch (err) {
+        console.error("Error fetching leave balance:", err);
+        setError("Failed to load leave balance.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-// ✅ Compute isCasualForFreshYear *after* fetching data
-useEffect(() => {
-  setIsCasualForFreshYear(
-    Array.isArray(prevleave) && prevleave.length === 0 &&
-    Array.isArray(currleave) && currleave.length === 0 &&
-    years.includes(year - 1)
-  );
-}, [prevleave, currleave, year]);
+    fetchData();
+  }, [year]);
 
-console.log("isCasualForFreshYear", isCasualForFreshYear);
+  // ✅ Compute isCasualForFreshYear *after* fetching data
+  useEffect(() => {
+    setIsCasualForFreshYear(
+      Array.isArray(prevleave) &&
+        prevleave.length === 0 &&
+        Array.isArray(currleave) &&
+        currleave.length === 0 &&
+        years.includes(year - 1)
+    );
+  }, [prevleave, currleave, year]);
+
+  console.log("isCasualForFreshYear", isCasualForFreshYear);
 
   console.log("prevleave", currleave);
 
@@ -337,7 +369,7 @@ console.log("isCasualForFreshYear", isCasualForFreshYear);
                     {/* {data.totalLeaves === null ? "-" : data.totalLeaves} */}
                     {type === "Casual Leave"
                       ? isCasualForFreshYear
-                        ? data.carrylimit + 14
+                        ? data.carrylimit + maxCasual
                         : data.totalLeaves ?? "-"
                       : data.totalLeaves ?? "-"}
                   </TableCell>
@@ -345,7 +377,7 @@ console.log("isCasualForFreshYear", isCasualForFreshYear);
                     {/* {data.totalLeaves === null ? "-" : data.availableLeaves} */}
                     {type === "Casual Leave"
                       ? isCasualForFreshYear
-                        ? data.carrylimit + 14
+                        ? data.carrylimit + maxCasual
                         : data.availableLeaves ?? "-"
                       : data.availableLeaves == 0 ||
                         data.availableLeaves == null

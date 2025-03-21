@@ -28,7 +28,7 @@ const LeavePolicySchema = new mongoose.Schema({
   },
   carryForwardLimit: {
     type: Number,
-    default: null, // ✅ Only used if carryForward is true
+    default: 0, // ✅ Only used if carryForward is true
   },
   createdAt: {
     type: Date,

@@ -42,7 +42,10 @@ const ApplyLeave = () =>
     const [openDescription, setOpenDescription] = useState(false);
     const [currentDescription, setCurrentDescription] = useState("");
     const [fileName, setFileName] = useState("");
+    const [leaveBalance, setLeaveBalance] = useState(null);
     const year = new Date().getFullYear();
+    const [totalMatLeaves, setTotalMatLeaves] = useState(0);
+
     const {
       leaveData,
       setLeaveData,
@@ -104,7 +107,8 @@ const ApplyLeave = () =>
     }, []);
 
 
-    
+
+ // Add dependencies if they change
     const handleSubmit = async (event) => {
       event.preventDefault();
 
@@ -183,11 +187,13 @@ const ApplyLeave = () =>
           requestedDays++;
         }
       }
-
+  
         currentDate = currentDate.add(1, "day"); // Move to the next day
       }
 
       console.log("Final requestedDays:", requestedDays);
+
+      
 
       if (
         leaveType.toLowerCase().includes("bereavement") &&

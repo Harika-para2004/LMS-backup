@@ -220,7 +220,7 @@ const LeaveRequestsTable = () => {
 
   
       let chilNumber = null;
-  
+  let total;
       // Fetch maternity leave limits if applicable
       if (leave.leaveType === "Maternity Leave") {
         try {
@@ -237,16 +237,18 @@ const LeaveRequestsTable = () => {
           
           const data = await response.json();
           console.log("Mat Response:", data.totalSplits, "Child Number:", data.chilNumber);
-          
+          total=data.totalSplits
           chilNumber = data.chilNumber; // Use the fetched child number
-       
+        
+          
         } catch (error) {
           console.error("Error getting maternity limit:", error);
           return;
         }
       }
+
   if(chilNumber>2 && totalLeaveDays>84){
-    showToast("Not enough available leaves.");
+    showToast("");
         return;
   }
       // Validation for Paternity Leave and Adoption Leave (Max 2 splits)
@@ -266,7 +268,9 @@ const LeaveRequestsTable = () => {
         [`rejectionComment.${selectedIndex}`]: "",
         ...(leave.leaveType === "Maternity Leave" ? { childNumber: chilNumber } : {}),  // ✅ Properly assigning chilNumber
       };
-      
+      if(total>=1){
+        updatedLeave.availableLeaves=84
+      }
   
       // Update leave record in the backend
       try {
