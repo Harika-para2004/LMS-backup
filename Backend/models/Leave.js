@@ -110,19 +110,22 @@ LeaveSchema.pre("save", async function (next) {
     this.duration = durationArray;
     this.month = monthsArray;
     this.year = yearsArray;
-
+    const year = Array.isArray(this.startDate) && this.startDate.length > 0
+    ? new Date(this.startDate[0]).getFullYear()
+    : new Date().getFullYear(); // Default to the current year if empty
     // ✅ Fetch Leave Policy and Set Leave Limits
     //updated available leaves
     const policy = await LeavePolicy.findOne({ leaveType: this.leaveType });
     if (policy) {
       if (policy.maxAllowedLeaves) {
         // Set total leaves by including carryForwardedLeaves
-        this.totalLeaves = (policy.maxAllowedLeaves || 0) + (this.carryForwardedLeaves || 0);
-        
+        const isCurrentYear = year === new Date().getFullYear();
+        this.totalLeaves = policy.maxAllowedLeaves + (isCurrentYear ? this.carryForwardedLeaves : 0);
+               
         // Ensure available leaves reflect the updated total leaves
    // Fetch all past leaves to correctly calculate available leaves
 // Fetch all past leaves for this employee and leave type
-const pastLeaves = await mongoose.model("leaveData").find({
+const pastLeaves = await mongoose.model("leaves").find({
   email: this.email,
   leaveType: this.leaveType,
 });
@@ -163,7 +166,7 @@ this.availableLeaves = availableLeavesByYear[latestYear] || this.totalLeaves;
        // ✅ Maternity Leave Adjustment
        if (this.leaveType === "Maternity Leave") {
         // Fetch past approved maternity leave records
-        const pastMaternityLeaves = await mongoose.model("leaveData").find({
+        const pastMaternityLeaves = await mongoose.model("leaves").find({
             email: this.email,
             leaveType: "Maternity Leave",
         });
@@ -189,7 +192,7 @@ this.availableLeaves = availableLeavesByYear[latestYear] || this.totalLeaves;
         }
     
         // ✅ **NEW CONDITION: Add previously approved leaves in the same year**
-        const approvedMaternityLeavesSameYear = await mongoose.model("leaveData").find({
+        const approvedMaternityLeavesSameYear = await mongoose.model("leaves").find({
             email: this.email,
             leaveType: "Maternity Leave",
             status: "Approved",
@@ -215,4 +218,4 @@ this.availableLeaves = availableLeavesByYear[latestYear] || this.totalLeaves;
   }
 });
 
-module.exports = mongoose.model("leaveData", LeaveSchema);
+module.exports = mongoose.model("leaves", LeaveSchema);

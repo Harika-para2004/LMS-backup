@@ -369,7 +369,7 @@ const LeaveBalanceChart = ({ email, year, years }) => {
                     {/* {data.totalLeaves === null ? "-" : data.totalLeaves} */}
                     {type === "Casual Leave"
                       ? isCasualForFreshYear
-                        ? data.carrylimit + maxCasual
+                        ?  maxCasual
                         : data.totalLeaves ?? "-"
                       : data.totalLeaves ?? "-"}
                   </TableCell>
@@ -377,7 +377,7 @@ const LeaveBalanceChart = ({ email, year, years }) => {
                     {/* {data.totalLeaves === null ? "-" : data.availableLeaves} */}
                     {type === "Casual Leave"
                       ? isCasualForFreshYear
-                        ? data.carrylimit + maxCasual
+                        ?  maxCasual
                         : data.availableLeaves ?? "-"
                       : data.availableLeaves == 0 ||
                         data.availableLeaves == null

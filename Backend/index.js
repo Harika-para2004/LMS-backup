@@ -32,11 +32,18 @@ app.use(cors());
 app.use(express.json({ limit: "10mb" }));  // Increase JSON body size limit
 /* mongodb+srv://lahiri:sai*123@cluster0.r7eze9l.mongodb.net/*/
 // Connect to MongoDB
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error("MongoDB connection error:", err.message));
 
+mongoose
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    tlsAllowInvalidCertificates: true,  // Disable strict SSL check
+    tlsAllowInvalidHostnames: true
+  })
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => console.error("MongoDB connection error:", err));
+
+  
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/leave-policies", leavepolicyRoutes);
@@ -139,7 +146,136 @@ app.get("/managers-list", async (req, res) => {
 //   }
 // });
 
+cron.schedule("59 23 31 12 *", async () => {
+  console.log("⏳ Running Year-End Carry Forward Cron Job...");
+  console.log("⏳ Cron job started at:", new Date().toISOString());
 
+  try {
+    const currentYear = new Date().getFullYear(); // Get current year dynamically
+    const nextYear = currentYear + 1; // Get next year dynamically
+    const users = await User.find({ isActive: true }); // Fetch all active users
+    const leavePolicies = await LeavePolicy.find(); // Fetch all leave policies
+
+    for (const user of users) {
+      let updatedCarryForward = new Map();
+
+      for (const policy of leavePolicies) {
+        let { leaveType, carryForward, carryForwardLimit, maxAllowedLeaves } =
+          policy;
+
+        if (carryForward) {
+
+          const approvedLeaveDurationSum = await Leave.aggregate([
+            {
+              $match: {
+                email:user.email,
+                leaveType: "Casual Leave"
+              }
+            },
+            {
+              $unwind: {
+                path: "$status",
+                includeArrayIndex: "index" // Capture the index to access corresponding duration and year
+              }
+            },
+            {
+              $match: {
+                status: "Approved"
+              }
+            },
+            {
+              $addFields: {
+                yearValue: { $arrayElemAt: ["$year", "$index"] }, // Get corresponding year using index
+                durationValue: { $arrayElemAt: ["$duration", "$index"] } // Get corresponding duration using index
+              }
+            },
+            {
+              $match: {
+                yearValue: [currentYear] // Ensure the leave is for the year 2025
+              }
+            },
+            {
+              $group: {
+                _id: null,
+                totalApprovedDuration: { $sum: { $arrayElemAt: ["$durationValue", 0] } } // Sum up durations
+              }
+            }
+          ]);
+          console.log("Approved Leaves Duration Sum:", approvedLeaveDurationSum);
+          console.log("🧐 Debugging Values Before Calculation:");
+          console.log("maxAllowedLeaves:", maxAllowedLeaves);
+          console.log("carryForwardLimit:", carryForwardLimit);
+          console.log("approvedLeaveDurationSum:", approvedLeaveDurationSum);
+          const usedLeaves =
+            Array.isArray(approvedLeaveDurationSum) &&
+            approvedLeaveDurationSum.length > 0 &&
+            typeof approvedLeaveDurationSum[0].totalApprovedDuration !== "undefined"
+              ? Number(approvedLeaveDurationSum[0].totalApprovedDuration) || 0
+              : 0;
+          
+              const leaveRecord = await Leave.findOne({
+                email: user.email,
+                leaveType: leaveType,
+                year: { $elemMatch: { $eq: [currentYear] } }, // Fetch current year leave details
+              });
+              
+              // If totalLeaves exist in the Leave schema, take that; otherwise, use default maxAllowedLeaves
+              const storedTotalLeaves = leaveRecord ? leaveRecord.totalLeaves || 0 : 0;
+              const maxAllowed = Math.max(storedTotalLeaves, Number(maxAllowedLeaves) || 0);
+                        const availableLeaves = maxAllowed - usedLeaves;
+          const safeAvailableLeaves = !isNaN(availableLeaves) ? availableLeaves : 0;
+          
+          const carryForwardLimitSafe = !isNaN(Number(carryForwardLimit)) ? Number(carryForwardLimit) : 0;
+          const carryForwardedLeaves = Math.min(safeAvailableLeaves, carryForwardLimitSafe);
+          const carryForwarded = !isNaN(carryForwardedLeaves) ? carryForwardedLeaves : 0;
+          
+          const updatedAvailableLeavesCalc = carryForwarded + availableLeaves;
+          const updatedAvailableLeaves = !isNaN(updatedAvailableLeavesCalc) ? updatedAvailableLeavesCalc : 0;
+          
+          console.log("usedLeaves:", usedLeaves);
+          console.log("availableLeaves:", availableLeaves);
+          console.log("carryForwardedLeaves:", carryForwardedLeaves);
+          console.log("updatedAvailableLeaves:", updatedAvailableLeaves);
+          console.log("safeAvailableLeaves:", safeAvailableLeaves);
+          totalchart=maxAllowedLeaves+(!isNaN(carryForwarded) ? carryForwarded : 0),
+availablechart=maxAllowedLeaves+(!isNaN(carryForwarded) ? carryForwarded : 0);
+          await Leave.updateOne(
+            { email: user.email, leaveType, year: { $elemMatch: { $eq: [nextYear] } } },
+            {
+              $set: {
+                empname:user.empname,
+                year:[[nextYear]],
+                empid:user.empid,
+                managerEmail:user.managerEmail,
+                totalLeaves:maxAllowedLeaves+(!isNaN(carryForwarded) ? carryForwarded : 0),
+                carryForwardedLeaves: !isNaN(carryForwarded) ? carryForwarded : 0,
+                availableLeaves:maxAllowedLeaves+(!isNaN(carryForwarded) ? carryForwarded : 0),
+              },
+            },
+            { upsert: true } // Create if not exists
+          );
+          
+          
+        } 
+      }
+
+      // ✅ Update User's Carry Forward Balance & Reset Yearly Leaves
+      // await User.updateOne(
+      //   { _id: user._id },
+      //   {
+      //     $set: {
+      //       carryForwardBalance: Object.fromEntries(updatedCarryForward), // Convert Map to Object
+      //       yearlyLeavesTaken: {}, // Reset yearly leaves for new year
+      //     },
+      //   }
+      // );
+    }
+
+    console.log("✅ Year-End Carry Forward Completed!");
+  } catch (error) {
+    console.error("❌ Error in Carry Forward Cron Job:", error);
+  }
+});
 const getMandatoryHolidays = async () => {
   try {
     const mandatoryHolidays = await Holiday.find({ type: "Mandatory" }).select("date");
@@ -2162,127 +2298,98 @@ app.get("/leave-balance/:email/:year", async (req, res) => {
   try {
     // ✅ Fetch all leave policies
     const policies = await LeavePolicy.find({});
-    let carrylimit =0 ;
 
-    // ✅ Initialize leave balance with all leave types
+    // ✅ Initialize leave balance with policy values
     const leaveBalance = {};
     for (const policy of policies) {
       leaveBalance[policy.leaveType] = {
         totalLeaves: policy.maxAllowedLeaves,
         usedLeaves: 0,
-        availableLeaves: policy.maxAllowedLeaves, // Initially set to total leaves
+        availableLeaves: policy.maxAllowedLeaves,
         carrylimit: policy.carryForwardLimit,
       };
-      if (policy.leaveType === "Maternity Leave") {
-        const maternityLeaveRecord = await Leave.findOne({
-          email,
-          leaveType: "Maternity Leave",
-          year: { $elemMatch: { $elemMatch: { $eq: numericYear } } },
-        });
-
-        if (maternityLeaveRecord) {
-          leaveBalance["Maternity Leave"].totalLeaves = maternityLeaveRecord.totalLeaves;
-          leaveBalance["Maternity Leave"].availableLeaves = maternityLeaveRecord.availableLeaves;
-          continue; // ✅ Skip further calculations for Maternity Leave
-        }
-        const highestMaternityLeave = await Leave.findOne({
-          email,
-          leaveType: "Maternity Leave"
-        }).sort({ childNumber: -1 }); // Sort by childNumber in descending order
-        
-        const highestChildNumber = highestMaternityLeave ? highestMaternityLeave.childNumber : 0; // Default to 0 if no record found
-        console.log(highestChildNumber)
-        const pastMaternityLeave = await Leave.findOne({
-          email,
-          leaveType: "Maternity Leave",
-          totalLeaves: 84, // ✅ Find the first year when 84 was recorded
-          year: { $elemMatch: { $elemMatch: { $lt: numericYear } } },
-        }).sort({ year: 1 }); // ✅ Find the earliest occurrence of 84
-        
-        if ((pastMaternityLeave && pastMaternityLeave.year < numericYear) || highestChildNumber >= 2) {
-          leaveBalance["Maternity Leave"].totalLeaves = 84;
-          leaveBalance["Maternity Leave"].availableLeaves = 84;
-        }
-        
-        
-      }
-      
-
-      // ✅ Find the most recent non-zero available leave balance from past years
-      const pastYearsLeaves = await Leave.find({
-        email,
-        leaveType: policy.leaveType,
-        year: { $elemMatch: { $elemMatch: { $lt: numericYear } } },
-      }).sort({ year: -1 }); // Sort in descending order (latest first)
-
-      let carryForwardLeave = 0; // ✅ Default to 0 if no valid past leave is found
-     
-      for (const prevLeave of pastYearsLeaves) {
-          const prevAvailable = prevLeave?.availableLeaves ?? 0; // ✅ Handle null/undefined
-          if (prevAvailable > 0) {
-              carryForwardLeave = Math.min(prevAvailable, policy.carryForwardLimit);
-              break; // ✅ Take the latest non-zero balance and stop
-          }
-      }
-      
-    
-
-      // ✅ If carry forward is enabled, adjust totalLeaves correctly
-      if (policy.carryForward) {
-        const currentLeaveRecord = await Leave.findOne({
-          email,
-          leaveType: policy.leaveType,
-          year: { $elemMatch: { $elemMatch: { $eq: numericYear } } },
-        });
-
-        if (!currentLeaveRecord) {
-          console.log(carryForwardLeave)
-          leaveBalance[policy.leaveType].totalLeaves = carryForwardLeave + policy.maxAllowedLeaves;
-          leaveBalance[policy.leaveType].availableLeaves = carryForwardLeave + policy.maxAllowedLeaves;
-        } else {
-          leaveBalance[policy.leaveType].totalLeaves = currentLeaveRecord.totalLeaves;
-          leaveBalance[policy.leaveType].availableLeaves = currentLeaveRecord.totalLeaves; // Set available correctly
-        }
-      }
     }
 
-    // ✅ Fetch leave requests for the given email and year
+    // ✅ Fetch leave records from the database for the given year
     const leaves = await Leave.find({
       email,
       year: { $elemMatch: { $elemMatch: { $eq: numericYear } } },
     });
 
     for (const leave of leaves) {
-      const { leaveType, duration, year, status } = leave;
+      const { leaveType, totalLeaves, availableLeaves } = leave;
 
-      // ✅ Skip if leave type is not found in policies
+      // ✅ If leave record exists in DB, override policy values
+      leaveBalance[leaveType] = {
+        totalLeaves: totalLeaves ?? leaveBalance[leaveType].totalLeaves,
+        usedLeaves: 0, // Will be calculated below
+        availableLeaves: availableLeaves ?? leaveBalance[leaveType].availableLeaves,
+      };
+    }
+
+    // ✅ Maternity Leave special case handling
+    if (leaveBalance["Maternity Leave"]) {
+      const maternityLeaveRecord = await Leave.findOne({
+        email,
+        leaveType: "Maternity Leave",
+        year: { $elemMatch: { $elemMatch: { $eq: numericYear } } },
+      });
+
+      if (maternityLeaveRecord) {
+        leaveBalance["Maternity Leave"].totalLeaves = maternityLeaveRecord.totalLeaves;
+        leaveBalance["Maternity Leave"].availableLeaves = maternityLeaveRecord.availableLeaves;
+      } else {
+        // ✅ If no maternity leave for the year, check past records for special cases
+        const highestMaternityLeave = await Leave.findOne({
+          email,
+          leaveType: "Maternity Leave",
+        }).sort({ childNumber: -1 }); // Sort by childNumber in descending order
+
+        const highestChildNumber = highestMaternityLeave ? highestMaternityLeave.childNumber : 0;
+
+        const pastMaternityLeave = await Leave.findOne({
+          email,
+          leaveType: "Maternity Leave",
+          totalLeaves: 84,
+          year: { $elemMatch: { $elemMatch: { $lt: numericYear } } },
+        }).sort({ year: 1 });
+
+        if ((pastMaternityLeave && pastMaternityLeave.year < numericYear) || highestChildNumber >= 2) {
+          leaveBalance["Maternity Leave"].totalLeaves = 84;
+          leaveBalance["Maternity Leave"].availableLeaves = 84;
+        }
+      }
+    }
+
+    // ✅ Now, calculate used leaves based on "Approved" status
+    for (const leave of leaves) {
+      const { leaveType, duration, year, status } = leave;
       if (!leaveBalance[leaveType]) continue;
 
       let usedLeavesInYear = 0;
       for (let i = 0; i < year.length; i++) {
         for (let j = 0; j < year[i].length; j++) {
           if (year[i][j] === numericYear && status[i] === "Approved") {
-            usedLeavesInYear += duration[i]?.[j] || 0; // ✅ Safely access nested array
+            usedLeavesInYear += duration[i]?.[j] || 0;
           }
         }
       }
 
-      // ✅ Update used leaves and available leaves correctly
-      leaveBalance[leaveType].usedLeaves += usedLeavesInYear;
+      leaveBalance[leaveType].usedLeaves = usedLeavesInYear;
       leaveBalance[leaveType].availableLeaves = Math.max(
         0,
-        leaveBalance[leaveType].totalLeaves - leaveBalance[leaveType].usedLeaves
+        leaveBalance[leaveType].totalLeaves - usedLeavesInYear
       );
-
     }
 
     res.json(leaveBalance);
-    console.log("leaveBalance",leaveBalance);
+    console.log("leaveBalance", leaveBalance);
   } catch (err) {
     console.error("Error fetching leave balance:", err);
     res.status(500).json({ error: "Error fetching leave balance" });
   }
 });
+
 app.post("/maternity-limit-display", async (req, res) => {
   try {
     const { email, leaveType } = req.body;
@@ -2709,57 +2816,41 @@ app.get("/leave-total", async (req, res) => {
     let totalLeaves = 0;
     let usedLeaves = 0;
 
-    // ✅ Loop through each leave type to check carry forward
-    for (const policy of validPolicies) {
-      const { leaveType, carryForward, maxAllowedLeaves, carryForwardLimit } = policy;
-      let carryForwardLeave = 0;
-
-      if (carryForward) {
-        // ✅ Fetch previous years' leave balances
-        const pastYearsLeaves = await Leave.find({
-          email,
-          leaveType,
-          year: { $elemMatch: { $elemMatch: { $lt: numericYear } } },
-        }).sort({ year: -1 }); // Sort descending (latest first)
-
-        for (const prevLeave of pastYearsLeaves) {
-          const prevAvailable = prevLeave?.availableLeaves ?? 0; // ✅ Handle null/undefined
-          if (prevAvailable > 0) {
-            carryForwardLeave = Math.min(prevAvailable, carryForwardLimit);
-            break; // ✅ Take the latest non-zero balance and stop
-          }
-        }
-
-        // ✅ Fetch current year's leave record
-        const currentYearLeave = await Leave.findOne({ email, leaveType, year: numericYear });
-
-        if (!currentYearLeave) {
-          totalLeaves += carryForwardLeave + maxAllowedLeaves;
-        } else {
-          totalLeaves += currentYearLeave.totalLeaves;
-        }
-      } else {
-        totalLeaves += maxAllowedLeaves || 0;
-      }
-    }
-
-    // ✅ Fetch leave requests for the given email and year
+    // ✅ Fetch leave records from the database for the given year
     const leaves = await Leave.find({
       email,
       year: { $elemMatch: { $elemMatch: { $eq: numericYear } } },
     });
 
+    // ✅ Create a lookup for database leave records
+    const leaveRecords = new Map();
+    for (const leave of leaves) {
+      leaveRecords.set(leave.leaveType, leave);
+    }
+
+    // ✅ Process each valid leave type
+    for (const policy of validPolicies) {
+      const { leaveType, maxAllowedLeaves } = policy;
+
+      if (leaveRecords.has(leaveType)) {
+        // ✅ If leave exists in DB, take totalLeaves from it
+        totalLeaves += leaveRecords.get(leaveType).totalLeaves ?? maxAllowedLeaves;
+      } else {
+        // ✅ If leave does not exist, take totalLeaves from policy
+        totalLeaves += maxAllowedLeaves;
+      }
+    }
+
+    // ✅ Now, calculate used leaves from database records
     for (const leave of leaves) {
       const { leaveType, duration, year, status } = leave;
-
-      // ✅ Skip leave types not in the LeavePolicy schema
       if (!validLeaveTypes.has(leaveType)) continue;
 
       let usedLeavesInYear = 0;
       for (let i = 0; i < year.length; i++) {
         for (let j = 0; j < year[i].length; j++) {
           if (year[i][j] === numericYear && status[i] === "Approved") {
-            usedLeavesInYear += duration[i][j] || 0; // ✅ Handle undefined durations
+            usedLeavesInYear += duration[i]?.[j] || 0;
           }
         }
       }
