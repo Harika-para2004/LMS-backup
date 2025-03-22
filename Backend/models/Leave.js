@@ -125,7 +125,7 @@ LeaveSchema.pre("save", async function (next) {
         // Ensure available leaves reflect the updated total leaves
    // Fetch all past leaves to correctly calculate available leaves
 // Fetch all past leaves for this employee and leave type
-const pastLeaves = await mongoose.model("leaves").find({
+const pastLeaves = await mongoose.model("leaveData").find({
   email: this.email,
   leaveType: this.leaveType,
 });
@@ -166,7 +166,7 @@ this.availableLeaves = availableLeavesByYear[latestYear] || this.totalLeaves;
        // ✅ Maternity Leave Adjustment
        if (this.leaveType === "Maternity Leave") {
         // Fetch past approved maternity leave records
-        const pastMaternityLeaves = await mongoose.model("leaves").find({
+        const pastMaternityLeaves = await mongoose.model("leaveData").find({
             email: this.email,
             leaveType: "Maternity Leave",
         });
@@ -192,7 +192,7 @@ this.availableLeaves = availableLeavesByYear[latestYear] || this.totalLeaves;
         }
     
         // ✅ **NEW CONDITION: Add previously approved leaves in the same year**
-        const approvedMaternityLeavesSameYear = await mongoose.model("leaves").find({
+        const approvedMaternityLeavesSameYear = await mongoose.model("leaveData").find({
             email: this.email,
             leaveType: "Maternity Leave",
             status: "Approved",
@@ -218,4 +218,4 @@ this.availableLeaves = availableLeavesByYear[latestYear] || this.totalLeaves;
   }
 });
 
-module.exports = mongoose.model("leaves", LeaveSchema);
+module.exports = mongoose.model("leaveData", LeaveSchema);
