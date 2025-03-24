@@ -14,6 +14,7 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const ManagersList = () => {
   const [employees, setEmployees] = useState([]);
@@ -26,7 +27,7 @@ const ManagersList = () => {
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const response = await axios.get("http://localhost:5001/managers-list");
+        const response = await axios.get(`${backendUrl}/managers-list`);
         setEmployees(Array.isArray(response.data) ? response.data : []);
       } catch (error) {
         console.error("Error fetching employees:", error);

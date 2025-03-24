@@ -16,7 +16,8 @@ import {
   import axios from "axios";
   import { useManagerContext } from "../context/ManagerContext";
   import { useLocation, useNavigate, useParams } from "react-router-dom";
-  
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
   const InActiveEmp = () => {
     const { email: contextEmail, role } = useManagerContext(); // Role helps differentiate
     const { email: paramEmail } = useParams(); // Email from URL (if manager clicks)
@@ -54,7 +55,7 @@ import {
       const fetchEmployees = async () => {
         try {
           const response = await axios.get(
-            `http://localhost:5001/api/employees/inactive?managerEmail=${email}`
+            `${backendUrl}/api/employees/inactive?managerEmail=${email}`
           );
           setEmployees(Array.isArray(response.data) ? response.data : []);
         } catch (error) {

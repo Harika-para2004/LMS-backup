@@ -10,6 +10,7 @@ import {
   Modal,
 } from "@mui/material";
 import { useManagerContext } from "../context/ManagerContext";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const ProfilePage = () => {
   const {
@@ -80,7 +81,7 @@ const ProfilePage = () => {
         // console.log("email in emp",email);
         console.log("user email",userData.email)
         const response = await fetch(
-          `http://localhost:5001/leavesummary?email=${email}`
+          `${backendUrl}/leavesummary?email=${email}`
         );
         if (response.ok) {
           const data = await response.json();
@@ -100,7 +101,7 @@ const ProfilePage = () => {
   useEffect(() => {
     const fetchLeavePolicies = async () => {
       try {
-        const policyResponse = await axios.get("http://localhost:5001/api/leave-policies");
+        const policyResponse = await axios.get(`${backendUrl}/api/leave-policies`);
         const leavePolicies = policyResponse.data.data;
 
         const appliedLeavesMap = {};
@@ -149,7 +150,7 @@ const ProfilePage = () => {
     console.log("Sending request with:", { email, newPassword: formData.newPassword });
   
     try {
-      const response = await axios.put("http://localhost:5001/updatepassword", {
+      const response = await axios.put(`${backendUrl}/updatepassword`, {
         email,
         newPassword: formData.newPassword,
       });

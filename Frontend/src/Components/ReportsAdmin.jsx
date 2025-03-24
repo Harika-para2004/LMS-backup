@@ -10,6 +10,7 @@ import {
   Pagination,
 } from "@mui/material";
 import AdminAnalytics from "./AdminAnalytics";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const ReportsAdmin = () => {
   const [reports, setReports] = useState([]);
@@ -26,7 +27,7 @@ const ReportsAdmin = () => {
   useEffect(() => {
     const fetchYears = async () => {
       try {
-        const response = await fetch("http://localhost:5001/years"); // Adjust API URL if needed
+        const response = await fetch(`${backendUrl}/years`); // Adjust API URL if needed
         const data = await response.json();
         setYears(data.years);
       } catch (error) {
@@ -44,7 +45,7 @@ const ReportsAdmin = () => {
   const fetchReports = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5001/reports-admin?project=${project}&search=${search}&year=${selectedYear}`
+        `${backendUrl}/reports-admin?project=${project}&search=${search}&year=${selectedYear}`
       );
       if (!response.ok) throw new Error("Failed to fetch reports");
       const data = await response.json();
@@ -122,7 +123,7 @@ console.log(currentReports);
   };
 
   const exportExcel = async () => {
-    const url = "http://localhost:5001/reports/export-excel";
+    const url = `${backendUrl}/reports/export-excel`;
 
     // ✅ Ensure search filter is applied before sending data
     const filteredReports = reports.filter(

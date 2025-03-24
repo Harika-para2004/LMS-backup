@@ -23,6 +23,7 @@ import {
 import { useLocation } from "react-router-dom";
 import { FaSearch } from "react-icons/fa";
 import { Search } from "@mui/icons-material";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const LeaveRequestsTable = () => {
   const {
@@ -87,7 +88,7 @@ const LeaveRequestsTable = () => {
   // const fetchLeaveRequests = async () => {
   //   try {
   //     const response = await fetch(
-  //       `http://localhost:5001/leaverequests?userRole=${userData.role}&userEmail=${userData.email}&year=${selectedYear}`
+  //       `${backendUrl}/leaverequests?userRole=${userData.role}&userEmail=${userData.email}&year=${selectedYear}`
   //     );
   //     if (response.ok) {
   //       const data = await response.json();
@@ -116,7 +117,7 @@ const LeaveRequestsTable = () => {
     );
     const excludeEmail = "Admin"; // Replace with the email to exclude
     try {
-      const response = await fetch(`http://localhost:5001/leaverequests`);
+      const response = await fetch(`${backendUrl}/leaverequests`);
       if (response.ok) {
         const data = await response.json();
         const filteredData = data.filter((item) => item.role !== excludeEmail); // Filter out records with the given email
@@ -135,7 +136,7 @@ const LeaveRequestsTable = () => {
   const fetchLeaveRequests = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5001/leaverequests?userRole=${role}&userEmail=${email}&year=${selectedYear}`
+        `${backendUrl}/leaverequests?userRole=${role}&userEmail=${email}&year=${selectedYear}`
       );
       if (response.ok) {
         const data = await response.json();
@@ -224,7 +225,7 @@ const LeaveRequestsTable = () => {
       // Fetch maternity leave limits if applicable
       if (leave.leaveType === "Maternity Leave") {
         try {
-          const response = await fetch(`http://localhost:5001/maternity-limit`, {
+          const response = await fetch(`${backendUrl}/maternity-limit`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email: leave.email, leaveType: "Maternity Leave", continous: leave.continous }),
@@ -274,7 +275,7 @@ const LeaveRequestsTable = () => {
   
       // Update leave record in the backend
       try {
-        const response = await fetch(`http://localhost:5001/leaverequests/${leave._id}`, {
+        const response = await fetch(`${backendUrl}/leaverequests/${leave._id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ $set: updatedLeave }), // ✅ Use `$set` to prevent modifying `duration`
@@ -358,7 +359,7 @@ const LeaveRequestsTable = () => {
   
       try {
         const response = await fetch(
-          `http://localhost:5001/leaverequests/${leave._id}`,
+          `${backendUrl}/leaverequests/${leave._id}`,
           {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -396,7 +397,7 @@ const LeaveRequestsTable = () => {
   useEffect(() => {
     const fetchYears = async () => {
       try {
-        const response = await fetch("http://localhost:5001/years"); // Adjust API URL if needed
+        const response = await fetch(`${backendUrl}/years`); // Adjust API URL if needed
         const data = await response.json();
         setYears(data.years);
       } catch (error) {
@@ -421,7 +422,7 @@ const LeaveRequestsTable = () => {
   );
 
   const getDownloadLink = (attachments) =>
-    `http://localhost:5001/${attachments}`;
+    `${backendUrl}/${attachments}`;
 
   const formatCase = (text) => {
     return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());

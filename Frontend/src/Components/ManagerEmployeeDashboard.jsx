@@ -12,6 +12,9 @@ import {
 import ReactECharts from "echarts-for-react";
 import fallbackImage from "../assets/img/no_data.jpg";
 import Overlap from "./ManagerOverlap";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+
 const ManagerDashboard = ({ email, selectedYear }) => {
   const currentYear = new Date().getFullYear();
   const [yearData, setYearData] = useState([]);
@@ -22,19 +25,19 @@ const ManagerDashboard = ({ email, selectedYear }) => {
 
   useEffect(() => {
     fetchData(
-      `http://localhost:5001/leave-approval-rate?userEmail=${email}&year=${selectedYear}`,
+      `${backendUrl}/leave-approval-rate?userEmail=${email}&year=${selectedYear}`,
       setApprovalRateData
     );
     fetchData(
-      `http://localhost:5001/leave-types?userEmail=${email}&year=${selectedYear}`,
+      `${backendUrl}/leave-types?userEmail=${email}&year=${selectedYear}`,
       setLeaveTypeData
     );
     // fetchData(
-    //   `http://localhost:5001/employee-monthly-leaves?userEmail=${email}&year=${selectedYear}`,
+    //   `${backendUrl}/employee-monthly-leaves?userEmail=${email}&year=${selectedYear}`,
     //   setMonthlyLeaveData
     // );
     fetchData(
-      `http://localhost:5001/employee-yearly-leaves?userEmail=${email}&year=${selectedYear}`,
+      `${backendUrl}/employee-yearly-leaves?userEmail=${email}&year=${selectedYear}`,
       setYearlyLeaveData
     );
   }, [selectedYear, email]);

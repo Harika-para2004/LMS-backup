@@ -25,6 +25,7 @@ import {
 import { Delete, Edit, Search } from "@mui/icons-material";
 import { Modal, Box, Typography } from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const LeaveHistory = () => {
   const {
@@ -305,7 +306,7 @@ const LeaveHistory = () => {
       // 🛑 Ensure overlap is checked **before** deleting the old leave
       // console.log(index);
       // const overlapResponse = await fetch(
-      //   `http://localhost:5001/check-overlap?email=${encodeURIComponent(
+      //   `${backendUrl}/check-overlap?email=${encodeURIComponent(
       //     email
       //   )}&newFrom=${formattedStartDate}&newTo=${formattedEndDate}&leaveId=${leaveId}&leaveType=${leaveType}&index=${index}`
       // );
@@ -332,7 +333,7 @@ const LeaveHistory = () => {
 
       // ✅ Proceed with submission after deletion
       const response = await fetch(
-        `http://localhost:5001/apply-leave?email=${encodeURIComponent(email)}`,
+        `${backendUrl}/apply-leave?email=${encodeURIComponent(email)}`,
         { method: "POST", body: formDataToSend }
       );
 
@@ -389,7 +390,7 @@ const LeaveHistory = () => {
   useEffect(() => {
     const fetchYears = async () => {
       try {
-        const response = await fetch("http://localhost:5001/years"); // Adjust API URL if needed
+        const response = await fetch(`${backendUrl}/years`); // Adjust API URL if needed
         const data = await response.json();
         setYears(data.years);
       } catch (error) {
@@ -493,7 +494,7 @@ const LeaveHistory = () => {
     // console.log("startdate",startDate);
 
     try {
-      const response = await fetch(`http://localhost:5001/leaves/${id}`, {
+      const response = await fetch(`${backendUrl}/leaves/${id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ startDate, endDate }),
@@ -513,7 +514,7 @@ const LeaveHistory = () => {
   const fetchLeavehistory = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5001/leave-history?email=${email}&year=${selectedYear}`
+        `${backendUrl}/leave-history?email=${email}&year=${selectedYear}`
       );
       if (response.ok) {
         const data = await response.json();

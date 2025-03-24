@@ -1,6 +1,7 @@
 import "./Navbar.css";
 import usePasswordUpdate from "./usePasswordUpdate";
 import PasswordModal from "./PasswordModal"; // ✅ Import separately
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const Navbar = ({ userType, email }) => {
   const { open, handleOpen, handleClose, formData, handleInputChange, errors, handleUpdatePassword } = usePasswordUpdate();

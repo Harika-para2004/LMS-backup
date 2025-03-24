@@ -18,6 +18,9 @@ import LeaveStatusChart from "./LeaveStatusChart";
 import LeaveBalanceChart from "./LeaveBalanceChart";
 import LeaveTrendChart from "./LeaveTrendChart";
 import TotalLeaveSummary from "./TotalLeaveSummary";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+
 const EmployeeDashboard = () => {
   const { email: contextEmail ,gender,setGender} = useManagerContext();
   const { managerEmail, email: paramEmail } = useParams(); // Access both params
@@ -61,7 +64,7 @@ const EmployeeDashboard = () => {
   useEffect(() => {
     const fetchYears = async () => {
       try {
-        const response = await fetch("http://localhost:5001/years"); // Adjust API URL if needed
+        const response = await fetch(`${backendUrl}/years`); // Adjust API URL if needed
         const data = await response.json();
         setYears(data.years);
       } catch (error) {

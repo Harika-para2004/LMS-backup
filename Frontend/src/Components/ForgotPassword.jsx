@@ -5,6 +5,7 @@ import logo from "./../assets/img/logo.jpg";
 import authImage from "./../assets/img/authentication.svg";
 import "./../assets/css/styles.css";
 import { useManagerContext } from "../context/ManagerContext";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -21,7 +22,7 @@ const ForgotPassword = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:5001/api/auth/forgot/forgot-password", { email });
+      const response = await axios.post(`${backendUrl}/api/auth/forgot/forgot-password`, { email });
 
       setNumbers(response.data.numbers); // Store random numbers
       setCorrectNumber(response.data.correctNumber); // Store correct number

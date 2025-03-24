@@ -6,6 +6,7 @@ import {
   Typography
 } from "@mui/material";
 import ReactECharts from "echarts-for-react";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const LeaveTrendChart = ({ email, year }) => {
   const [chartData, setChartData] = useState([]);
@@ -20,7 +21,7 @@ const LeaveTrendChart = ({ email, year }) => {
       setError(null);
       try {
         const res = await axios.get(
-          `http://localhost:5001/leave-trends/${email}/${year}`
+          `${backendUrl}/leave-trends/${email}/${year}`
         );
       
         console.log("Fetched Data:", res.data);

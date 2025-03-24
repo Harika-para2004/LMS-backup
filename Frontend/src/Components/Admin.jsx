@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import logo from "./../assets/img/quadfacelogo-hd.png";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 // import { BASE_URL } from "../Config";
-const BASE_URL = "http://localhost:5001/";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import axios from "axios";
 import { FaEdit, FaTrash } from "react-icons/fa";
@@ -37,6 +36,9 @@ import AdminTrends from "./AdminTrends";
 import HolidayCalendar from "./HolidayCalendar";
 import TotalEmployees from "./TotalEmployees";
 import Navbar from "./Navbar";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
+const BASE_URL = `${backendUrl}/`;
+
 
 function AdminDashboard() {
   const [Email,setEmail] = useState("");
@@ -501,7 +503,7 @@ function AdminDashboard() {
   
       try {
         const response = await fetch(
-          `http://localhost:5001/leaverequests/${leave._id}`,
+          `${backendUrl}/leaverequests/${leave._id}`,
           {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -578,7 +580,7 @@ function AdminDashboard() {
   
       try {
         const response = await fetch(
-          `http://localhost:5001/leaverequests/${leave._id}`,
+          `${backendUrl}/leaverequests/${leave._id}`,
           {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -807,7 +809,7 @@ function AdminDashboard() {
         )
   );
   const getDownloadLink = (attachments) =>
-    `http://localhost:5001/${attachments}`;
+    `${backendUrl}/${attachments}`;
 
   const renderContent = () => {
     switch (selectedCategory) {

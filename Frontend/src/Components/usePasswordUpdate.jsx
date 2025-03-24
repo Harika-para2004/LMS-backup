@@ -1,6 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import useToast from "./useToast";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const usePasswordUpdate = () => {
   const [open, setOpen] = useState(false);
@@ -32,7 +33,7 @@ const usePasswordUpdate = () => {
     }
 
     try {
-      const response = await axios.put("http://localhost:5001/updatepassword", {
+      const response = await axios.put(`${backendUrl}/updatepassword`, {
         email,
         newPassword: formData.newPassword,
       });

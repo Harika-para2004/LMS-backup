@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
-const BASE_URL = "http://localhost:5001/";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
+const BASE_URL = `${backendUrl}/`;
+
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import {
   Box,
@@ -47,7 +49,7 @@ const HolidayCalendar = () => {
   useEffect(() => {
     const fetchYears = async () => {
       try {
-        const response = await fetch("http://localhost:5001/years"); // Adjust API URL if needed
+        const response = await fetch(`${backendUrl}/years`); // Adjust API URL if needed
         const data = await response.json();
         setYears(data.years);
       } catch (error) {
@@ -352,7 +354,7 @@ const HolidayCalendar = () => {
 
       const url = isEditMode
         ? `${BASE_URL}holidays/${holidays[editingRow]._id}`
-        : `${BASE_URL}/holidays`;
+        : `${BASE_URL}holidays`;
       const method = isEditMode ? "PUT" : "POST";
 
       const response = await fetch(url, {

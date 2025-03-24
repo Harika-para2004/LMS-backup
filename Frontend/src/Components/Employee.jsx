@@ -15,6 +15,7 @@ import EmployeeDashboard from "./EmployeeDashboard";
 import { Outlet } from "react-router-dom";
 import { useManagerContext } from "../context/ManagerContext";
 import Navbar from "./Navbar";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const App = () => {
   // const [selectedCategory, setSelectedCategory] = useState("dashboard");
@@ -118,7 +119,7 @@ setCurrentHolidays,
     const fetchLeavePolicies = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:5001/api/leave-policies"
+          `${backendUrl}/api/leave-policies`
         );
         console.log("API Response:", response.data);
 
@@ -249,7 +250,7 @@ setCurrentHolidays,
         console.log("email in emp", email);
         console.log("user email", userData.email);
         const response = await fetch(
-          `http://localhost:5001/leavesummary?email=${email}`
+          `${backendUrl}/leavesummary?email=${email}`
         );
         if (response.ok) {
           const data = await response.json();
@@ -269,7 +270,7 @@ setCurrentHolidays,
   useEffect(() => {
     const fetchHolidays = async () => {
       try {
-        const response = await fetch("http://localhost:5001/allholidays");
+        const response = await fetch(`${backendUrl}/allholidays`);
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
@@ -290,7 +291,7 @@ setCurrentHolidays,
   useEffect(() => {
     const fetchcurrentHolidays = async () => {
       try {
-        const response = await fetch(`http://localhost:5001/holidays?year=${currentYear}`);
+        const response = await fetch(`${backendUrl}/holidays?year=${currentYear}`);
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
@@ -313,7 +314,7 @@ setCurrentHolidays,
   const fetchLeaveHistory = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5001/leave-history?email=${email}`
+        `${backendUrl}/leave-history?email=${email}`
       );
       if (response.ok) {
         const data = await response.json();
@@ -342,7 +343,7 @@ setCurrentHolidays,
     }
 
     try {
-      const response = await fetch(`http://localhost:5001/leaves/${id}`, {
+      const response = await fetch(`${backendUrl}/leaves/${id}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",

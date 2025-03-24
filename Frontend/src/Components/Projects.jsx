@@ -11,8 +11,9 @@ import {
 } from "@mui/material";
 import { Add, Edit, Delete, Close } from "@mui/icons-material";
 import { useManagerContext } from "../context/ManagerContext";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-const BASE_URL = "http://localhost:5001/api";
+const BASE_URL = `${backendUrl}/api`;
 
 const ProjectManager = () => {
   const [projects, setProjects] = useState([]);

@@ -5,6 +5,7 @@ import { AiFillEye, AiFillEyeInvisible } from 'react-icons/ai'; // Importing eye
 import "./../assets/css/styles.css";
 import logo from "./../assets/img/logo.jpg";
 import authImage from "./../assets/img/authentication.svg";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const LoginForm = () => {
   const [formData, setFormData] = useState({
@@ -25,7 +26,7 @@ const LoginForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const apiUrl = "http://localhost:5001/api/auth/signin";
+    const apiUrl = `${backendUrl}/api/auth/signin`;
 
     try {
       const response = await axios.post(apiUrl, formData);
@@ -33,7 +34,7 @@ const LoginForm = () => {
 
       if (response.status === 200 || response.status === 201) {
         const userDataResponse = await axios.get(
-          `http://localhost:5001/api/auth/user/${response.data.userId}`
+          `${backendUrl}/api/auth/user/${response.data.userId}`
         );
         const userData = userDataResponse.data;
 

@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import { useManagerContext } from "../context/ManagerContext";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const Reports = () => {
   const { email: contextEmail, role } = useManagerContext();
@@ -35,7 +36,7 @@ const Reports = () => {
   useEffect(() => {
     const fetchYears = async () => {
       try {
-        const response = await fetch("http://localhost:5001/years"); // Adjust API URL if needed
+        const response = await fetch(`${backendUrl}/years`); // Adjust API URL if needed
         const data = await response.json();
         setYears(data.years);
       } catch (error) {
@@ -69,7 +70,7 @@ const Reports = () => {
   const fetchReports = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5001/reports?project=${project}&search=${search}&email=${email}&year=${selectedYear}`
+        `${backendUrl}/reports?project=${project}&search=${search}&email=${email}&year=${selectedYear}`
       );
       if (!response.ok) throw new Error("Failed to fetch reports");
       const data = await response.json();
@@ -132,7 +133,7 @@ const Reports = () => {
 
   const exportExcel = async () => {
     await exportFile(
-      `http://localhost:5001/reports/export-excel?year=${selectedYear}&reports=${JSON.stringify(
+      `${backendUrl}/reports/export-excel?year=${selectedYear}&reports=${JSON.stringify(
         reports
       )}`,
       "leave_reports.xlsx"

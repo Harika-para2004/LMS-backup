@@ -9,6 +9,7 @@ import {
   FormControl,
 } from "@mui/material";
 import ReactECharts from "echarts-for-react";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const LeaveStatusChart = ({ email, year }) => {
   const [chartData, setChartData] = useState([]);
@@ -23,7 +24,7 @@ const LeaveStatusChart = ({ email, year }) => {
       setError(null);
       try {
         const res = await axios.get(
-          `http://localhost:5001/leave-type-status/${email}/${year}`
+          `${backendUrl}/leave-type-status/${email}/${year}`
         );
         const data = res.data;
 

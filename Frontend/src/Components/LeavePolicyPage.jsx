@@ -19,6 +19,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Add, Delete, Edit, ExpandLess, ExpandMore } from "@mui/icons-material";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 function LeavePolicyPage() {
   const [formData, setFormData] = useState({
@@ -41,7 +42,7 @@ function LeavePolicyPage() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5001/api/leave-policies")
+      .get(`${backendUrl}/api/leave-policies`)
       .then((res) => setPolicies(res.data.data))
       .catch(console.error);
   }, []);
@@ -80,7 +81,7 @@ function LeavePolicyPage() {
     try {
       const url = formData.policyId ? `update/${formData.policyId}` : "create";
       await axios[formData.policyId ? "put" : "post"](
-        `http://localhost:5001/api/leave-policies/${url}`,
+        `${backendUrl}/api/leave-policies/${url}`,
         {
           leaveType: formData.leaveType.replace(/\b\w/g, (c) => c.toUpperCase()),
           maxAllowedLeaves: formData.maxLeaves,
@@ -96,7 +97,7 @@ function LeavePolicyPage() {
         } successfully!`
       );
       setPolicies(
-        (await axios.get("http://localhost:5001/api/leave-policies")).data.data
+        (await axios.get(`${backendUrl}/api/leave-policies`)).data.data
       );
       setShowForm(false);
     } catch (error) {
@@ -109,7 +110,7 @@ function LeavePolicyPage() {
     if (!window.confirm("Are you sure you want to delete this policy?")) return;
     try {
       await axios.delete(
-        `http://localhost:5001/api/leave-policies/delete/${id}`
+        `${backendUrl}/api/leave-policies/delete/${id}`
       );
       setPolicies(policies.filter((p) => p._id !== id));
       showToast("Leave policy deleted successfully!");

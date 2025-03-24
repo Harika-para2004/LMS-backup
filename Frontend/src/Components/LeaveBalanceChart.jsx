@@ -20,6 +20,7 @@ import {
   FormControl,
 } from "@mui/material";
 import ReactECharts from "echarts-for-react";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const LeaveBalanceChart = ({ email, year, years }) => {
   const currentYear = new Date().getFullYear();
@@ -33,7 +34,7 @@ const LeaveBalanceChart = ({ email, year, years }) => {
   const fetchGenderByEmail = async (email) => {
     try {
       const response = await fetch(
-        `http://localhost:5001/user/gender?email=${encodeURIComponent(email)}`
+        `${backendUrl}/user/gender?email=${encodeURIComponent(email)}`
       );
       const data = await response.json();
 
@@ -56,7 +57,7 @@ const LeaveBalanceChart = ({ email, year, years }) => {
 
   const fetchPolicies = async () => {
     try {
-      const response = await fetch(`http://localhost:5001/api/leave-policies`);
+      const response = await fetch(`${backendUrl}/api/leave-policies`);
       const data = await response.json();
 
       if (response.ok) {
@@ -85,7 +86,7 @@ const LeaveBalanceChart = ({ email, year, years }) => {
   useEffect(() => {
     const fetchMaternityLimit = async () => {
       try {
-        const response = await fetch("http://localhost:5001/maternity-limit", {
+        const response = await fetch(`${backendUrl}/maternity-limit`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -124,10 +125,10 @@ const LeaveBalanceChart = ({ email, year, years }) => {
   //     if (years.includes(year - 1)) {
   //       try {
   //         const res1 = await axios.get(
-  //           `http://localhost:5001/get-leave/${email}/${year - 1}`
+  //           `${backendUrl}/get-leave/${email}/${year - 1}`
   //         );
   //         const res2 = await axios.get(
-  //           `http://localhost:5001/get-leave/${email}/${year }`
+  //           `${backendUrl}/get-leave/${email}/${year }`
   //         );
   //         setPrevleave(res1.data);
   //         setCurrleave(res2.data);
@@ -156,10 +157,10 @@ const LeaveBalanceChart = ({ email, year, years }) => {
 
       try {
         const res1 = await axios.get(
-          `http://localhost:5001/get-leave/${email}/${year - 1}`
+          `${backendUrl}/get-leave/${email}/${year - 1}`
         );
         const res2 = await axios.get(
-          `http://localhost:5001/get-leave/${email}/${year}`
+          `${backendUrl}/get-leave/${email}/${year}`
         );
         setPrevleave(res1.data);
         setCurrleave(res2.data);
@@ -196,7 +197,7 @@ const LeaveBalanceChart = ({ email, year, years }) => {
       setError(null);
       try {
         const res = await axios.get(
-          `http://localhost:5001/leave-balance/${email}/${year}`
+          `${backendUrl}/leave-balance/${email}/${year}`
         );
         setLeaveBalance(res.data);
       } catch (err) {

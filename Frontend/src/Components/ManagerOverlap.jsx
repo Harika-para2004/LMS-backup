@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./overlapping.css";
 import { MenuItem, Select,FormControl,InputLabel } from "@mui/material";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const Overlap = ({ year, managerEmail }) => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
@@ -24,7 +25,7 @@ const Overlap = ({ year, managerEmail }) => {
     try {
       if (!managerEmail) return; // Prevent fetch if managerEmail is not available
       const response = await fetch(
-        `http://localhost:5001/data/manager-leave-reports?email=${managerEmail}&month=${selectedMonth}&year=${year}`
+        `${backendUrl}/data/manager-leave-reports?email=${managerEmail}&month=${selectedMonth}&year=${year}`
       );
       if (!response.ok) throw new Error("Failed to fetch reports");
       const data = await response.json();
@@ -39,7 +40,7 @@ const Overlap = ({ year, managerEmail }) => {
     try {
       const monthStr = String(selectedMonth).padStart(2, "0");
       const response = await fetch(
-        `http://localhost:5001/data/holidays?month=${monthStr}&year=${year}`
+        `${backendUrl}/data/holidays?month=${monthStr}&year=${year}`
       );
       if (!response.ok) throw new Error("Failed to fetch holidays");
 

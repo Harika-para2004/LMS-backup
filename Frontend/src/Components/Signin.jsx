@@ -6,6 +6,7 @@ import "./../assets/css/styles.css";
 import logo from "./../assets/img/logo.jpg";
 import authImage from "./../assets/img/authentication.svg";
 import { useManagerContext } from "../context/ManagerContext";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const LoginForm = () => {
   const [formData, setFormData] = useState({
@@ -39,7 +40,7 @@ const LoginForm = () => {
   const normalizedEmail = formData.email.toLowerCase();
 
   try {
-    const apiUrl = "http://localhost:5001/api/auth/signin";
+    const apiUrl = `${backendUrl}/api/auth/signin`;
     const response = await axios.post(apiUrl, {
       email: normalizedEmail,
       password: formData.password,
@@ -47,7 +48,7 @@ const LoginForm = () => {
 
     if (response.status === 200 || response.status === 201) {
       const userDataResponse = await axios.get(
-        `http://localhost:5001/api/auth/user/${response.data.userId}`
+        `${backendUrl}/api/auth/user/${response.data.userId}`
       );
       const userData = userDataResponse.data;
       if(userData.isActive === false){

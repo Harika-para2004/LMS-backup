@@ -3,6 +3,7 @@ import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faLock, faTimes, faUserCircle } from "@fortawesome/free-solid-svg-icons";
 import "./AdminProfileModal.css";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const AdminProfileModal = ({ isOpen, onClose, adminEmail }) => {
   const [newPassword, setNewPassword] = useState("");
@@ -28,7 +29,7 @@ const AdminProfileModal = ({ isOpen, onClose, adminEmail }) => {
     
     try {
       setLoading(true);
-      const response = await axios.put("http://localhost:5001/api/auth/updateAdminPassword", {
+      const response = await axios.put(`${backendUrl}/api/auth/updateAdminPassword`, {
         email: adminEmail,
         newPassword: newPassword,
       });

@@ -27,51 +27,10 @@ import dayjs from "dayjs";
 
 import { useManagerContext } from "../context/ManagerContext";
 import Navbar from "./Navbar";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 
 function LeaveRequests() {
-  // const [modalOpen, setModalOpen] = useState(false);
-  // const [leaveHistory, setLeaveHistory] = useState([]);
-  // const [selectedLeave, setSelectedLeave] = useState(null);
-  // const [selectedCategory, setSelectedCategory] = useState("leaverequests");
-  // const [leaveData, setLeaveData] = useState([]);
-  // const [managerEmail, setmanagerEmail] = useState("");
-  // const [email, setEmail] = useState("");
-  // const [gender, setGender] = useState("");
-  // const [empid, setEmpid] = useState("");
-  // const [username, setUsername] = useState("");
-  // const [project, setProject] = useState("");
-  // const [designation, setDesignation] = useState("");
-  // const [leavehistory, setLeavehistory] = useState([]);
-  // const [holidays, setHolidays] = useState([]);
-  // const [profileImage, setProfileImage] = useState(Profile);
-  // const [newPassword, setNewPassword] = useState("");
-  // const [confirmPassword, setConfirmPassword] = useState("");
-  // const [userData, setUserData] = useState(null);
-  // const [file, setFile] = useState(null);
-  // const [selectedFilter, setSelectedFilter] = useState("All");
-  // const [error, setError] = useState("");
-  // const navigate = useNavigate();
-  // const [leavePolicyRef, setLeavePolicyRef] = useState([]);
-  // const year = new Date().getFullYear();
-  // const showToast = useToast();
-
-  // const [errors, setErrors] = useState({
-  //   leaveType: "",
-  //   from: "",
-  //   to: "",
-  //   reason: "",
-  //   mismatch: "",
-  // });
-  // const [formData, setFormData] = useState({
-  //   leaveType: "",
-  //   applyDate: "",
-  //   startDate: "",
-  //   endDate: "",
-  //   reason: "",
-  // });
-  // const [mergedLeaveData, setMergedLeaveData] = useState([]);
-
   const {
     modalOpen, setModalOpen,
     leaveRequests, setLeaveRequests,
@@ -123,7 +82,7 @@ function LeaveRequests() {
   useEffect(() => {
     const fetchYears = async () => {
       try {
-        const response = await fetch("http://localhost:5001/years"); // Adjust API URL if needed
+        const response = await fetch(`${backendUrl}/years`); 
         const data = await response.json();
         setYears(data.years);
       } catch (error) {
@@ -143,7 +102,7 @@ function LeaveRequests() {
     const fetchLeavePoliciesData = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:5001/api/leave-policies"
+          `${backendUrl}/api/leave-policies`
         );
         console.log("leave policy Response:", response.data);
 
@@ -210,7 +169,7 @@ function LeaveRequests() {
   useEffect(() => {
     const fetchHolidays = async () => {
       try {
-        const response = await fetch("http://localhost:5001/allholidays");
+        const response = await fetch(`${backendUrl}/allholidays`);
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
@@ -232,7 +191,7 @@ function LeaveRequests() {
   useEffect(() => {
     const fetchcurrentHolidays = async () => {
       try {
-        const response = await fetch(`http://localhost:5001/holidays?year=${currentYear}`);
+        const response = await fetch(`${backendUrl}/holidays?year=${currentYear}`);
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
@@ -254,7 +213,7 @@ function LeaveRequests() {
   const fetchLeaveHistory = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5001/leave-history?email=${email}`
+        `${backendUrl}/leave-history?email=${email}`
       );
       if (response.ok) {
         const data = await response.json();
@@ -275,7 +234,7 @@ function LeaveRequests() {
   const fetchLeaveRequests = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5001/leaverequests?userRole=${userData.role}&userEmail=${userData.email}&year=${selectedYear}`
+        `${backendUrl}/leaverequests?userRole=${userData.role}&userEmail=${userData.email}&year=${selectedYear}`
       );
       if (response.ok) {
         const data = await response.json();
@@ -327,7 +286,7 @@ function LeaveRequests() {
         console.log("email in emp",email);
         console.log("user email",userData.email)
         const response = await fetch(
-          `http://localhost:5001/leavesummary?email=${email}`
+          `${backendUrl}/leavesummary?email=${email}`
         );
         if (response.ok) {
           const data = await response.json();
@@ -348,7 +307,7 @@ function LeaveRequests() {
   //     const fetchLeaveData = async () => {
   //       try {
   //         const response = await fetch(
-  //           `http://localhost:5001/leavesummary?email=${email}`
+  //           `${backendUrl}/leavesummary?email=${email}`
   //         );
   //         if (response.ok) {
   //           const data = await response.json();
@@ -450,7 +409,7 @@ function LeaveRequests() {
   
       try {
         const response = await fetch(
-          `http://localhost:5001/leaverequests/${leave._id}`,
+          `${backendUrl}/leaverequests/${leave._id}`,
           {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -524,7 +483,7 @@ function LeaveRequests() {
   
         try {
           const response = await fetch(
-            `http://localhost:5001/leaverequests/${leave._id}`,
+            `${backendUrl}/leaverequests/${leave._id}`,
             {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
@@ -584,7 +543,7 @@ function LeaveRequests() {
     }
   
     try {
-      const response = await fetch(`http://localhost:5001/leaves/${id}`, {
+      const response = await fetch(`${backendUrl}/leaves/${id}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -605,7 +564,7 @@ function LeaveRequests() {
   };
   
   const getDownloadLink = (attachments) =>
-    `http://localhost:5001/${attachments}`;
+    `${backendUrl}/${attachments}`;
 
   const renderContent = () => {
     switch (selectedCategory) {

@@ -23,6 +23,7 @@ import {
 } from "@mui/material";
 import { useManagerContext } from "../context/ManagerContext";
 import axios from "axios";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const style = {
   position: "absolute",
@@ -82,7 +83,7 @@ const ApplyLeave = () =>
     const fetchAllOptionalHolidays = async () => {
       try {
         const currentYear = new Date().getFullYear(); // Get current year
-        const response = await fetch(`http://localhost:5001/all-optional-holidays?year=${currentYear}`);
+        const response = await fetch(`${backendUrl}/all-optional-holidays?year=${currentYear}`);
         console.log("Fetching optional holidays for year:", currentYear);
     
         if (!response.ok) {
@@ -277,7 +278,7 @@ if (leaveType.toLowerCase().includes("optional")) {
 
       try {
         const response = await fetch(
-          `http://localhost:5001/apply-leave?email=${encodeURIComponent(
+          `${backendUrl}/apply-leave?email=${encodeURIComponent(
             email
           )}`,
           { method: "POST", body: formDataToSend }
@@ -355,7 +356,7 @@ if (leaveType.toLowerCase().includes("optional")) {
         try {
           // Fetch leave policies (default leave types)
           const policyResponse = await axios.get(
-            "http://localhost:5001/api/leave-policies"
+            `${backendUrl}/api/leave-policies`
           );
           setLeavePolicyRef(policyResponse.data.data);
           const leavePolicies = policyResponse.data.data;

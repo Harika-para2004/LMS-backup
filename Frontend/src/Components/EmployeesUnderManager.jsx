@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useManagerContext } from "../context/ManagerContext";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const EmployeesUnderManager = () => {
   const { email: contextEmail, role } = useManagerContext(); // Role helps differentiate
@@ -58,7 +59,7 @@ const EmployeesUnderManager = () => {
     const fetchEmployees = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:5001/api/employees?managerEmail=${email}`
+          `${backendUrl}/api/employees?managerEmail=${email}`
         );
         setEmployees(Array.isArray(response.data) ? response.data : []);
       } catch (error) {

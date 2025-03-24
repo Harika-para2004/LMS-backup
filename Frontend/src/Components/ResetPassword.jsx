@@ -6,6 +6,7 @@ import authImage from "./../assets/img/authentication.svg";
 import "./../assets/css/styles.css";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 import { useManagerContext } from "../context/ManagerContext";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const ResetPassword = () => {
   const { email } = useParams(); // Get email from URL
@@ -33,7 +34,7 @@ const ResetPassword = () => {
 
     setLoading(true);
     try {
-        const response = await axios.post(`http://localhost:5001/api/auth/forgot/reset-password`, {
+        const response = await axios.post(`${backendUrl}/api/auth/forgot/reset-password`, {
           email,  // Send email
           newPassword: formData.password, // Use "newPassword" instead of "password"
         });

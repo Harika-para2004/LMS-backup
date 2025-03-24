@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 import { Card, CardContent, Typography } from "@mui/material";
 import { useManagerContext } from "../context/ManagerContext";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const LeaveBalanceChart = ({ email, year }) => {
   const [leaveData, setLeaveData] = useState(null);
@@ -13,7 +14,7 @@ const LeaveBalanceChart = ({ email, year }) => {
 
   const fetchGenderByEmail = async (email) => {
     try {
-      const response = await fetch(`http://localhost:5001/user/gender?email=${encodeURIComponent(email)}`);
+      const response = await fetch(`${backendUrl}/user/gender?email=${encodeURIComponent(email)}`);
       const data = await response.json();
   
       if (response.ok) {
@@ -45,7 +46,7 @@ const LeaveBalanceChart = ({ email, year }) => {
 
       try {
         const response = await fetch(
-          `http://localhost:5001/leave-total?email=${email}&year=${year}&gender=${gender}`
+          `${backendUrl}/leave-total?email=${email}&year=${year}&gender=${gender}`
         );
 
         if (!response.ok) {
