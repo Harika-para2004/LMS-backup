@@ -50,12 +50,6 @@ const EmployeeDashboard = () => {
       navigate(`/admin/analytics/${managerEmail}/inactive-employees`);
     }
   };
-
-  // console.log("mg1 email", email);
-  // console.log("mg2 email", paramEmail);
-  // console.log("mg3 email", contextEmail);
-  // console.log("mg4 email", userData?.email);
-
   const currentYear = new Date().getFullYear();
   const [years, setYears] = useState([]);
 

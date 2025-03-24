@@ -35,7 +35,6 @@ const LeaveStatusChart = ({ email, year }) => {
 
         setChartData(data);
       } catch (err) {
-        console.error("Error fetching leave data:", err);
         setError("Failed to load leave data.");
       } finally {
         setLoading(false);

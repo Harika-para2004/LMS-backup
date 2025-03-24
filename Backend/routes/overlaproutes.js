@@ -39,7 +39,6 @@ router.get("/leave-reports", async (req, res) => {
 
     res.json(leaveMap);
   } catch (error) {
-    console.error("Error fetching leave reports:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -91,7 +90,6 @@ router.get("/manager-leave-reports", async (req, res) => {
 
     res.json(leaveMap);
   } catch (error) {
-    console.error("Error fetching manager leave reports:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -122,7 +120,6 @@ router.get("/holidays", async (req, res) => {
 
     res.json(holidays);
   } catch (error) {
-    console.error("Error fetching holidays:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });

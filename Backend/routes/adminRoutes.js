@@ -5,16 +5,13 @@ const router = express.Router();
 router.get("/projects", async (req, res) => {
   try {
     const projects = await User.distinct("project", { project: { $ne: null } });
-    console.log("Fetched Projects:", projects); // ✅ Log fetched projects
 
     if (!projects.length) {
-      console.log("No projects found"); // ✅ Log if no projects exist
       return res.status(404).json({ message: "No projects found" });
     }
     
     res.json(projects.map((name) => ({ name })));
   } catch (error) {
-    console.error("Error fetching projects:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -27,7 +24,6 @@ router.get("/leaves/overlap-report", async (req, res) => {
       return res.status(400).json({ error: "Project is required" });
     }
 
-    console.log(`Fetching leave overlap report for project: ${project}`);
 
     // ✅ Step 1: Get all employees in the project
     const employees = await User.find(
@@ -35,7 +31,6 @@ router.get("/leaves/overlap-report", async (req, res) => {
       "empid empname email"
     );
 
-    console.log("Employees in project:", employees);
 
     if (employees.length === 0) {
       return res.status(404).json({ message: "No employees found in this project" });
@@ -54,7 +49,6 @@ router.get("/leaves/overlap-report", async (req, res) => {
       }
     }
 
-    console.log("Employee leave data:", JSON.stringify(employeeLeaves, null, 2));
 
     if (employeeLeaves.length < 2) {
       return res.status(200).json({ message: "Not enough employees with approved leaves for overlap check." });
@@ -99,7 +93,6 @@ router.get("/leaves/overlap-report", async (req, res) => {
     return res.json({ overlapReport });
 
   } catch (error) {
-    console.error("Error fetching leave overlap report:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -111,7 +104,6 @@ router.get("/leave-trends/:year", async (req, res) => {
     const { year } = req.params;
     const selectedYear = parseInt(year);
 
-    console.log(`Fetching leave trends for year: ${selectedYear}`);
 
     const leaves = await Leave.find({
       year: { $elemMatch: { $elemMatch: { $eq: selectedYear } } }, // Match the correct year
@@ -146,7 +138,6 @@ router.get("/leave-trends/:year", async (req, res) => {
     });
 
   } catch (err) {
-    console.error("❌ Error fetching leave trends:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -194,7 +185,6 @@ async function getAdminReports(project = "", search = "") {
 
     return reports;
   } catch (error) {
-    console.error("Error fetching admin reports:", error);
     throw error;
   }
 }
@@ -203,7 +193,6 @@ router.get("/department-leave/:year", async (req, res) => {
     const { year } = req.params;
     const selectedYear = parseInt(year);
 
-    console.log(`Fetching department leave data for year: ${selectedYear}`);
 
     // Fetch employee reports with project details
     const adminReports = await getAdminReports();
@@ -235,11 +224,9 @@ router.get("/department-leave/:year", async (req, res) => {
       });
     });
 
-    console.log("✅ Department Leave Data:", JSON.stringify(departmentData, null, 2));
 
     res.status(200).json(departmentData);
   } catch (error) {
-    console.error("❌ Error fetching department leave stats:", error);
     res.status(500).json({ message: "Server Error" });
   }
 });
@@ -251,7 +238,6 @@ router.get("/top-leave-takers/:year", async (req, res) => {
     const { year } = req.params;
     const selectedYear = parseInt(year);
 
-    console.log(`Fetching employee leave data for year: ${selectedYear}`);
 
     // Fetch employee reports to map email → empname
     const adminReports = await getAdminReports();
@@ -286,11 +272,9 @@ router.get("/top-leave-takers/:year", async (req, res) => {
       totalLeave,
     }));
 
-    console.log("✅ Employee Leave Data:", JSON.stringify(topEmployees, null, 2));
 
     res.status(200).json(topEmployees);
   } catch (error) {
-    console.error("❌ Error fetching employee leave stats:", error);
     res.status(500).json({ message: "Server Error" });
   }
 });
@@ -325,7 +309,6 @@ router.get("/leave-status/:year", async (req, res) => {
 
     res.status(200).json(statusCounts);
   } catch (error) {
-    console.error("Error fetching leave status:", error);
     res.status(500).json({ message: "Server Error" });
   }
 });
@@ -334,7 +317,6 @@ router.get("/leave-type-distribution/:year", async (req, res) => {
     const { year } = req.params;
     const selectedYear = parseInt(year);
 
-    console.log(`Fetching leave type distribution for year: ${selectedYear}`);
 
     // Fetch all leave records for the given year
     const leaves = await Leave.find({
@@ -360,12 +342,10 @@ router.get("/leave-type-distribution/:year", async (req, res) => {
       });
     });
 
-    console.log("✅ Leave Type Duration Distribution:", JSON.stringify(leaveTypeDuration, null, 2));
 
     res.status(200).json(leaveTypeDuration);
 
   } catch (error) {
-    console.error("❌ Error fetching leave type distribution:", error);
     res.status(500).json({ message: "Server Error" });
   }
 });

@@ -84,19 +84,16 @@ const ApplyLeave = () =>
       try {
         const currentYear = new Date().getFullYear(); // Get current year
         const response = await fetch(`${backendUrl}/all-optional-holidays?year=${currentYear}`);
-        console.log("Fetching optional holidays for year:", currentYear);
     
         if (!response.ok) {
           throw new Error("Failed to fetch optional holidays.");
         }
     
         const holidaysData = await response.json();
-        console.log("Fetched optional holidays:", holidaysData);
     
         // Set fetched holidays to state
         setHolidays(holidaysData);
       } catch (error) {
-        console.error("Error fetching optional holidays:", error.message);
         setHolidays([]); // Reset to empty if error occurs
       }
     };
@@ -192,7 +189,6 @@ const ApplyLeave = () =>
         currentDate = currentDate.add(1, "day"); // Move to the next day
       }
 
-      console.log("Final requestedDays:", requestedDays);
 
       
 
@@ -295,7 +291,6 @@ if (leaveType.toLowerCase().includes("optional")) {
         setFileName("")
         setErrors({});
       } catch (error) {
-        console.error("Error submitting form:", error);
         showToast(error.message, "error");
       }
     };

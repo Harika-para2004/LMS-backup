@@ -82,10 +82,7 @@ const LeaveHistory = () => {
 
   const handleSubmit = async (event, leaveId) => {
     event.preventDefault();
-    console.log("index", selectedLeave);
     const { leaveType, startDate, endDate, reason } = formData;
-    console.log("prevFormData", prevFormData);
-    console.log("formdata", formData);
     // return;
     const today = dayjs().format("YYYY-MM-DD");
 
@@ -188,7 +185,6 @@ const LeaveHistory = () => {
 
       currentDate = currentDate.add(1, "day"); // Move to the next day
     }
-    console.log("Final requestedDays:", requestedDays);
 
     if (leaveType.toLowerCase().includes("bereavement") && requestedDays > 3) {
       showToast(
@@ -303,35 +299,6 @@ const LeaveHistory = () => {
 
 
     try {
-      // 🛑 Ensure overlap is checked **before** deleting the old leave
-      // console.log(index);
-      // const overlapResponse = await fetch(
-      //   `${backendUrl}/check-overlap?email=${encodeURIComponent(
-      //     email
-      //   )}&newFrom=${formattedStartDate}&newTo=${formattedEndDate}&leaveId=${leaveId}&leaveType=${leaveType}&index=${index}`
-      // );
-      // const overlapData = await overlapResponse.json();
-
-      // if (overlapData.hasOverlap) {
-      //   showToast(overlapData.message, "warning");
-      //   // return; // 🛑 Stop deletion & update if overlap exists
-      // } else{
-      // // ✅ Now delete the previous leave only if there is no overlap
-      
-      // }
-
-      // if (prevFormData.leaveId) {
-      //   console.log("Attempting to delete previous leave entry...");
-
-      //   await handleDelete(
-      //     prevFormData.leaveId,
-      //     formatDate(prevFormData.startDate),
-      //     formatDate(prevFormData.endDate)
-      //   );
-      //   console.log("Previous leave entry deleted successfully.");
-      // }
-
-      // ✅ Proceed with submission after deletion
       const response = await fetch(
         `${backendUrl}/apply-leave?email=${encodeURIComponent(email)}`,
         { method: "POST", body: formDataToSend }

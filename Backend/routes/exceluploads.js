@@ -212,7 +212,6 @@ router.post("/uploadEmployees", upload.single("file"), async (req, res) => {
       };
 
       return transporter.sendMail(mailOptions).catch((err) => {
-        console.log(`Error sending email to ${user.email}:`, err);
       });
     });
 
@@ -224,7 +223,6 @@ router.post("/uploadEmployees", upload.single("file"), async (req, res) => {
       failedEntries,
     });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: "Error processing file" });
   }
 });
@@ -298,7 +296,6 @@ existingHolidays.forEach((holiday) => {
       let { date, name, type } = row;
 
       if (!date || !name || !type) {
-        console.log("⚠️ Skipping invalid row:", row);
         continue;
       }
 
@@ -308,9 +305,7 @@ existingHolidays.forEach((holiday) => {
 
       // ✅ Check if the holiday already exists
       if (existingDates.has(formattedDate) || existingNames.has(name.toLowerCase())) {
-        console.log(
-          `⚠️ Skipping duplicate holiday (Date/Name): ${formattedDate} - ${name}`
-        );
+       
         continue; // Skip duplicates
       }
 
@@ -318,16 +313,10 @@ existingHolidays.forEach((holiday) => {
         weekday: "long",
       });
       if (dayOfWeek === "Saturday" || dayOfWeek === "Sunday") {
-        console.log(`⚠️ Skipping weekend holiday: ${formattedDate}`);
         continue; // Skip weekends
       }
 
-      console.log("✅ Processed Holiday:", {
-        date: formattedDate,
-        day: dayOfWeek,
-        name,
-        type,
-      });
+
 
       holidaysToInsert.push({
         date: formattedDate,
@@ -347,7 +336,6 @@ existingHolidays.forEach((holiday) => {
       newHolidays: insertedHolidays,
     });
   } catch (error) {
-    console.error("Error uploading holidays:", error);
     res.status(500).json({ message: "Error processing file", error: error.message });
   }
 });
@@ -402,7 +390,6 @@ router.get("/downloadHolidayTemplate", async (req, res) => {
     // Send the file
     res.send(buffer);
   } catch (error) {
-    console.error("Error generating holiday template:", error);
     res.status(500).json({ message: "Error generating template" });
   }
 });
@@ -445,7 +432,6 @@ router.get("/downloadTemplate", async (req, res) => {
 
     res.send(buffer);
   } catch (error) {
-    console.error("Error generating template:", error);
     res.status(500).json({ message: "Error generating template" });
   }
 });

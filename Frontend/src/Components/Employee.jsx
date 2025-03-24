@@ -121,7 +121,6 @@ setCurrentHolidays,
         const response = await axios.get(
           `${backendUrl}/api/leave-policies`
         );
-        console.log("API Response:", response.data);
 
         setLeavePolicyRef(response.data.data);
 
@@ -141,11 +140,9 @@ setCurrentHolidays,
         else if (response.data.leaveType) {
           setLeavePolicies([response.data.leaveType]);
         } else {
-          console.error("Unexpected response format:", response.data);
           setLeavePolicies([]); // Set to empty array if the format is unexpected
         }
       } catch (error) {
-        console.error("Error fetching leave policies:", error);
         setLeavePolicies([]);
       }
     };
@@ -247,14 +244,11 @@ setCurrentHolidays,
   useEffect(() => {
     const fetchLeaveData = async () => {
       try {
-        console.log("email in emp", email);
-        console.log("user email", userData.email);
         const response = await fetch(
           `${backendUrl}/leavesummary?email=${email}`
         );
         if (response.ok) {
           const data = await response.json();
-          console.log("Fetched Data:", data);
           setLeaveData(data);
         } else {
           console.error("Failed to fetch leave data");
@@ -281,7 +275,6 @@ setCurrentHolidays,
         // Set the sorted holidays
         setHolidays(sortedHolidays);
       } catch (error) {
-        console.error("Error fetching holidays:", error);
         setError("Failed to fetch holidays.");
       }
     };
@@ -299,11 +292,9 @@ setCurrentHolidays,
 
         // Sort the fetched holidays before setting the state
         const sortedHolidays = sortHolidaysByMonthAndCustomDay(data);
-        console.log("current",sortedHolidays)
         // Set the sorted holidays
         setCurrentHolidays(sortedHolidays);
       } catch (error) {
-        console.error("Error fetching holidays:", error);
         setError("Failed to fetch holidays.");
       }
     };
@@ -328,7 +319,6 @@ setCurrentHolidays,
   };
   useEffect(() => {
     if (userData && userData.email && userData.role) {
-      console.log("Fetching leave requests for:", userData.email);
       fetchLeaveHistory();
     }
   }, [userData]);

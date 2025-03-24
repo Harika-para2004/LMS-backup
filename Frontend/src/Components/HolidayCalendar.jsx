@@ -124,7 +124,6 @@ const HolidayCalendar = () => {
         });
 
         const result = await response.json();
-        console.log("Server Response:", result);
 
         if (!response.ok) {
           showToast(result.message, "error");
@@ -144,7 +143,6 @@ const HolidayCalendar = () => {
         setSelectedFile(null); // Clear selected file display
         fetchHolidays(); // Refresh holidays list
       } catch (error) {
-        console.error("Error uploading holidays:", error);
         alert("Failed to upload holidays. Please try again.");
       }
     };
@@ -165,7 +163,6 @@ const HolidayCalendar = () => {
     }
 
     const requestUrl = `${BASE_URL}holidays?year=${selectedYear}`;
-    console.log("Fetching from:", requestUrl); // ✅ Log the full API URL
 
     try {
       const response = await fetch(requestUrl, {
@@ -248,7 +245,6 @@ const HolidayCalendar = () => {
       link.download = "Holiday_Template.xlsx";
       link.click();
     } catch (error) {
-      console.error("Error downloading holiday template:", error);
       alert("Failed to download template. Try again.");
     }
   };
@@ -274,7 +270,6 @@ const HolidayCalendar = () => {
       showToast("Holiday deleted successfully!");
       fetchHolidays();
     } catch (error) {
-      console.error("Error deleting employee:", error);
       setError("Failed to delete employee. Please try again later.");
     }
   };
@@ -380,7 +375,6 @@ const HolidayCalendar = () => {
       setFormData({ date: "", holidayName: "", holidayType: "Mandatory" });
       setIsEditMode(false);
     } catch (error) {
-      console.error("Error updating holiday:", error);
       showToast("Failed to update holiday.");
     }
   };
@@ -501,7 +495,6 @@ const HolidayCalendar = () => {
       setFormData({ date: "", holidayName: "", holidayType: "Mandatory" });
       setShowModal(false);
     } catch (error) {
-      console.error("Error adding holiday:", error);
       showToast("Failed to add holiday. Please try again later."); // 🔴 Handle unexpected errors
     }
   };

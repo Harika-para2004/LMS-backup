@@ -116,7 +116,6 @@ const ReportsAdmin = () => {
     indexOfFirstEmployee,
     indexOfLastEmployee
   );
-console.log(currentReports);
   // Handle page change
   const handlePageChange = (event, value) => {
     setCurrentPage(value);

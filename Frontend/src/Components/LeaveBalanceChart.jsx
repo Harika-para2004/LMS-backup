@@ -29,7 +29,6 @@ const LeaveBalanceChart = ({ email, year, years }) => {
   const [error, setError] = useState(null);
   const [gender, setGender] = useState("");
   const [maxCasual, setMaxCasual] = useState();
-  console.log(years.includes(year - 1));
 
   const fetchGenderByEmail = async (email) => {
     try {
@@ -39,7 +38,6 @@ const LeaveBalanceChart = ({ email, year, years }) => {
       const data = await response.json();
 
       if (response.ok) {
-        console.log("Gender:", data.gender);
         setGender(data.gender);
       } else {
         console.error("Error:", data.error);
@@ -107,42 +105,7 @@ const LeaveBalanceChart = ({ email, year, years }) => {
     };
 
     fetchMaternityLimit();
-  }, [email]); // Add dependencies if they change
-
-  // const [prevleave, setPrevleave] = useState([]);
-  // const [currleave, setCurrleave] = useState([]);
-  // const isCasualForFreshYear =
-  //   (Array.isArray(prevleave) &&
-  //   prevleave.length === 0) && ( Array.isArray(currleave) &&
-  //   currleave.length === 0 )&&
-  //   years.includes(year - 1);
-  // console.log("isCasualForFreshYear", isCasualForFreshYear);
-  // useEffect(() => {
-  //   if (!email || !year) return;
-  //   const fetchData = async () => {
-  //     setLoading(true);
-  //     setError(null);
-  //     if (years.includes(year - 1)) {
-  //       try {
-  //         const res1 = await axios.get(
-  //           `${backendUrl}/get-leave/${email}/${year - 1}`
-  //         );
-  //         const res2 = await axios.get(
-  //           `${backendUrl}/get-leave/${email}/${year }`
-  //         );
-  //         setPrevleave(res1.data);
-  //         setCurrleave(res2.data);
-  //       } catch (err) {
-  //         console.error("Error fetching leave balance:", err);
-  //         setError("Failed to load leave balance.");
-  //       } finally {
-  //         setLoading(false);
-  //       }
-  //     }
-  //   };
-
-  //   fetchData();
-  // }, [year]);
+  }, [email]); 
 
   const [prevleave, setPrevleave] = useState([]);
   const [currleave, setCurrleave] = useState([]);
@@ -165,7 +128,6 @@ const LeaveBalanceChart = ({ email, year, years }) => {
         setPrevleave(res1.data);
         setCurrleave(res2.data);
       } catch (err) {
-        console.error("Error fetching leave balance:", err);
         setError("Failed to load leave balance.");
       } finally {
         setLoading(false);
@@ -186,10 +148,6 @@ const LeaveBalanceChart = ({ email, year, years }) => {
     );
   }, [prevleave, currleave, year]);
 
-  console.log("isCasualForFreshYear", isCasualForFreshYear);
-
-  console.log("prevleave", currleave);
-
   useEffect(() => {
     if (!email || !year) return;
     const fetchData = async () => {
@@ -201,7 +159,6 @@ const LeaveBalanceChart = ({ email, year, years }) => {
         );
         setLeaveBalance(res.data);
       } catch (err) {
-        console.error("Error fetching leave balance:", err);
         setError("Failed to load leave balance.");
       } finally {
         setLoading(false);

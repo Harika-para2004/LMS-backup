@@ -57,7 +57,6 @@ export const ManagerProvider = ({ children }) => {
 
   useEffect(() => {
     const storedUserData = localStorage.getItem("userData");
-    console.log("storedUserData",storedUserData);
     if (storedUserData) {
       try {
         const parsedUserData = JSON.parse(storedUserData);

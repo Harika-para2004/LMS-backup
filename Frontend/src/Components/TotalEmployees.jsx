@@ -406,13 +406,11 @@ const TotalEmployees = () => {
       );
       fetchEmployees();
     } catch (error) {
-      console.error("Error deactivating employee:", error);
       setError("Failed to deactivate employee. Please try again later.");
     }
   };
   const handleEditEmployee = (id) => {
     // Find the employee using _id
-    console.log("id", id);
     const selectedEmployee = employeeList.find((emp) => emp._id === id);
 
     if (selectedEmployee) {
@@ -512,7 +510,6 @@ const TotalEmployees = () => {
         setMessage("");
       }, 3000);
     } catch (error) {
-      console.error("Error uploading file:", error);
 
       if (
         error.response &&

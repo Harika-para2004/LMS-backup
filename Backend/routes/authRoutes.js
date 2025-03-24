@@ -106,15 +106,12 @@ router.post('/addEmployee', async (req, res) => {
 
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
-        console.log('Error sending email:', error);
         return res.status(500).json({ message: 'Error sending email' });
       } else {
-        console.log('Email sent: ' + info.response);
         res.status(201).json({ message: 'Employee Added successfully!', userId: newUser._id });
       }
     });
   } catch (err) {
-    console.log(err);
     res.status(500).json({ message: 'Error registering user' });
   }
 });
@@ -192,7 +189,6 @@ router.put("/updateAdminPassword", async (req, res) => {
 
     res.json({ message: "Password updated successfully" });
   } catch (error) {
-    console.error("Error updating admin password:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });

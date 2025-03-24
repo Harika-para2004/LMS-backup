@@ -10,7 +10,6 @@ const AdminToManager = () => {
   const { email: paramEmail } = useParams();
   const { email: contextEmail } = useManagerContext(); // role will be "admin"
   const [email, setEmail] = useState(paramEmail || contextEmail);
-  console.log("admin email", email);
 
   const role = localStorage.getItem("role");
 

@@ -62,7 +62,6 @@ const LeaveRequestsTable = () => {
     setRejectionComment("");
     setShowCommentBox(false);
   };
-  // console.log("admincred",admincred);
   const [userData, setUserData] = useState(() => {
     const storedAdmin = localStorage.getItem("admin");
     return (
@@ -84,33 +83,6 @@ const LeaveRequestsTable = () => {
       setUserData({});
     }
   }, [location.state?.userData, localStorage.getItem("admin")]);
-
-  // const fetchLeaveRequests = async () => {
-  //   try {
-  //     const response = await fetch(
-  //       `${backendUrl}/leaverequests?userRole=${userData.role}&userEmail=${userData.email}&year=${selectedYear}`
-  //     );
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       const sortedData = data.sort(
-  //         (a, b) => new Date(b.applyDate) - new Date(a.applyDate)
-  //       );
-  //       setLeaveRequests(sortedData);
-  //     } else {
-  //       console.error("Failed to fetch leave history");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching leave history:", error);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   if (userData.role !== "Admin" && userData.email && selectedYear && userData.role === "Manager" ) {
-  //     console.log(`Fetching leave requests for ${userData.email} in ${selectedYear} role is ${userData.role}`);
-  //     fetchLeaveRequests();
-  //   }
-  // }, [userData.email, selectedYear,userData.role]);
-
   const fetchLeaveRequestsAdmin = async () => {
     const userDataResponse = await fetch(
       `${BASE_URL}api/auth/user/${userData.userId}`
@@ -154,9 +126,7 @@ const LeaveRequestsTable = () => {
 
   useEffect(() => {
     if (email && selectedYear && role) {
-      console.log(
-        `Fetching leave requests for ${email} in ${selectedYear} role is ${role}`
-      );
+     
       fetchLeaveRequests();
     }
   }, [email, selectedYear, role]);
@@ -189,7 +159,6 @@ const LeaveRequestsTable = () => {
         leave.duration.length === 0 ||
         selectedIndex >= leave.duration.length
       ) {
-        console.error("Invalid leave duration or selected index:", selectedLeave);
         return;
       }
   
@@ -210,7 +179,6 @@ const LeaveRequestsTable = () => {
   
       const currentStatus = leave.status[selectedIndex]?.toLowerCase();
       if (!currentStatus || (currentStatus !== "pending" && currentStatus !== "rejected")) {
-        console.log("This leave is already approved.");
         return;
       }
   
@@ -232,12 +200,10 @@ const LeaveRequestsTable = () => {
           });
           
           if (!response.ok) {
-            console.error("Server error:", response.status, await response.text());
             return;
           }
           
           const data = await response.json();
-          console.log("Mat Response:", data.totalSplits, "Child Number:", data.chilNumber);
           total=data.totalSplits
           chilNumber = data.chilNumber; // Use the fetched child number
         
@@ -283,7 +249,6 @@ const LeaveRequestsTable = () => {
   
         if (response.ok) {
           const updatedLeaveFromServer = await response.json();
-          console.log("Updated leave:", updatedLeaveFromServer);
   
           setLeaveRequests((prevHistory) =>
             prevHistory.map((item) =>
@@ -293,7 +258,6 @@ const LeaveRequestsTable = () => {
   
           setSelectedLeave(null);
           setModalOpen(false);
-          console.log("Approved and updated in the database:", updatedLeaveFromServer);
           fetchLeaveRequests();
         } else {
           console.error("Failed to update leave in the database");
@@ -314,7 +278,6 @@ const LeaveRequestsTable = () => {
         leave.duration.length === 0 ||
         selectedIndex >= leave.duration.length
       ) {
-        console.error("Invalid leave duration or selected index:", selectedLeave);
         return;
       }
   
@@ -339,7 +302,6 @@ const LeaveRequestsTable = () => {
         !currentStatus ||
         (currentStatus !== "pending" && currentStatus !== "approved")
       ) {
-        console.log("This leave is already rejected.");
         return;
       }
   
@@ -378,10 +340,7 @@ const LeaveRequestsTable = () => {
           );
           setSelectedLeave(null);
           setModalOpen(false);
-          console.log(
-            "Rejected and updated in the database:",
-            updatedLeaveFromServer
-          );
+        
           fetchLeaveRequests();
         } else {
           console.error("Failed to update leave status in the database");

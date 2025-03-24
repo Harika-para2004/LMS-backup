@@ -24,7 +24,6 @@ const LeaveTrendChart = ({ email, year }) => {
           `${backendUrl}/leave-trends/${email}/${year}`
         );
       
-        console.log("Fetched Data:", res.data);
       
         const data = res.data || [];
       
@@ -33,7 +32,6 @@ const LeaveTrendChart = ({ email, year }) => {
         );
         
         if (approvedData.length === 0) {
-          console.log("No approved leave data found.");
           setChartData([]);
           setLeaveTypes([]);
           return;

@@ -46,7 +46,6 @@ const Overlap = ({ year }) => {
       if (!response.ok) throw new Error("Failed to fetch holidays");
 
       const data = await response.json();
-      console.log("Raw Holiday Data:", data); // Debugging
 
       // Process the data into a lookup object
       const holidayMap = {};
@@ -60,7 +59,6 @@ const Overlap = ({ year }) => {
         }
       });
 
-      console.log("Processed Holidays Map:", holidayMap); // Debugging
       setHolidays(holidayMap);
     } catch (error) {
       console.error("Error fetching holidays:", error);

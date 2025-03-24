@@ -18,7 +18,6 @@ const LeaveBalanceChart = ({ email, year }) => {
       const data = await response.json();
   
       if (response.ok) {
-        console.log("Gender:", data.gender);
         setGender(data.gender);
       } else {
         console.error("Error:", data.error);
@@ -40,10 +39,6 @@ const LeaveBalanceChart = ({ email, year }) => {
 
       setLoading(true);
       setError(null);
-
-      // await fetchGenderByEmail(email);
-      // console.log("gender",gender)
-
       try {
         const response = await fetch(
           `${backendUrl}/leave-total?email=${email}&year=${year}&gender=${gender}`
@@ -56,7 +51,6 @@ const LeaveBalanceChart = ({ email, year }) => {
         const data = await response.json();
         setLeaveData(data);
       } catch (error) {
-        console.error("Error fetching leave balance:", error);
         setError(error.message || "Failed to load leave balance.");
       } finally {
         setLoading(false);

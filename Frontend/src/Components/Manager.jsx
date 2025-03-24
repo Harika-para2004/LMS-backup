@@ -104,7 +104,6 @@ function LeaveRequests() {
         const response = await axios.get(
           `${backendUrl}/api/leave-policies`
         );
-        console.log("leave policy Response:", response.data);
 
         // Check if response.data is an array
         if (Array.isArray(response.data)) {
@@ -122,7 +121,6 @@ function LeaveRequests() {
         else if (response.data.leaveType) {
           setLeavePolicies([response.data.leaveType]);
         } else {
-          console.error("Unexpected response format:", response.data);
           setLeavePolicies([]); // Set to empty array if the format is unexpected
         }
       } catch (error) {
@@ -181,7 +179,6 @@ function LeaveRequests() {
         // Set the sorted holidays
         setHolidays(sortedHolidays);
       } catch (error) {
-        console.error("Error fetching holidays:", error);
         setError("Failed to fetch holidays.");
       }
     };
@@ -199,7 +196,6 @@ function LeaveRequests() {
 
         // Sort the fetched holidays before setting the state
         const sortedHolidays = sortHolidaysByMonthAndCustomDay(data);
-        console.log("current",sortedHolidays)
         // Set the sorted holidays
         setCurrentHolidays(sortedHolidays);
       } catch (error) {
@@ -253,14 +249,12 @@ function LeaveRequests() {
 
   useEffect(() => {
     if (userData.role !== "Admin" && userData.email && selectedYear && userData.role === "Manager" ) {
-      console.log(`Fetching leave requests for ${userData.email} in ${selectedYear} role is ${userData.role}`);
       fetchLeaveRequests();
     }
   }, [userData.email, selectedYear,userData.role]); 
   
   useEffect(() => {
     const storedUserData = localStorage.getItem("userData");
-    console.log("storedUserData",storedUserData);
     if (storedUserData) {
       try {
         const parsedUserData = JSON.parse(storedUserData);
@@ -283,14 +277,12 @@ function LeaveRequests() {
   useEffect(() => {
     const fetchLeaveData = async () => {
       try {
-        console.log("email in emp",email);
-        console.log("user email",userData.email)
+     
         const response = await fetch(
           `${backendUrl}/leavesummary?email=${email}`
         );
         if (response.ok) {
           const data = await response.json();
-          console.log("Fetched Data:", data);
           setLeaveData(data);
         } else {
           console.error("Failed to fetch leave data");
@@ -302,28 +294,6 @@ function LeaveRequests() {
     if(email)
     fetchLeaveData();
   }, [email]); 
-  
-  //   // if (email) {
-  //     const fetchLeaveData = async () => {
-  //       try {
-  //         const response = await fetch(
-  //           `${backendUrl}/leavesummary?email=${email}`
-  //         );
-  //         if (response.ok) {
-  //           const data = await response.json();
-  //           console.log(data);
-  //           setLeaveData(data);
-  //         } else {
-  //           console.error("Failed to fetch leave data");
-  //         }
-  //       } catch (error) {
-  //         console.error("Error fetching leave data:", error);
-  //       }
-  //     };
-  //     fetchLeaveData();
-  //   // }
-  // }, [leaveData]);
-  
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -426,7 +396,6 @@ function LeaveRequests() {
           );
           setSelectedLeave(null);
           setModalOpen(false);
-          console.log("Rejected and updated in the database:", updatedLeaveFromServer);
         } else {
           console.error("Failed to update leave status in the database");
         }
@@ -457,7 +426,6 @@ function LeaveRequests() {
       
       // Check if leave is already approved
       if (!currentStatus || (currentStatus !== "pending" && currentStatus !== "rejected")) {
-        console.log("This leave is already approved.");
         return;
       }
   
@@ -500,7 +468,6 @@ function LeaveRequests() {
             );
             setSelectedLeave(null);
             setModalOpen(false);
-            console.log("Approved and updated in the database:", updatedLeaveFromServer);
           } else {
             console.error("Failed to update leave in the database");
           }

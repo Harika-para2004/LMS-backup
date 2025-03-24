@@ -29,10 +29,7 @@ const app = express();
 const port = process.env.PORT || 5001;
 
 app.use(cors());
-app.use(express.json({ limit: "10mb" }));  // Increase JSON body size limit
-/* mongodb+srv://lahiri:sai*123@cluster0.r7eze9l.mongodb.net/*/
-// Connect to MongoDB
-
+app.use(express.json({ limit: "10mb" }));  
 mongoose
   .connect(process.env.MONGO_URI, {
     
@@ -64,90 +61,8 @@ app.get("/managers-list", async (req, res) => {
     res.status(500).json({ message: "Error fetching managers", error: error.message });
   }
 });
-
-// app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
-//   const { email } = req.query;
-//   const { empname, empid, leaveType, startDate, endDate, reason, managerEmail } = req.body;
-//   const filePath = req.file ? req.file.path : null;
-
-//   try {
-//     const formattedStartDate = new Date(startDate);
-//     const formattedEndDate = new Date(endDate);
-
-//     if (!leaveType || !startDate || !endDate) {
-//       return res.status(400).json({ message: "All fields (Leave Type, Start Date, End Date) are required." });
-//     }
-
-//     if (formattedEndDate < formattedStartDate) {
-//       return res.status(400).json({ message: "End Date cannot be before Start Date." });
-//     }
-
-//     // Fetch all leave records for the user
-//     let existingLeaves = await Leave.find({ email });
-
-//     for (let leave of existingLeaves) {
-//       for (let i = 0; i < leave.startDate.length; i++) {
-//         const existingStartDate = new Date(leave.startDate[i]);
-//         const existingEndDate = new Date(leave.endDate[i]);
-
-//         if (
-//           (formattedStartDate >= existingStartDate && formattedStartDate <= existingEndDate) ||
-//           (formattedEndDate >= existingStartDate && formattedEndDate <= existingEndDate) ||
-//           (formattedStartDate <= existingStartDate && formattedEndDate >= existingEndDate)
-//         ) {
-//           return res.status(400).json({
-//             message: `You have already applied for leave from ${existingStartDate.toLocaleDateString("en-GB")} to ${existingEndDate.toLocaleDateString("en-GB")}.`
-//           });
-//         }
-//       }
-//     }
-
-//     const startMonth = formattedStartDate.getMonth() + 1;
-//     const startYear = formattedStartDate.getFullYear();
-
-//     let leaveRecord = await Leave.findOne({ email, leaveType });
-
-//     if (leaveRecord) {
-//       leaveRecord.startDate.push(formattedStartDate);
-//       leaveRecord.endDate.push(formattedEndDate);
-//       leaveRecord.applyDate.push(new Date());
-//       leaveRecord.status.push("Pending");
-//       leaveRecord.attachments.push(filePath || "");
-//       leaveRecord.reason.push(reason || "");
-//       leaveRecord.month.push(startMonth);
-//       leaveRecord.year.push(startYear);
-
-//       await leaveRecord.save();
-//       return res.status(200).json({ message: "Leave application submitted successfully" });
-//     } else {
-//       const newLeave = new Leave({
-//         email,
-//         empname,
-//         empid,
-//         managerEmail,
-//         applyDate: [new Date()],
-//         leaveType,
-//         startDate: [formattedStartDate],
-//         endDate: [formattedEndDate],
-//         reason: reason ? [reason] : [],
-//         status: ["Pending"],
-//         attachments: [filePath || ""],
-//         month: [startMonth],
-//         year: [startYear],
-//       });
-
-//       await newLeave.save();
-//       return res.status(200).json({ message: "Leave application submitted successfully" });
-//     }
-//   } catch (error) {
-//     console.error("Error applying for leave:", error);
-//     res.status(500).json({ message: "Server error while applying leave." });
-//   }
-// });
-
 cron.schedule("59 23 31 12 *", async () => {
-  console.log("⏳ Running Year-End Carry Forward Cron Job...");
-  console.log("⏳ Cron job started at:", new Date().toISOString());
+
 
   try {
     const currentYear = new Date().getFullYear(); // Get current year dynamically
@@ -200,11 +115,7 @@ cron.schedule("59 23 31 12 *", async () => {
               }
             }
           ]);
-          console.log("Approved Leaves Duration Sum:", approvedLeaveDurationSum);
-          console.log("🧐 Debugging Values Before Calculation:");
-          console.log("maxAllowedLeaves:", maxAllowedLeaves);
-          console.log("carryForwardLimit:", carryForwardLimit);
-          console.log("approvedLeaveDurationSum:", approvedLeaveDurationSum);
+
           const usedLeaves =
             Array.isArray(approvedLeaveDurationSum) &&
             approvedLeaveDurationSum.length > 0 &&
@@ -230,12 +141,6 @@ cron.schedule("59 23 31 12 *", async () => {
           
           const updatedAvailableLeavesCalc = carryForwarded + availableLeaves;
           const updatedAvailableLeaves = !isNaN(updatedAvailableLeavesCalc) ? updatedAvailableLeavesCalc : 0;
-          
-          console.log("usedLeaves:", usedLeaves);
-          console.log("availableLeaves:", availableLeaves);
-          console.log("carryForwardedLeaves:", carryForwardedLeaves);
-          console.log("updatedAvailableLeaves:", updatedAvailableLeaves);
-          console.log("safeAvailableLeaves:", safeAvailableLeaves);
           totalchart=maxAllowedLeaves+(!isNaN(carryForwarded) ? carryForwarded : 0),
 availablechart=maxAllowedLeaves+(!isNaN(carryForwarded) ? carryForwarded : 0);
           await Leave.updateOne(
@@ -258,19 +163,8 @@ availablechart=maxAllowedLeaves+(!isNaN(carryForwarded) ? carryForwarded : 0);
         } 
       }
 
-      // ✅ Update User's Carry Forward Balance & Reset Yearly Leaves
-      // await User.updateOne(
-      //   { _id: user._id },
-      //   {
-      //     $set: {
-      //       carryForwardBalance: Object.fromEntries(updatedCarryForward), // Convert Map to Object
-      //       yearlyLeavesTaken: {}, // Reset yearly leaves for new year
-      //     },
-      //   }
-      // );
     }
 
-    console.log("✅ Year-End Carry Forward Completed!");
   } catch (error) {
     console.error("❌ Error in Carry Forward Cron Job:", error);
   }
@@ -280,7 +174,6 @@ const getMandatoryHolidays = async () => {
     const mandatoryHolidays = await Holiday.find({ type: "Mandatory" }).select("date");
     return mandatoryHolidays.map((holiday) => holiday.date);
   } catch (error) {
-    console.error("Error fetching mandatory holidays:", error);
     return [];
   }
 };
@@ -317,10 +210,8 @@ app.get("/years", async (req, res) => {
     // Sort the years in ascending order
     years.sort((a, b) => a - b);
 
-    console.log("years", years);
     res.status(200).json({ years });
   } catch (error) {
-    console.error("Error fetching years:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -364,7 +255,6 @@ const getValidLeaveDays = async (startDate, endDate, leaveType) => {
   while (currentDate <= new Date(endDate)) {
     const dayOfWeek = currentDate.getUTCDay();
     const formattedDate = formatDate(currentDate);
-console.log(leaveType)
     // Count all days for Maternity Leave, exclude weekends & holidays otherwise
     if (leaveType === "Maternity Leave" || (dayOfWeek !== 0 && dayOfWeek !== 6 && !mandatoryHolidays.includes(formattedDate))) {
       validDays++;
@@ -372,7 +262,6 @@ console.log(leaveType)
 
     currentDate.setUTCDate(currentDate.getUTCDate() + 1); // Move to the next day
   }
-console.log(validDays)
   return validDays;
 };
 
@@ -484,7 +373,6 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
      
 
     let requestedLeaveDays = await getValidLeaveDays(formattedStartDate, formattedEndDate,leaveType);
-console.log("requestedDays",requestedLeaveDays)
     let leaveRecords = await Leave.find({ email, leaveType });
 
     let usedLeavesByYear = {};
@@ -499,15 +387,12 @@ console.log("requestedDays",requestedLeaveDays)
         if ((record.status[i] == "Approved" && record.leaveType=="Paternity Leave") || (record.status[i] == "Approved" && record.leaveType=="Adoption Leave")  ) {
           let leaveYear = new Date(record.startDate[i]).getFullYear();
           count[leaveYear] = (count[leaveYear] || 0) + 1;
-          console.log("inside")
         }
       }
     }
-    console.log(count)
     const maxSplits = 2;
     const currentSplits = Number(count[startYear]) || 0; // Ensure it's a number
     
-    console.log(currentSplits)
     if (currentSplits >= maxSplits) {
       return res.status(400).json({ message: "Exceeding max splits" });
     }
@@ -522,11 +407,9 @@ console.log("requestedDays",requestedLeaveDays)
         ) {
           let leaveYear = new Date(record.startDate[i]).getFullYear();
           count1[leaveYear] = (count1[leaveYear] || 0) + 1;
-          // console.log("inside");
         }
       }
     }
-    console.log(count1);
     const totalSplits = Object.values(count1).reduce((sum, value) => sum + value, 0);
 
     const flag = totalSplits >= 2;
@@ -585,7 +468,6 @@ if (policy.carryForward) {
   }
     // Apply leave logic remains the same
     let leaveRecord = await Leave.findOne({ email, leaveType, year: { $elemMatch: { $elemMatch: { $eq: Number(startYear) } } } });
-console.log("leaveRecord",leaveRecord)
 if (startYear === endYear) {
   if (!leaveRecord) {
       let availableLeaves = totalAllowedLeaves + carryForwardedLeaves;
@@ -612,7 +494,6 @@ if (startYear === endYear) {
           continous: false,  // ✅ Single-year leave → `continous` remains `false`
       });
   }
-console.log("in",requestedLeaveDays)
   leaveRecord.startDate.push(formattedStartDate);
   leaveRecord.endDate.push(formattedEndDate);
   leaveRecord.applyDate.push(new Date());
@@ -624,7 +505,6 @@ console.log("in",requestedLeaveDays)
   leaveRecord.duration.push([requestedLeaveDays]);
   await updateValidYears(startYear, endYear);
   await leaveRecord.save();
-  console.log(leaveRecord)
 
   return res.status(200).json({ message: "Leave application submitted successfully" });
 
@@ -636,7 +516,6 @@ console.log("in",requestedLeaveDays)
     let yearEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59));
 
     let leaveStart = year === startYear ? currentStartDate : yearStart;
-    console.log("leaveStart",leaveStart)
     while (await isMandatoryHoliday(leaveStart)) {
       leaveStart.setUTCDate(leaveStart.getUTCDate() + 1);
     }
@@ -700,7 +579,6 @@ return res.status(200).json({ message: "Leave application submitted successfully
   
 
 catch (error) {
-    console.error("Error applying for leave:", error);
     res.status(500).json({ message: "Server error while applying leave." });
   }
 });
@@ -747,37 +625,9 @@ app.get("/leave-history", async (req, res) => {
 
     res.status(200).json(formattedHistory);
   } catch (error) {
-    console.error("Error fetching leave history:", error);
     res.status(500).json({ message: "An error occurred" });
   }
 });
-// app.get("/leavesummary", async (req, res) => {
-//   const { email } = req.query; // Get the email from the query parameters
-//   if (!email) {
-//     return res.status(400).json({ message: "Email is required" });
-//   }
-
-//   const currentYear = new Date().getFullYear(); // Get the current year
-
-//   try {
-//     const leaveData = await Leave.find({
-//       email,
-//       year: { $in: [[currentYear]] } // Match the year field
-//     });
-
-//     if (!leaveData || leaveData.length === 0) {
-//       return res
-//         .status(404)
-//         .json({ message: "No leave records found for the specified email in the current year" });
-//     }
-
-//     res.json(leaveData);
-//   } catch (err) {
-//     console.error("Error fetching leave summary:", err);
-//     res.status(500).send("Server Error");
-//   }
-// });
-
 app.get("/leavesummary", async (req, res) => {
   const { email } = req.query;
   if (!email) {
@@ -819,7 +669,6 @@ app.get("/leavesummary", async (req, res) => {
 
     res.json(updatedLeaveData); // Returns the updated leave data with policy adjustments
   } catch (err) {
-    console.error("Error fetching leave summary:", err);
     res.status(500).send("Server Error");
   }
 });
@@ -897,7 +746,6 @@ app.get("/leaverequests", async (req, res) => {
 
     res.json(processedLeaves);
   } catch (error) {
-    console.error("Error fetching leave requests:", error);
     res.status(500).send("Server error");
   }
 });
@@ -936,7 +784,6 @@ app.put("/leaverequests/:id", async (req, res) => {
         employeeLeave.usedLeaves += totalDuration;
         employeeLeave.availableLeaves = Math.max(employeeLeave.totalLeaves - employeeLeave.usedLeaves, 0);
         
-        console.log("Available Leaves After Update:", employeeLeave.availableLeaves);
 
         // 🔹 Carry forward logic
         const nextYear = year + 1;
@@ -964,7 +811,6 @@ app.put("/leaverequests/:id", async (req, res) => {
     return res.status(200).json(leave);
     
   } catch (error) {
-    console.error("Error updating leave request:", error);
     res.status(500).json({ message: "An error occurred" });
   }
 });
@@ -997,7 +843,6 @@ app.put("/updatepassword", async (req, res) => {
 
     res.status(200).json({ message: "Password updated successfully." });
   } catch (error) {
-    console.error("Error updating password:", error);
     res.status(500).json({ message: "Internal server error." });
   }
 });
@@ -1008,18 +853,11 @@ app.get("/holidays", async (req, res) => {
     if (!year || isNaN(year)) {
       return res.status(400).json({ message: "Valid year is required!" });
     }
-
-    console.log("Fetching holidays for year:", year);
-
     const holidays = await Holiday.find({
       date: { $regex: `-${year}$`, $options: "i" },
-    });
-
-    console.log("Found holidays:", holidays.length);
-    
+    });    
     res.json(holidays);
   } catch (err) {
-    console.error("Error fetching holidays:", err);
     res.status(500).json({ message: "Server Error", error: err.message });
   }
 });
@@ -1047,7 +885,6 @@ app.get("/employee-list", async (req, res) => {
 
     res.json(updatedEmployees);
   } catch (err) {
-    console.error("Error fetching employees:", err);
     res.status(500).json({ message: "Server Error", error: err.message });
   }
 });   
@@ -1079,20 +916,16 @@ app.post("/holidays", async (req, res) => {
 
     res.status(201).json(savedHoliday);
   } catch (err) {
-    console.error("Error saving holiday:", err);
     res.status(500).json({ message: "Error creating holiday", error: err.message });
   }
 });
 
 app.put("/holidays/:id", async (req, res) => {
-  console.log("Received ID:", req.params.id);
-  console.log("Received Data:", req.body);
 
   const { date, name, type } = req.body;
 
   try {
     if (!date || !name || !type) {
-      console.log("Missing fields!");
       return res.status(400).json({ message: "All fields are required!" });
     }
 
@@ -1107,7 +940,6 @@ app.put("/holidays/:id", async (req, res) => {
     });
 
     if (existingHoliday) {
-      console.log("Duplicate holiday found!");
       return res.status(400).json({
         message: `A holiday with the same date (${date}) and name (${name}) already exists!`,
       });
@@ -1121,14 +953,10 @@ app.put("/holidays/:id", async (req, res) => {
     );
 
     if (!updatedHoliday) {
-      console.log("Holiday not found!");
       return res.status(404).json({ message: "Holiday not found" });
     }
-
-    console.log("Updated Holiday:", updatedHoliday);
     res.json(updatedHoliday);
   } catch (err) {
-    console.error("Error updating holiday:", err.message);
     res.status(400).json({ message: "Error updating holiday", error: err.message });
   }
 });
@@ -1371,9 +1199,6 @@ app.get("/reports", async (req, res) => {
                 new Date(leave.startDate).getFullYear() === parseInt(year) // ✅ Filter by year
             )
         );
-      //  console.log(approvedLeaves);
-
-        // Only return employees who have at least one approved leave in the selected year
         if (approvedLeaves.length > 0) {
           return {
             empid: employee.empid,
@@ -1389,15 +1214,10 @@ app.get("/reports", async (req, res) => {
         return null; // Ignore employees with no approved leaves in the selected year
       })
     );
-
-   // console.log(reports);
-
-    // Remove null values (employees with no approved leaves)
     const filteredReports = reports.filter((report) => report !== null);
 
     res.status(200).json(filteredReports);
   } catch (error) {
-    console.error("Error fetching reports:", error);
     res.status(500).json({ message: "Server Error" });
   }
 });
@@ -1423,12 +1243,10 @@ app.get("/reports-admin", async (req, res) => {
     const reports = await Promise.all(
       employees.map(async (employee) => {
         const leaves = await Leave.find({ email: employee.email });
-        leaves.flatMap((leave) => console.log(leave.startDate));
 
 
         // Filter only approved leaves within the selected year
         const approvedLeaves = leaves.flatMap((leave) =>
-        // console.log(leave);
           leave.startDate
             .map((start, index) => ({
               leaveType: leave.leaveType,
@@ -1449,11 +1267,6 @@ app.get("/reports-admin", async (req, res) => {
                 new Date(leave.startDate).getFullYear() === parseInt(year) // ✅ Filter by year
             )
         );
-
-        // console.log(approvedLeaves);
-
-
-        // Only return employees who have at least one approved leave in the selected year
         if (approvedLeaves.length > 0) {
           return {
             empid:employee.empid,
@@ -1475,7 +1288,6 @@ app.get("/reports-admin", async (req, res) => {
 
     res.status(200).json(filteredReports);
   } catch (error) {
-    console.error("Error fetching admin reports:", error);
     res.status(500).json({ message: "Server Error" });
   }
 });
@@ -1498,12 +1310,10 @@ app.get("/reports/export-excel", async (req, res) => {
     let { project, reports,year } = req.query;
     let query = {};
     if (project) query.project = project;
-    // console.log("reports:", reports);
     if (typeof reports === "string") {
       try {
         reports = JSON.parse(reports);
       } catch (error) {
-        console.error("Error parsing reports:", error);
         reports = [];
       }
     }
@@ -1607,7 +1417,6 @@ app.get("/reports/export-excel", async (req, res) => {
     await workbook.xlsx.write(res);
     res.end();
   } catch (error) {
-    console.error("Error exporting Excel:", error);
     res.status(500).json({ message: "Server Error" });
   }
 });
@@ -1716,61 +1525,9 @@ allReports.forEach((report) => {
     await workbook.xlsx.write(res);
     res.end();
   } catch (error) {
-    console.error("Error exporting Excel:", error);
     res.status(500).json({ message: "Server Error" });
   }
 });
-/*
-app.post("/maternity-limit", async (req, res) => {
-  try {
-    const { email, leaveType,continous } = req.body;
-
-    if (!email || !leaveType) {
-      return res.status(400).json({ message: "Email and leave type are required." });
-    }
-
-    // Fetch all approved maternity leave records for the employee
-    let leaveRecords = await Leave.find({ email, leaveType: "Maternity Leave" });
-
-    let childNumbers = new Set();
-    let yearWiseCount = {}; // Track leave approvals by year
-    let maxChildNumber = 0; // Track the highest childNumber
-
-    for (let record of leaveRecords) {
-      if (record.childNumber) {
-        childNumbers.add(record.childNumber);
-        maxChildNumber = Math.max(maxChildNumber, record.childNumber); // Find highest child number
-      }
-      for (let i = 0; i < record.startDate.length; i++) {
-        if (record.status[i] === "Approved") {
-          let leaveYear = new Date(record.startDate[i]).getFullYear();
-          yearWiseCount[leaveYear] = (yearWiseCount[leaveYear] || 0) + 1;
-        }
-      }
-    }
-
-    console.log("Existing Child Numbers:", childNumbers);
-    console.log("Max Child Number:", maxChildNumber);
-
-    // Compute total approved maternity leave splits
-    const totalSplits = Object.values(yearWiseCount).reduce((sum, value) => sum + value, 0);
-
-    // Existing condition: If `childNumber` already exists, keep it as `1`
-    let chilNumber = childNumbers.has(1) ? 2 : totalSplits + 1;
-
-    // ✅ New condition: Ensure childNumber is always incremented
-    chilNumber = Math.max(chilNumber, maxChildNumber + 1);
-
-    const flag = totalSplits >= 1;
-
-    return res.status(200).json({ email, leaveType, flag, totalSplits, yearWiseCount, chilNumber });
-
-  } catch (error) {
-    console.error("Error:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
-  }
-});*/
-
 app.post("/maternity-limit", async (req, res) => {
   try {
     const { email, leaveType, continous } = req.body;
@@ -1778,8 +1535,6 @@ app.post("/maternity-limit", async (req, res) => {
     if (!email || !leaveType) {
       return res.status(400).json({ message: "Email and leave type are required." });
     }
-
-    // Fetch all approved maternity leave records for the employee
     let leaveRecords = await Leave.find({ email, leaveType: "Maternity Leave" });
 
     let childNumbers = new Set();
@@ -1807,32 +1562,20 @@ app.post("/maternity-limit", async (req, res) => {
       );
       previousYearChildNumber = latestRecord ? latestRecord.childNumber : 0;
     }
-
-    console.log("Existing Child Numbers:", childNumbers);
-    console.log("Max Child Number:", maxChildNumber);
-
-    // Compute total approved maternity leave splits
     const totalSplits = Object.values(yearWiseCount).reduce((sum, value) => sum + value, 0);
-    console.log(totalSplits);
 
     let chilNumber;
-console.log(continous)
-    // ✅ Handling continuous leave condition
     if (continous) {
       chilNumber = totalSplits;
     } else {
       chilNumber = childNumbers.has(1) ? 2 : totalSplits + 1;
       chilNumber = Math.max(chilNumber, maxChildNumber + 1);
     }
-
-    // ✅ Ensure chilNumber is always incremented based on the highest past childNumber
-
     const flag = totalSplits >= 1;
 
     return res.status(200).json({ email, leaveType, flag, totalSplits, yearWiseCount, chilNumber });
 
   } catch (error) {
-    console.error("Error:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 });
@@ -1855,7 +1598,6 @@ app.get("/reports/export-pdf", async (req, res) => {
         employees = JSON.parse(reports);
         if (!Array.isArray(employees)) employees = [];
       } catch (error) {
-        console.error("Error parsing reports:", error);
         employees = [];
       }
     }
@@ -1928,7 +1670,6 @@ app.get("/reports/export-pdf", async (req, res) => {
 
     doc.end();
   } catch (error) {
-    console.error("Error exporting PDF:", error);
     res.status(500).json({ message: "Server Error" });
   }
 });
@@ -1988,11 +1729,8 @@ app.get("/leave-trends/:email/:year", async (req, res) => {
         });
       });
     });
-console.log(leaveTrends)
-   // console.log("Leave Trends Data:", JSON.stringify(leaveTrends, null, 2)); // Log data before sending
     res.json(leaveTrends);
   } catch (error) {
-    console.error("Error fetching leave trends:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
@@ -2021,30 +1759,9 @@ app.get("/all-optional-holidays", async (req, res) => {
     // Return the filtered holidays
     res.status(200).json(optionalHolidays);
   } catch (error) {
-    console.error("Error fetching optional holidays:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
-
-
-
-
-
-// Get Leave Type Distribution
-// app.get('/leave-types/:email', async (req, res) => {
-//   const { email } = req.params;
-//   try {
-//     const types = await Leave.aggregate([
-//       { $match: { email } },
-//       { $group: { _id: "$leaveType", count: { $sum: { $size: "$startDate" } } } } // Count total leave applications
-//     ]);
-//     res.json(types);
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// });
-
 app.get('/leave-type-status/:email/:year', async (req, res) => {
   const { email, year } = req.params;
   const requestedYear = parseInt(year);
@@ -2079,145 +1796,9 @@ app.get('/leave-type-status/:email/:year', async (req, res) => {
 
     res.json(Object.entries(formattedResponse).map(([leaveType, statuses]) => ({ leaveType, statuses })));
   } catch (err) {
-    console.error("❌ Error in API:", err);
     res.status(500).json({ error: err.message });
   }
 });
-
-// app.get('/leave-types/:email/:year?', async (req, res) => {
-//   const { email, year } = req.params;
-//   const matchStage = { email };
-
-//   // If a specific year is provided, filter by that year
-//   if (year) {
-//     matchStage["year"] = parseInt(year);
-//   }
-
-//   try {
-//     const types = await Leave.aggregate([
-//       { $match: matchStage },
-
-//       // 🔹 Unwind `status`, `startDate`, and `year`
-//       { $unwind: "$status" },
-//       { $unwind: "$startDate" },
-//       { $unwind: "$year" },
-
-//       // 🔹 Extract the year from `startDate`
-//       {
-//         $addFields: {
-//           extractedYear: { $year: "$startDate" }
-//         }
-//       },
-
-//       // 🔹 Group by Year & Status
-//       {
-//         $group: {
-//           _id: { year: "$extractedYear", status: "$status" },
-//           count: { $sum: 1 }
-//         }
-//       },
-
-//       // 🔹 Sort by Year & Status
-//       { $sort: { "_id.year": 1, "_id.status": 1 } }
-//     ]);
-
-//     res.json(types);
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// });
-
-// app.get('/leave-types/:email/:year?', async (req, res) => {
-//   const { email, year } = req.params;
-
-//   try {
-//     const matchStage = { email }; // Match email
-
-//     // If a specific year is provided, filter by that year (inside the array)
-//     if (year) {
-//       matchStage["year"] = { $elemMatch: { $eq: parseInt(year) } };
-//     }
-
-//     const types = await Leave.aggregate([
-//       { $match: matchStage },
-
-//       // 🔹 Unwind arrays so that each leave entry is treated separately
-//       { $unwind: "$startDate" },
-//       { $unwind: "$status" },
-//       { $unwind: "$year" },
-
-//       // 🔹 Extract the year from `startDate`
-//       {
-//         $addFields: {
-//           extractedYear: { $year: "$startDate" }
-//         }
-//       },
-
-//       // 🔹 Filter again to match the requested year (if provided)
-//       ...(year ? [{ $match: { extractedYear: parseInt(year) } }] : []),
-
-//       // 🔹 Group by Year & Status
-//       {
-//         $group: {
-//           _id: { year: "$extractedYear", status: "$status" },
-//           count: { $sum: 1 }
-//         }
-//       },
-
-//       // 🔹 Sort by Year & Status
-//       { $sort: { "_id.year": 1, "_id.status": 1 } }
-//     ]);
-//     console.log("year by trends:",types);
-
-//     res.json(types);
-
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// });
-
-// app.get('/leave-types/:email/:year?', async (req, res) => {
-//   const { email, year } = req.params;
-  
-//   console.log("Received request:", { email, year });
-
-//   try {
-//     // 🔹 Build Query Dynamically (Filter by Email & Year if provided)
-//     let matchStage = { email };
-//     if (year) {
-//       matchStage.startDate = {
-//         $gte: new Date(`${year}-01-01`),
-//         $lt: new Date(`${year}-12-31`),
-//       };
-//     }
-
-//     const leaveTypes = await Leave.aggregate([
-//       { $match: matchStage },
-
-//       // 🔹 Group by leaveType & status
-//       {
-//         $group: {
-//           _id: { leaveType: "$leaveType", status: "$status" },
-//           count: { $sum: 1 }
-//         }
-//       },
-
-//       // 🔹 Sort for consistency
-//       { $sort: { "_id.leaveType": 1 } }
-//     ]);
-
-//     console.log("📌 Leave Types Result:", leaveTypes);
-//     res.json(leaveTypes);
-//   } catch (err) {
-//     console.error("❌ Error in API:", err);
-//     res.status(500).json({ error: err.message });
-//   }
-// });
-
-//charts.js
-// Fetch Leave Type Status
-// Fetch Leave Type Status
-// Fetch Leave Type Status
 app.get('/leave-type-status/:email/:year', async (req, res) => {
   const { email, year } = req.params;
   const requestedYear = parseInt(year);
@@ -2248,7 +1829,6 @@ app.get('/leave-type-status/:email/:year', async (req, res) => {
 
     res.json(Object.entries(formattedResponse).map(([leaveType, statuses]) => ({ leaveType, statuses })));
   } catch (err) {
-    console.error("❌ Error in API:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -2282,11 +1862,8 @@ app.get("/leave-trends/:email/:year", async (req, res) => {
         });
       });
     });
-
-   // console.log("Leave Trends Data:", JSON.stringify(leaveTrends, null, 2)); // Logging the data
     res.json(leaveTrends);
   } catch (error) {
-    console.error("Error fetching leave trends:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
@@ -2295,10 +1872,7 @@ app.get("/leave-balance/:email/:year", async (req, res) => {
   const numericYear = Number(year);
 
   try {
-    // ✅ Fetch all leave policies
     const policies = await LeavePolicy.find({});
-
-    // ✅ Initialize leave balance with policy values
     const leaveBalance = {};
     for (const policy of policies) {
       leaveBalance[policy.leaveType] = {
@@ -2308,8 +1882,6 @@ app.get("/leave-balance/:email/:year", async (req, res) => {
         carrylimit: policy.carryForwardLimit,
       };
     }
-
-    // ✅ Fetch leave records from the database for the given year
     const leaves = await Leave.find({
       email,
       year: { $elemMatch: { $elemMatch: { $eq: numericYear } } },
@@ -2318,7 +1890,6 @@ app.get("/leave-balance/:email/:year", async (req, res) => {
     for (const leave of leaves) {
       const { leaveType, totalLeaves, availableLeaves } = leave;
 
-      // ✅ If leave record exists in DB, override policy values
       leaveBalance[leaveType] = {
         totalLeaves: totalLeaves ?? leaveBalance[leaveType].totalLeaves,
         usedLeaves: 0, // Will be calculated below
@@ -2382,9 +1953,7 @@ app.get("/leave-balance/:email/:year", async (req, res) => {
     }
 
     res.json(leaveBalance);
-    console.log("leaveBalance", leaveBalance);
   } catch (err) {
-    console.error("Error fetching leave balance:", err);
     res.status(500).json({ error: "Error fetching leave balance" });
   }
 });
@@ -2411,11 +1980,9 @@ app.post("/maternity-limit-display", async (req, res) => {
         ) {
           let leaveYear = new Date(record.startDate[i]).getFullYear();
           count[leaveYear] = (count[leaveYear] || 0) + 1;
-          // console.log("inside");
         }
       }
     }
-    console.log(count);
     const totalSplits = Object.values(count).reduce((sum, value) => sum + value, 0);
 
     const flag = totalSplits >= 1;
@@ -2423,7 +1990,6 @@ app.post("/maternity-limit-display", async (req, res) => {
     return res.status(200).json({ email, leaveType, flag,totalSplits,count });
     // return res.status(200).json({ message: "Data received successfully.", email, leaveType });
   } catch (error) {
-    console.error("Error:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 });
@@ -2445,12 +2011,10 @@ app.get("/get-leave/:email/:year", async (req, res) => {
       year: { $elemMatch: { $elemMatch: { $eq: targetYear } } }, 
     });
 
-    console.log("leaves",leaves);
 
 
     res.status(200).json(leaves);
   } catch (error) {
-    console.error("Error fetching leave data:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
@@ -2552,10 +2116,8 @@ app.get('/leave-approval-rate', async (req, res) => {
           }
       });
 
-    //  console.log("Leave Approval Rate Data:", stats);
       res.json(stats);
   } catch (error) {
-      console.error("Error fetching approval rate:", error);
       res.status(500).json({ message: 'Error fetching approval rate', error });
   }
 });
@@ -2580,10 +2142,8 @@ app.get('/leave-types', async (req, res) => {
           });
       });
 
-     // console.log("Leave Types Data:", types); // ✅ Debugging log
       res.json(Object.entries(types).map(([leaveType, counts]) => ({ leaveType, ...counts })));
     } catch (error) {
-      console.error("Error fetching leave types:", error);
       res.status(500).json({ message: 'Error fetching leave types', error });
   }})// Fetch Employee Monthly Leaves (Handles Multiple Years)
 // Fetch Employee Monthly Leaves (Handles Leaves Spanning Multiple Years)
@@ -2704,24 +2264,20 @@ const checkOverlap = async (email, newFrom, newTo, leaveId,leaveType) => {
 
       return { hasOverlap: false };
   } catch (error) {
-      console.error("Error checking leave overlap:", error);
       return { hasOverlap: false, error: "Something went wrong" };
   }
 };
 
 app.get("/check-overlap", async (req, res) => {
   const { email, newFrom, newTo, leaveId, leaveType,index } = req.query;
-console.log("index",index)
   try {
     const overlap = await checkOverlap(email, newFrom, newTo, leaveId, leaveType,index);
-console.log("overlap",overlap)
     if (overlap.hasOverlap) {
       return res.status(400).json(overlap); // 🛑 Return error response instead of proceeding
     }
 
     res.json(overlap);
   } catch (error) {
-    console.error("Error checking overlap:", error);
     res.status(500).json({ error: "Something went wrong" });
   }
 });
@@ -2730,10 +2286,6 @@ console.log("overlap",overlap)
 app.delete("/leaves/:id", async (req, res) => {
   const { id } = req.params;
   const { startDate, endDate } = req.body;
-
-  console.log("Received ID:", id);
-  console.log("Start Date to Match:", startDate);
-  console.log("Start Date to Match:", endDate);
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({ error: "Invalid MongoDB ID format" });
@@ -2790,7 +2342,6 @@ app.delete("/leaves/:id", async (req, res) => {
     return res.status(400).json({ error: `Only 'Pending' leave entries can be deleted ${leave.status[indexToRemove]}` });
 
   } catch (error) {
-    console.error("Error deleting leave:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -2864,7 +2415,6 @@ app.get("/leave-total", async (req, res) => {
       availableLeaves,
     });
   } catch (err) {
-    console.error("Error fetching leave summary:", err);
     res.status(500).json({ error: "Error fetching leave summary" });
   }
 });
@@ -2875,7 +2425,6 @@ app.get("/allholidays", async (req, res) => {
     const holidays = await Holiday.find();
     res.json(holidays);
   } catch (err) {
-    console.error("Error fetching holidays:", err);
     res.status(500).json({ message: "Server Error", error: err.message }); // Include error message
   }
 });
@@ -2895,7 +2444,6 @@ app.get("/user/gender", async (req, res) => {
 
     res.status(200).json({ gender: user.gender });
   } catch (error) {
-    console.error("Error fetching gender:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });

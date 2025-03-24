@@ -24,7 +24,6 @@ router.post('/create', async (req, res) => {
     await newPolicy.save();
     res.status(201).json({ message: "Leave policy created successfully!", data: newPolicy });
   } catch (error) {
-    console.error("Error creating leave policy:", error.message);
     res.status(500).json({ message: "Error creating leave policy", error: error.message });
   }
 });
@@ -36,7 +35,6 @@ router.get('/', async (req, res) => {
     res.status(200).json({ data: policies });
 
   } catch (error) {
-    console.error('Error fetching leave policies:', error);
     res.status(500).json({
       message: 'Error fetching leave policies',
       error: error.message,
@@ -67,34 +65,12 @@ router.put('/update/:id', async (req, res) => {
       data: updatedPolicy,
     });
   } catch (error) {
-    console.error('Error updating leave policy:', error);
     res.status(500).json({
       message: 'Error updating leave policy',
       error: error.message,
     });
   }
 });
-
-// Delete a leave policy
-// router.delete('/delete/:id', async (req, res) => {
-//   const { id } = req.params;
-
-//   try {
-//     const deletedPolicy = await LeavePolicy.findByIdAndDelete(id);
-
-//     if (!deletedPolicy) {
-//       return res.status(404).json({ message: 'Leave policy not found' });
-//     }
-
-//     res.status(200).json({ message: 'Leave policy deleted successfully!' });
-//   } catch (error) {
-//     console.error('Error deleting leave policy:', error);
-//     res.status(500).json({
-//       message: 'Error deleting leave policy',
-//       error: error.message,
-//     });
-//   }
-// });
 
 router.delete('/delete/:id', async (req, res) => {
   const { id } = req.params;
@@ -120,7 +96,6 @@ router.delete('/delete/:id', async (req, res) => {
     res.status(200).json({ message: 'Leave policy deleted successfully!' });
 
   } catch (error) {
-    console.error('Error deleting leave policy:', error);
     res.status(500).json({
       message: 'Error deleting leave policy',
       error: error.message,

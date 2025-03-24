@@ -50,7 +50,6 @@ function AdminDashboard() {
           if (parsedUserData && parsedUserData.role === "Admin") {
             setEmail(parsedUserData.email || "");
           }
-          console.log("admin email is :",Email);
         } catch (error) {
           console.error("Error parsing userData from localStorage:", error);
         }
@@ -131,7 +130,6 @@ function AdminDashboard() {
 
       setEmpList(filteredAndSortedData); // Update state with filtered and sorted data
     } catch (error) {
-      console.error("Error fetching employees:", error);
       setError("Failed to fetch employees. Please try again later."); // Update error state for UI
     }
   };
@@ -175,7 +173,6 @@ function AdminDashboard() {
          setMessage("");
        }, 3000);
      } catch (error) {
-       console.error("Error uploading file:", error);
        
        if (error.response && error.response.data.message.includes("Missing required columns")) {
          alert(error.response.data.message); // Alert user about missing columns
@@ -216,7 +213,6 @@ function AdminDashboard() {
         });
     
         const result = await response.json();
-        console.log("Server Response:", result);
     
         if (!response.ok) {
           if (result.message.includes("Wrong format")) {
@@ -233,7 +229,6 @@ function AdminDashboard() {
         fetchHolidays(); // Refresh holidays list
     
       } catch (error) {
-        console.error("Error uploading holidays:", error);
         alert("Failed to upload holidays. Please try again.");
       }
     };
@@ -413,7 +408,6 @@ function AdminDashboard() {
       setFormData({ date: "", holidayName: "", holidayType: "Mandatory" });
       setShowModal(false);
     } catch (error) {
-      console.error("Error adding holiday:", error);
       alert("Failed to add holiday. Please try again later."); //  Show alert on error
     }
   };
@@ -457,7 +451,6 @@ function AdminDashboard() {
       // Set the sorted holidays
       setHolidays(sortedHolidays);
     } catch (error) {
-      console.error("Error fetching holidays:", error);
       setError("Failed to fetch holidays. Please try again later."); // Update error state for UI
     }
   };
@@ -475,7 +468,6 @@ function AdminDashboard() {
         leave.duration.length === 0 ||
         selectedIndex >= leave.duration.length
       ) {
-        console.error("Invalid leave duration or selected index:", selectedLeave);
         return;
       }
   
@@ -520,7 +512,6 @@ function AdminDashboard() {
           );
           setSelectedLeave(null);
           setModalOpen(false);
-          console.log("Rejected and updated in the database:", updatedLeaveFromServer);
         } else {
           console.error("Failed to update leave status in the database");
         }
@@ -541,7 +532,6 @@ function AdminDashboard() {
         leave.duration.length === 0 ||
         selectedIndex >= leave.duration.length
       ) {
-        console.error("Invalid leave duration or selected index:", selectedLeave);
         return;
       }
   
@@ -550,7 +540,6 @@ function AdminDashboard() {
       const currentStatus = leave.status[selectedIndex]?.toLowerCase(); // Add optional chaining
   
       if (!currentStatus || (currentStatus !== "pending" && currentStatus !== "rejected")) {
-        console.log("This leave is already approved.");
         return;
       }
   
@@ -597,7 +586,6 @@ function AdminDashboard() {
           );
           setSelectedLeave(null);
           setModalOpen(false);
-          console.log("Approved and updated in the database:", updatedLeaveFromServer);
         } else {
           console.error("Failed to update leave in the database");
         }
@@ -636,7 +624,6 @@ function AdminDashboard() {
       );
       alert("Employee deleted successfully!");
     } catch (error) {
-      console.error("Error deleting employee:", error);
       setError("Failed to delete employee. Please try again later.");
     }
   };
@@ -666,7 +653,6 @@ function AdminDashboard() {
       );
       alert("Holiday deleted successfully!");
     } catch (error) {
-      console.error("Error deleting employee:", error);
       setError("Failed to delete employee. Please try again later.");
     }
   };
@@ -720,7 +706,6 @@ function AdminDashboard() {
       setEditingRow(null);
       setError(null);
     } catch (error) {
-      console.error("Error updating holiday:", error);
       setError("Failed to update holiday. Please try again later.");
     }
   };
@@ -781,7 +766,6 @@ function AdminDashboard() {
       setEditingRow(null);
       setError(null); // Clear errors
     } catch (error) {
-      console.error("Error updating employee:", error);
       setError("Failed to update employee. Please try again later.");
     }
   };

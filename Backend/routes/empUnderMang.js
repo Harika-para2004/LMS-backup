@@ -14,7 +14,6 @@ router.get("/", async (req, res) => {
 
     res.status(200).json(employees);
   } catch (error) {
-    console.error("Error fetching employees:", error);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -29,7 +28,6 @@ router.get("/inactive", async (req, res) => {
 
     res.status(200).json(employees);
   } catch (error) {
-    console.error("Error fetching employees:", error);
     res.status(500).json({ error: "Server error" });
   }
 });

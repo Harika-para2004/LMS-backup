@@ -55,7 +55,6 @@ const ProfilePage = () => {
 
   useEffect(() => {
     const storedUserData = localStorage.getItem("userData");
-    console.log("storedUserData",storedUserData);
     if (storedUserData) {
       try {
         const parsedUserData = JSON.parse(storedUserData);
@@ -78,14 +77,11 @@ const ProfilePage = () => {
   useEffect(() => {
     const fetchLeaveData = async () => {
       try {
-        // console.log("email in emp",email);
-        console.log("user email",userData.email)
         const response = await fetch(
           `${backendUrl}/leavesummary?email=${email}`
         );
         if (response.ok) {
           const data = await response.json();
-          console.log("Fetched Data:", data);
           setLeaveData(data);
         } else {
           console.error("Failed to fetch leave data");
@@ -124,7 +120,6 @@ const ProfilePage = () => {
         console.error("Error fetching leave policies:", error);
       }
     };
-    // console.log("1st email",email);
     if(email)
     fetchLeavePolicies();
   }, [leaveData,email]);
@@ -145,18 +140,12 @@ const ProfilePage = () => {
     if (formData.newPassword !== formData.confirmPassword) {
       setErrors({ confirmPassword: "Passwords do not match" });
       return;
-    }
-  
-    console.log("Sending request with:", { email, newPassword: formData.newPassword });
-  
+    }  
     try {
       const response = await axios.put(`${backendUrl}/updatepassword`, {
         email,
         newPassword: formData.newPassword,
-      });
-  
-      console.log("Response received:", response.data);
-  
+      });  
       if (response.status === 200) {
         showToast("Password updated successfully!","success");
         handleClose();
@@ -164,7 +153,6 @@ const ProfilePage = () => {
         showToast("Failed to update password. Try again.","error");
       }
     } catch (error) {
-      console.error("Error updating password:", error.response?.data || error.message);
       showToast(error.response?.data?.message || "An error occurred while updating the password.","error");
     }
   };

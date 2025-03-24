@@ -10,7 +10,6 @@ const PrivateRoute = ({ children, allowedRoles }) => {
         const storedUserData = localStorage.getItem("userData");
         const adminData = localStorage.getItem("admin");
 
-        console.log(storedUserData)
         if (storedUserData || adminData) {
             try {
                 const parsedUserData = JSON.parse(storedUserData);
@@ -24,14 +23,12 @@ const PrivateRoute = ({ children, allowedRoles }) => {
                 setAdmin(admin || "");
 
             } catch (error) {
-                console.error("Error parsing userData from localStorage:", error);
                 setRole("guest");
             }
         } else {
             setRole("guest");
         }
     }, []);
-    console.log("role :",role);
 
     // Show loading spinner
     if (role === null && admin == null) {

@@ -43,12 +43,6 @@ const EmployeesUnderManagerinAdmin = () => {
     }
   }, [contextEmail, paramEmail, navigate]);
 
-  console.log("location", location);
-  console.log("dash email", email);
-
-  console.log("email in emp dash", email);
-  console.log("role", userData.role);
-
   const [employees, setEmployees] = useState([]);
 
   useEffect(() => {
