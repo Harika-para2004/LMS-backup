@@ -540,84 +540,86 @@ if (leaveType.toLowerCase().includes("optional")) {
                   </LocalizationProvider>
                 </Box>
 
-                {/* To Date */}
-                <Box flex={1}>
-                  <label className="field-label">
-                    To: <span className="req">*</span>
-                    <br />
-                  </label>
-                  {errors.to && <span className="req">{errors.to}</span>}
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <DatePicker
-                      value={
-                        formData.endDate
-                          ? dayjs(formData.endDate, "DD/MM/YYYY")
-                          : null
-                      }
-                      onChange={(newValue) =>
-                        handleInputChange({
-                          target: {
-                            name: "endDate",
-                            value: newValue
-                              ? dayjs(newValue).format("DD/MM/YYYY")
-                              : "",
-                          },
-                        })
-                      }
-                      format="DD/MM/YYYY"
-                      shouldDisableDate={(date) => {
-                        return (
-                          date.day() === 0 || // Disable Sundays
-                          date.day() === 6 || // Disable Saturdays
-                          holidays.some(
-                            (holiday) =>
-                              holiday.type === "Mandatory" &&
-                              dayjs(holiday.date).isSame(date, "day")
-                          )
-                        );
-                      }}
-                      slots={{
-                        day: (props) => {
-                          const { day, outsideCurrentMonth, selected } = props;
-                          const holiday = holidays.find(
-                            (holiday) =>
-                              holiday.type === "Mandatory" &&
-                              dayjs(holiday.date).isSame(day, "day")
-                          );
+          {/* To Date */}
+<Box flex={1}>
+  <label className="field-label">
+    To: <span className="req">*</span>
+    <br />
+  </label>
+  {errors.to && <span className="req">{errors.to}</span>}
+  <LocalizationProvider dateAdapter={AdapterDayjs}>
+    <DatePicker
+      value={
+        formData.endDate
+          ? dayjs(formData.endDate, "DD/MM/YYYY")
+          : null
+      }
+      onChange={(newValue) =>
+        handleInputChange({
+          target: {
+            name: "endDate",
+            value: newValue
+              ? dayjs(newValue).format("DD/MM/YYYY")
+              : "",
+          },
+        })
+      }
+      format="DD/MM/YYYY"
+      minDate={formData.startDate ? dayjs(formData.startDate, "DD/MM/YYYY") : null} // 🚀 Prevent selecting dates before From Date
+      shouldDisableDate={(date) => {
+        return (
+          date.day() === 0 || // Disable Sundays
+          date.day() === 6 || // Disable Saturdays
+          holidays.some(
+            (holiday) =>
+              holiday.type === "Mandatory" &&
+              dayjs(holiday.date).isSame(date, "day")
+          )
+        );
+      }}
+      slots={{
+        day: (props) => {
+          const { day, outsideCurrentMonth, selected } = props;
+          const holiday = holidays.find(
+            (holiday) =>
+              holiday.type === "Mandatory" &&
+              dayjs(holiday.date).isSame(day, "day")
+          );
 
-                          return (
-                            <Tooltip title={holiday ? holiday.name : ""} arrow>
-                              <span>
-                                <PickersDay
-                                  {...props}
-                                  disabled={
-                                    outsideCurrentMonth || selected || !!holiday
-                                  }
-                                  sx={{
-                                    ...(holiday && {
-                                      backgroundColor: "#ffcccc", // Light red for holidays
-                                      color: "#d32f2f", // Dark red text
-                                      "&:hover": { backgroundColor: "#ffb3b3" },
-                                    }),
-                                    ...(day.day() === 0 || day.day() === 6
-                                      ? {
-                                          backgroundColor: "#f0f0f0", // Light gray for weekends
-                                          color: "#9e9e9e",
-                                        }
-                                      : {}),
-                                  }}
-                                />
-                              </span>
-                            </Tooltip>
-                          );
-                        },
-                      }}
-                      renderInput={(params) => (
-                        <TextField {...params} fullWidth size="small" />
-                      )}
-                    />
-                  </LocalizationProvider>
-                </Box>
+          return (
+            <Tooltip title={holiday ? holiday.name : ""} arrow>
+              <span>
+                <PickersDay
+                  {...props}
+                  disabled={
+                    outsideCurrentMonth || selected || !!holiday
+                  }
+                  sx={{
+                    ...(holiday && {
+                      backgroundColor: "#ffcccc", // Light red for holidays
+                      color: "#d32f2f", // Dark red text
+                      "&:hover": { backgroundColor: "#ffb3b3" },
+                    }),
+                    ...(day.day() === 0 || day.day() === 6
+                      ? {
+                          backgroundColor: "#f0f0f0", // Light gray for weekends
+                          color: "#9e9e9e",
+                        }
+                      : {}),
+                  }}
+                />
+              </span>
+            </Tooltip>
+          );
+        },
+      }}
+      renderInput={(params) => (
+        <TextField {...params} fullWidth size="small" />
+      )}
+    />
+  </LocalizationProvider>
+</Box>
+
               </Box>
 
               <Box mt={2}>

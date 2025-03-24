@@ -35,8 +35,7 @@ app.use(express.json({ limit: "10mb" }));  // Increase JSON body size limit
 
 mongoose
   .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
+    
     tlsAllowInvalidCertificates: true,  // Disable strict SSL check
     tlsAllowInvalidHostnames: true
   })
