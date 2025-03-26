@@ -51,10 +51,12 @@ const LoginForm = () => {
         `${backendUrl}/api/auth/user/${response.data.userId}`
       );
       const userData = userDataResponse.data;
-      if(userData.isActive === false){
-        showToast("Your account is deactivated","error")
+
+      if (!userData.isActive) {
+        showToast("Your account is deactivated", "error");
         return;
       }
+
       localStorage.setItem("role", userData.role);
       localStorage.setItem("userData", JSON.stringify(userData));
 
@@ -69,10 +71,29 @@ const LoginForm = () => {
       }
     }
   } catch (error) {
-    showToast(error.response?.data?.message || "Something went wrong", "error");
+    if (error.response?.status === 400 && normalizedEmail === "admin@gmail.com") {
+      // Admin email not found, create the admin user
+      try {
+        const createAdminResponse = await axios.post(`${backendUrl}/api/auth/signup`, {
+          empname: "Admin",
+          empid: "0",
+          email: "admin@gmail.com",
+          password: formData.password, // Use a default password or prompt the user
+          role: "Admin",
+          isActive: true,
+        });
+
+        if (createAdminResponse.status === 201) {
+          showToast("Admin account created successfully. Please login.", "success");
+        }
+      } catch (creationError) {
+        showToast(creationError.response?.data?.message || "Failed to create admin account", "error");
+      }
+    } else {
+      showToast(error.response?.data?.message || "Something went wrong", "error");
+    }
   }
 };
-  
 
   return (
     <div className="l-form">

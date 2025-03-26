@@ -138,6 +138,38 @@ router.post('/signin', async (req, res) => {
     res.status(500).json({ message: 'Error signing in user' });
   }
 });
+router.post('/signup', async (req, res) => {
+  let { empname, empid, email, password, role, isActive } = req.body;
+
+  try {
+    email = email.toLowerCase();
+    
+    // Check if the email already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists!" });
+    }
+
+    // Hash the password before storing it
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = new User({
+      empname,
+      empid,
+      email,
+      password: hashedPassword,
+      role,
+      isActive
+    });
+
+    await newUser.save();
+    return res.status(201).json({ message: "User registered successfully!", userId: newUser._id });
+
+  } catch (err) {
+    console.error("Signup Error:", err);
+    res.status(500).json({ message: "Error registering user", error: err.message });
+  }
+});
 
 // Get User Route
 router.get('/user/:userId', async (req, res) => {

@@ -24,7 +24,7 @@ const upload = multer({ storage: storage });
 const exceluploads = require("./routes/exceluploads")
 const forgotPasswordRoutes = require("./routes/ForgotPasswordRoutes");
 dotenv.config();
-
+/*mongodb+srv://lahiri:sai*123@cluster0.r7eze9l.mongodb.net/*/
 const app = express();
 const port = process.env.PORT || 5001;
 
