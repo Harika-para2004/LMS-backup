@@ -96,7 +96,7 @@ const LoginForm = () => {
 };
 
   return (
-    <div className="l-form">
+    <div className="l-form" style={{ width: "100vw", height: "100vh" }}>
       <div className="shape2"></div>
       <div className="shape1"></div>
 
