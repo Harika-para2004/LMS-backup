@@ -278,7 +278,7 @@ const AdminAnalytics = ({year}) => {
         interval: 0,
         rotate: 0,
         margin: 10,
-        formatter: (value) => (value.length > 5 ? value.slice(0, 5) + "..." : value), // Truncate label
+        formatter: (value) => (value.length > 3 ? value.slice(0, 3) + "..." : value), // Truncate label
       },
       tooltip: {
         show: true, // Show tooltip when hovering over X-axis labels
@@ -291,7 +291,7 @@ const AdminAnalytics = ({year}) => {
       {
         name: "Leaves",
         type: "bar",
-        barWidth: 30, // ✅ Fixed width for equal-sized bars
+        barWidth: 20, // ✅ Fixed width for equal-sized bars
         data: departmentLeaves?.leaveCounts || [],
         itemStyle: {
           color: (params) => {
