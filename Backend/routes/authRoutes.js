@@ -10,8 +10,18 @@ const formatCase = (text) => {
   return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
 };
 router.post('/addEmployee', async (req, res) => {
-  let { empname, empid, email, password, gender, project, role, managerEmail } = req.body;
-  email = email ? email.toLowerCase() : "";
+  let {
+    empname,
+    empid,
+    email,
+    password,
+    gender,
+    project,
+    role,
+    managerEmail,
+    joinDate
+  } = req.body;
+    email = email ? email.toLowerCase() : "";
   project = project ? project.toLowerCase() : "";
   managerEmail = managerEmail ? managerEmail.toLowerCase() : "";
 
@@ -84,8 +94,12 @@ router.post('/addEmployee', async (req, res) => {
       gender,
       project: assignedProject,
       role,
-      managerEmail: role === "Manager" ? "" : managerEmail
+      managerEmail: role === "Manager" ? "" : managerEmail,
+    
+      /** ✅ JOIN DATE */
+      joinDate: joinDate ? new Date(joinDate) : new Date()
     });
+    
 
     await newUser.save();
 

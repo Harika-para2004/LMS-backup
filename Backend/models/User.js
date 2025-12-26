@@ -19,6 +19,11 @@ const userSchema = new mongoose.Schema({
     of: Number,
     default: {},
   },
+  joinDate: {
+    type: Date,
+    required: true,
+    default: Date.now
+  },
 
   // 🔹 Add these fields for Forgot Password feature
   resetCode: { type: Number }, // Temporary reset code

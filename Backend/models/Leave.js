@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const LeavePolicy = require("./LeavePolicy");
 const Holiday = require("./Holiday");
+const User = require("./User");
 
 const LeaveSchema = new mongoose.Schema({
   email: { type: String, required: true },
@@ -31,6 +32,24 @@ const LeaveSchema = new mongoose.Schema({
 });
 
 LeaveSchema.pre("save", async function (next) {
+  // 🔹 JOIN DATE (manual for now – later fetch from User table)
+  /*changes*/
+  const user = await User.findOne({ email: this.email });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (!user.joinDate) {
+      return res.status(400).json({ message: "Join date missing" });
+    }
+
+    const joinDate = new Date(user.joinDate);
+    console.log(joinDate);
+    const joinYear = joinDate.getFullYear();
+    const joinMonth = joinDate.getMonth() + 1;
+  
+/*changes*/
   if (
     !this.isNew &&
     this.isModified("status") &&
@@ -116,11 +135,39 @@ LeaveSchema.pre("save", async function (next) {
     // ✅ Fetch Leave Policy and Set Leave Limits
     //updated available leaves
     const policy = await LeavePolicy.findOne({ leaveType: this.leaveType });
+    /*changes*/
     if (policy) {
       if (policy.maxAllowedLeaves) {
-        // Set total leaves by including carryForwardedLeaves
+    
+        // ✅ JOIN-DATE BASED TOTAL LEAVES (NEW LOGIC)
+        let eligibleLeaves = 0;
+    
+        if (joinYear < year) {
+          // Joined before this year → full quota
+          eligibleLeaves = policy.maxAllowedLeaves;
+        } 
+        else if (joinYear === year) {
+          // ✅ Joined in this year → prorated with minimum 1 leave
+          const remainingMonths = 12 - joinMonth + 1;
+        
+          const calculatedLeaves =
+            (policy.maxAllowedLeaves / 12) * remainingMonths;
+        
+          // ✅ Minimum 1 leave for ALL leave types
+          eligibleLeaves = Math.max(1, Math.ceil(calculatedLeaves));
+        } 
+        else {
+          // ❌ Joined after this year → no leaves
+          eligibleLeaves = 0;
+        }
+        
+    
         const isCurrentYear = year === new Date().getFullYear();
-        this.totalLeaves = policy.maxAllowedLeaves + (isCurrentYear ? this.carryForwardedLeaves : 0);
+    
+        // ✅ Preserve carry forward
+        this.totalLeaves =
+          eligibleLeaves + (isCurrentYear ? this.carryForwardedLeaves : 0);
+    /*changes*/
                
         // Ensure available leaves reflect the updated total leaves
    // Fetch all past leaves to correctly calculate available leaves

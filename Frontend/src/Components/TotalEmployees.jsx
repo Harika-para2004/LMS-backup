@@ -69,6 +69,7 @@ const TotalEmployees = () => {
     project: "",
     role: "",
     managerEmail: "",
+    joinDate: ""   // ✅ added
   });
   const handleManagerChange = (e) => {
     const selectedValue = e.target.value;
@@ -348,6 +349,7 @@ const TotalEmployees = () => {
           gender: "",
           role: "",
           managerEmail: "",
+          joinDate: ""
         });
         handleAddEmployeeClose();
       } else {
@@ -681,6 +683,17 @@ const TotalEmployees = () => {
                 onChange={handleChange}
                 fullWidth
               />
+                       <TextField
+  label="Join Date"
+  name="joinDate"
+  type="date"
+  value={empData.joinDate}
+  onChange={handleChange}
+  fullWidth
+  InputLabelProps={{
+    shrink: true,
+  }}
+/>
               <TextField
                 label="Password *"
                 name="password"

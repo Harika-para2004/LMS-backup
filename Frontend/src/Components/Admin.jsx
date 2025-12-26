@@ -86,8 +86,10 @@ function AdminDashboard() {
     gender: "",
     project: "",
     role: "",
-    managerEmail:""
+    managerEmail: "",
+    joinDate: ""   // ✅ added
   });
+  
   const [formData, setFormData] = useState({
     date: "",
     holidayName: "",
@@ -329,7 +331,9 @@ function AdminDashboard() {
           gender: "",
           role: "",
           managerEmail: "",
+          joinDate: ""
         });
+        
         handleAddEmployeeClose();
       } else {
         // Display specific error message from the backend
@@ -1000,6 +1004,18 @@ function AdminDashboard() {
             onChange={handleChange}
             fullWidth
           />
+          <TextField
+  label="Join Date"
+  name="joinDate"
+  type="date"
+  value={empData.joinDate}
+  onChange={handleChange}
+  fullWidth
+  InputLabelProps={{
+    shrink: true,
+  }}
+/>
+
           <TextField
             label="Password"
             name="password"
