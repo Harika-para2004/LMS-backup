@@ -633,7 +633,18 @@ app.post("/apply-leave", upload.single("attachment"), async (req, res) => {
       formattedEndDate.getDate(),
       23, 59, 59
     ));
-
+    const joinDateUTC = new Date(Date.UTC(
+      joinDate.getFullYear(),
+      joinDate.getMonth(),
+      joinDate.getDate(),
+      0, 0, 0
+    ))
+    
+    if (formattedStartDate < joinDateUTC) {
+      return res.status(400).json({
+        message: "Leave start date cannot be before your joining date."
+      });
+    }
     const startYear = formattedStartDate.getFullYear();
     const endYear = formattedEndDate.getFullYear();
     let existingLeaves = await Leave.find({ email});
@@ -2460,6 +2471,13 @@ app.get("/leave-balance/:email/:year", async (req, res) => {
         leaveBalance[leaveType].totalLeaves - usedLeavesInYear
       );
     }
+// 🔹 6. Replace totalLeaves = 0 with '-'
+for (const leaveType in leaveBalance) {
+  if (leaveBalance[leaveType].totalLeaves === 0) {
+    leaveBalance[leaveType].totalLeaves = "-";
+    leaveBalance[leaveType].availableLeaves = "-";
+  }
+}
 
     res.json(leaveBalance);
 
