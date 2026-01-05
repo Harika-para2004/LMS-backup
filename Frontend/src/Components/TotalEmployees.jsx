@@ -969,6 +969,8 @@ const TotalEmployees = () => {
               <th>Name</th>
               <th>Email</th>
               <th>Role</th>
+                  <th>Join Date</th>  
+
               <th>Project</th>
               <th>Is Active</th>
               <th>Manager Name</th>
@@ -990,6 +992,11 @@ const TotalEmployees = () => {
                     </td>
                     <td>{emp.email}</td>
                     <td>{emp.role}</td>
+<td>
+  {emp.joinDate
+    ? new Date(emp.joinDate).toLocaleDateString("en-GB")
+    : "-"}
+</td>
 
                     <td>
                       {emp.project

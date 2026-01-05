@@ -325,22 +325,28 @@ const LeaveBalanceChart = ({ email, year, years }) => {
                   <TableCell sx={{ padding: "8px 8px" }}>{type}</TableCell>
                   <TableCell sx={{ padding: "8px 8px" }} align="center">
                     {/* {data.totalLeaves === null ? "-" : data.totalLeaves} */}
-                    {type === "Casual Leave"
+                    {/*{type === "Casual Leave"
                       ? isCasualForFreshYear
                         ?  maxCasual
                         : data.totalLeaves ?? "-"
-                      : data.totalLeaves ?? "-"}
+                      : data.totalLeaves ?? "-"}*/}
+{data.totalLeaves ?? "-"}
+
                   </TableCell>
                   <TableCell sx={{ padding: "8px 8px" }} align="center">
                     {/* {data.totalLeaves === null ? "-" : data.availableLeaves} */}
-                    {type === "Casual Leave"
+                   {/* {type === "Casual Leave"
                       ? isCasualForFreshYear
                         ?  maxCasual
                         : data.availableLeaves ?? "-"
                       : data.availableLeaves == 0 ||
                         data.availableLeaves == null
                       ? "-"
-                      : data.availableLeaves}
+                      : data.availableLeaves}*/}
+{data.availableLeaves === null || data.availableLeaves === "-"
+  ? "-"
+  : data.availableLeaves}
+
                   </TableCell>
                   <TableCell sx={{ padding: "8px 8px" }} align="center">
                     {data.usedLeaves}

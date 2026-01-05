@@ -232,7 +232,7 @@ const ManagerDashboard = ({ email, selectedYear }) => {
 
     // Filter employees with leaves > 1
     const filteredEmployees = Object.entries(yearlyLeaveData)
-      .filter(([_, leaves]) => leaves > 1)
+      .filter(([_, leaves]) => leaves >= 1)
       .map(([emp, leaves]) => ({ name: emp, totalLeaves: leaves }))
       .sort((a, b) => b.totalLeaves - a.totalLeaves) // Sort in descending order
       .slice(0, 3); // Keep only the top 3
@@ -268,7 +268,7 @@ const ManagerDashboard = ({ email, selectedYear }) => {
   const getYearlyLeaveChart = () => {
     // Filter employees with leaves > 1
     const filteredLeaveData = Object.entries(yearlyLeaveData)
-      .filter(([_, leaves]) => leaves > 1)
+      .filter(([_, leaves]) => leaves >= 1)
       .reduce((acc, [emp, leaves]) => {
         acc[emp] = leaves;
         return acc;

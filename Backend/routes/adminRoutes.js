@@ -252,11 +252,12 @@ router.get("/top-leave-takers/:year", async (req, res) => {
     });
 
     const employeeLeaveData = {};
-
-    leaves.forEach(({ email, year, status, duration }) => {
+ const excludedTypes = ["Optional Holiday", "Compensatory Off"];
+leaves.forEach(({ email, year, status, duration, leaveType }) => {
       year.forEach((yearGroup, i) => {
         yearGroup.forEach((leaveYear, index) => {
-          if (leaveYear === selectedYear && status[i] === "Approved") {
+          if (leaveYear === selectedYear && status[i] === "Approved"&&
+  !excludedTypes.includes(leaveType)) {
             const leaveDuration = duration[i][index];
 
             employeeLeaveData[email] = (employeeLeaveData[email] || 0) + leaveDuration;
